@@ -1,6 +1,6 @@
 # Team Guide
 
-## Team
+## Team Members
 
 | Name | Student ID | GitHub | Role |
 |---|---:|---|---|
@@ -9,35 +9,43 @@
 | Nguyen Minh Anh | 2312571 | `MinhAnhhhhhh` | Member |
 | Tran Xuan Hieu | 2312617 | `ThanhXuanHieu` | Member |
 
-## Work Split
+Each owner completes the database, API, UI, useful logs, and tests for a feature when those layers apply.
 
-Each member owns vertical feature work across the database, API, UI, and tests when those layers apply. Minh Anh has lower-risk work at about 70-80% of a normal load. Dan has a smaller coding load so he has time for review, integration, and team support.
+## Current Cycle
 
-The full plan is in [ROADMAP.md](ROADMAP.md).
+Cycle 1 has four open Issues. All members can start now.
 
-## Current Work Cycle
+| Issue | Owner | Work | Start note |
+|---:|---|---|---|
+| #1 | Dan | Local registration and login | No dependency |
+| #2 | Han | Create and update categories | Use a seeded Admin until #1 is ready |
+| #3 | Minh Anh | Category detail and simple recipe cards | Start with an empty recipe list; add cards after #4 |
+| #4 | Hieu | Draft recipe creation and the base Recipe model | Use a seeded Author until #1 is ready |
 
-Cycle 1 builds the core data and access features.
+The seeded users are temporary development data. Replace them with real authentication during integration.
 
-| Owner | First task | Reviewer |
-|---|---|---|
-| Dan | Local registration and login | Han |
-| Han | Create and update categories | Dan |
-| Minh Anh | Category detail and simple recipe cards | Dan |
-| Hieu | Draft recipe creation and the base Recipe model | Dan |
+## High-Level Work Split
 
-The Category list on the home page is **Agent Bootstrap** work. It is not student work.
+| Cycle | Dan | Han | Minh Anh | Hieu |
+|---|---|---|---|---|
+| 1 | Registration and login | Category create and update | Category detail and recipe cards | Draft recipe and base model |
+| 2 | Tokens, publication, and ownership checks | Recipe create/update, ingredients, steps, and safe deletion | Profiles and recipe details | Public recipe list, filters, sorting, and paging |
+| 3 | OAuth, security, health, logging foundation, and integration | MinIO, welcome email, deployment, and backup | SEO, accessibility, sitemap, and user docs | Images, resize job, search, Redis, and performance |
+
+Han also owns safe category deletion. Hieu owns recipe archive and external image cleanup. Han owns the recipe database delete flow and its ownership checks.
+
+S = 1, M = 2, and L = 3 are simple planning guides. Minh Anh has lower-risk work at about 70-80% of a normal member's load. Dan has less feature coding because he reviews Pull Requests, solves integration problems, and supports the team. Han and Hieu have more connected feature work, but it follows clear data and media dependencies.
 
 ## Git Workflow
 
-1. Choose the assigned Issue and pull the latest `main`.
-2. Create one feature branch, for example `feat/2-local-login`.
-3. Build and test the task.
+1. Pull the latest `main` and choose the assigned Issue.
+2. Create one branch, such as `feat/2-category-management`.
+3. Build and test the full feature.
 4. Push the branch and open a small Pull Request.
-5. The reviewer checks it. Dan merges after CI passes.
-6. Delete the branch and then start the next Issue.
+5. Dan reviews member Pull Requests. Han reviews Dan's Pull Requests.
+6. Dan merges after CI passes, then the branch is deleted.
 
-Dan reviews member Pull Requests. Han reviews Dan's Pull Requests. Another free member may review when needed.
+When Cycle 1 is almost complete, create four Cycle 2 Issues. Keep future work in [ROADMAP.md](ROADMAP.md) until then.
 
 ## Six Team Rules
 
@@ -52,7 +60,6 @@ Dan reviews member Pull Requests. Han reviews Dan's Pull Requests. Another free 
 
 - The feature works from UI to API and database when those layers apply.
 - Permissions and validation follow the SRS.
-- Important success and error cases are tested.
-- CI passes.
-- No secrets are committed.
+- Useful logs and important success and error tests are included.
+- CI passes and no secrets are committed.
 - The Pull Request is reviewed and merged.
