@@ -1,0 +1,52 @@
+name: Feature task
+description: A small task with one clear result
+title: ""
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Describe the result in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      value: |
+        - [ ] The main flow works with real data
+        - [ ] Important errors are handled
+        - [ ] Tests pass
+        - [ ] The related UI and API work together
+        - [ ] Documentation is updated when needed
+    validations:
+      required: true
+  - type: input
+    id: srs
+    attributes:
+      label: SRS
+      placeholder: FR-RCP-003
+    validations:
+      required: true
+  - type: input
+    id: owner
+    attributes:
+      label: Owner and reviewer
+      placeholder: Owner: Hieu; Reviewer: Dan
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options:
+        - S
+        - M
+        - L
+    validations:
+      required: true
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies
+      placeholder: Issue #1 or None

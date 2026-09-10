@@ -1,0 +1,69 @@
+name: culinary-blog
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-culinary_blog}
+      POSTGRES_USER: ${POSTGRES_USER:-culinary}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-culinary}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-culinary} -d ${POSTGRES_DB:-culinary_blog}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+    command: >-
+      sh -c "alembic upgrade head && seed &&
+      uvicorn culinary_blog_api.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    profiles: ["full"]
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-culinary}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change-this-local-password}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    profiles: ["full"]
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
