@@ -23,12 +23,15 @@
 Run the checks that match the change. Before a Pull Request, run all checks when practical:
 
 ```bash
-uv sync --directory backend
+uv sync --locked --directory backend
 uv run --directory backend ruff check .
-uv run --directory backend pytest --cov=culinary_blog_api
+uv run --directory backend pytest --cov=culinary_blog_api --cov-fail-under=80
 npm ci --prefix frontend
 npm run lint --prefix frontend
+npm run typecheck --prefix frontend
+npm test --if-present --prefix frontend
 npm run build --prefix frontend
+docker compose config --quiet
 ```
 
 Use `docker compose up --build` for the full stack. Run migrations with `docker compose exec api alembic upgrade head` and seed data with `docker compose exec api seed`.

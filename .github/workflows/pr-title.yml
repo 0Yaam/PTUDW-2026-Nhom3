@@ -1,0 +1,41 @@
+name: PR title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-title:
+    name: PR title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check name, student ID, and title
+        uses: actions/github-script@v9.0.0
+        with:
+          script: |
+            const title = context.payload.pull_request?.title ?? "";
+            const members = new Map([
+              ["Nguyễn Ngọc Trường Dân", "2312590"],
+              ["Nguyen Ngoc Truong Dan", "2312590"],
+              ["Nguyễn Ngọc Hân", "2312607"],
+              ["Nguyen Ngoc Han", "2312607"],
+              ["Nguyễn Minh Anh", "2312571"],
+              ["Nguyen Minh Anh", "2312571"],
+              ["Trần Xuân Hiếu", "2312617"],
+              ["Tran Xuan Hieu", "2312617"],
+            ]);
+            const match = title.match(/^(.+?) - (\d{7}): (\S(?:.*\S)?)$/u);
+            const example = "Nguyễn Ngọc Hân - 2312607: add category management";
+
+            if (!match || members.get(match[1]) !== match[2]) {
+              core.setFailed(
+                `Use a valid name and student ID. Example: ${example}`,
+              );
+            }

@@ -1,36 +1,46 @@
 # Project Roadmap
 
-Keep future work here. Create four new Issues only when the current cycle is almost complete.
+GitHub Project is the source of current status. Future work stays as compact Backlog items until the team is ready to create detailed Issues.
+
+Size is a rough guide: S = 1, M = 2, L = 3. Each feature owner completes all needed layers. Dan has less feature coding because he leads, reviews, and integrates. Minh Anh has lower-risk work at about 70-80% of normal effort.
 
 ## Cycle 1 - Core Data And Access
 
-| Owner | Feature group | SRS | Important dependency |
-|---|---|---|---|
-| Dan | Local registration and login | FR-AUTH-001, FR-AUTH-002, NFR-SEC-001 | None |
-| Han | Create and update categories | FR-CAT-003, FR-CAT-004 | Start with a seeded Admin; integrate #1 later |
-| Minh Anh | Category detail and simple recipe cards | FR-CAT-002 | Start with an empty recipe list; add cards after #4 |
-| Hieu | Draft recipe creation and the base Recipe model | FR-RCP-003 | Start with a seeded Author; integrate #1 later |
+| Owner | Feature | Size | SRS | Start | Finish integration |
+|---|---|---:|---|---|---|
+| Dan | Local registration and login | L | FR-AUTH-001, FR-AUTH-002, NFR-SEC-001 | No dependency | Shared User model and auth contract are merged |
+| Han | Create and update categories | M | FR-CAT-003, FR-CAT-004 | Existing Category model; development Admin fixture is allowed | Issue #1 auth and Admin permission checks are merged |
+| Minh Anh | Category detail and simple recipe cards | M | FR-CAT-002 | Existing category seed; use an empty recipe list | Issue #4 Recipe contract is merged for real cards |
+| Hieu | Base Recipe model and draft recipe creation | L | FR-RCP-003 | Agreed API/error rules; development Author fixture is allowed | Issue #1 User model and Author permission checks are merged |
 
-Agent Bootstrap provides the category list foundation for FR-CAT-001. Seeded users are only temporary development data.
+Only these four feature Issues begin in Ready. Fixtures or mock identities must work only in development and tests; they never bypass production authentication.
 
 ## Cycle 2 - Main Application Flow
 
-| Owner | Feature group | SRS | Important dependency |
-|---|---|---|---|
-| Dan | Refresh token, sign out, publish, unpublish, and shared ownership checks | FR-AUTH-004, FR-AUTH-005, FR-RCP-005, NFR-SEC-002, NFR-SEC-006 | Cycle 1 authentication and Recipe model |
-| Han | Create and update recipes, ingredients, cooking steps, safe category deletion, and recipe database deletion | FR-CAT-005, FR-RCP-004, FR-RCP-007, FR-RCP-009, FR-RCP-010 | Hieu's base Recipe model and Dan's ownership foundation |
-| Minh Anh | View and update profiles, and show recipe details | FR-AUTH-006, FR-AUTH-007, FR-RCP-002 | Cycle 1 authentication and Recipe model |
-| Hieu | Public recipe list, filters, sorting, and pagination | FR-RCP-001, FR-SRCH-002 to FR-SRCH-004 | Published recipe data from Dan's flow |
+| Owner | Feature bundle | Size | Main dependency |
+|---|---|---:|---|
+| Dan | Refresh token, sign out, publish/unpublish, shared ownership checks | L | Cycle 1 auth and Recipe model |
+| Han | Recipe editing, ingredients, cooking steps, and recipe deletion | L | Recipe model and Dan's ownership checks |
+| Minh Anh | User profiles and recipe detail | M | Auth and Recipe model |
+| Hieu | Public recipe list, filters, sorting, pagination, and archive | L | Published recipe data and agreed query contract |
 
-Han owns recipe update and database deletion with ownership rules. Hieu adds archive behavior and external image cleanup in Cycle 3.
+Dan owns shared authentication, ownership checks, and security rules. Han reuses them for recipe changes and deletion. Hieu owns archive behavior.
 
-## Cycle 3 - Supporting Features
+## Cycle 3 - Services And Quality
 
-| Owner | Feature group | SRS | Important dependency |
-|---|---|---|---|
-| Dan | Google OAuth, security, health checks, shared logging, and final integration | FR-AUTH-003, FR-OBS-001 to FR-OBS-003, NFR-SEC-003 to NFR-SEC-007, NFR-REL-001, NFR-REL-002, NFR-MAINT-001, NFR-MAINT-002 | Main application flows |
-| Han | MinIO storage, welcome email job, deployment, and backup | FR-FILE-001, FR-FILE-002, FR-JOB-001, NFR-REL-003, NFR-SCALE-001, NFR-SCALE-003 | Stable auth and recipe data |
-| Minh Anh | Recipe SEO, accessibility, sitemap, and final user documentation | FR-JOB-003, NFR-PERF-005, NFR-USE-001 to NFR-USE-004, NFR-MAINT-003, NFR-MAINT-004, NFR-SEO-001 to NFR-SEO-004 | Recipe detail pages |
-| Hieu | Recipe archive, images, image resize job, full-text search, Redis cache, and performance checks | FR-RCP-006, FR-RCP-008, FR-JOB-002, FR-SRCH-001, NFR-PERF-001 to NFR-PERF-004, NFR-SCALE-002 | Han's MinIO service and recipe delete flow |
+| Owner | Feature bundle | Size | Main dependency |
+|---|---|---:|---|
+| Dan | Google OAuth, shared logging/security, health checks, final integration | M | Stable main flows |
+| Han | MinIO foundation, safe category/file deletion, welcome email, deployment/backup | L | Stable auth, recipes, and deployment access |
+| Minh Anh | SEO, accessibility, sitemap, short user documentation | M | Stable public pages |
+| Hieu | Recipe images, resize/cleanup jobs, search, cache, performance | L | Han's MinIO foundation and recipe flows |
 
-Every member adds useful logs and tests for their own features. Dan provides the shared logging and security foundation.
+Cycle 3 task counts are not effort counts. Han owns shared MinIO and deployment rules. Hieu reuses MinIO for image work. Hieu's image/search bundle must be split into small linked Pull Requests. If image work blocks search, move search or cache to Dan during cycle planning; do not move SRS ownership silently.
+
+## Main Dependency Order
+
+1. Merge Issue #1 User/auth contracts and Issue #4 Recipe contracts early.
+2. Integrate Issue #2 permissions with auth and Issue #3 cards with Recipe data.
+3. Merge shared ownership checks before recipe edit, delete, publish, or archive flows.
+4. Merge MinIO foundation before image upload, resize, or cleanup.
+5. Stabilize public recipe pages before SEO, sitemap, search, cache, and performance checks.

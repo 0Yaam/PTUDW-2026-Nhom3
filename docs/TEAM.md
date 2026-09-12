@@ -1,6 +1,8 @@
 # Team Guide
 
-## Team Members
+Group 3, CTK47A uses one repository, feature branches, Pull Requests, and the [GitHub Project](https://github.com/users/0Yaam/projects/1).
+
+## Members
 
 | Name | Student ID | GitHub | Role |
 |---|---:|---|---|
@@ -9,57 +11,68 @@
 | Nguyen Minh Anh | 2312571 | `MinhAnhhhhhh` | Member |
 | Tran Xuan Hieu | 2312617 | `ThanhXuanHieu` | Member |
 
-Each owner completes the database, API, UI, useful logs, and tests for a feature when those layers apply.
+Each owner completes the database, API, UI, and tests for a feature when those layers apply. Shared rules and components have one owner. Other members reuse them.
 
-## Current Cycle
+## Find Your Task
 
-Cycle 1 has four open Issues. All members can start now.
+1. Open the GitHub Project.
+2. Use **Current Work** to see Ready, In Progress, and Review items.
+3. Open the Ready Issue assigned to you.
+4. Work on only one In Progress Issue at a time.
+5. Ask Dan for the next Ready task after your current task is Done. Do not choose a random Backlog item.
 
-| Issue | Owner | Work | Start note |
-|---:|---|---|---|
-| #1 | Dan | Local registration and login | No dependency |
-| #2 | Han | Create and update categories | Use a seeded Admin until #1 is ready |
-| #3 | Minh Anh | Category detail and simple recipe cards | Start with an empty recipe list; add cards after #4 |
-| #4 | Hieu | Draft recipe creation and the base Recipe model | Use a seeded Author until #1 is ready |
+Project Status is the source of current task status. Roadmap files do not copy changing status.
 
-The seeded users are temporary development data. Replace them with real authentication during integration.
+## Git And Pull Request Flow
 
-## High-Level Work Split
+1. Open your assigned Ready Issue and move it to In Progress.
+2. Update local `main` and create `feat/<issue-number>-<short-name>`.
+3. Implement and test the feature.
+4. Push the branch and open a Pull Request.
+5. Link the Issue. Use `Closes #N` only when the Pull Request completes it.
+6. Move the Issue to Review when the complete feature is ready.
+7. Fix CI and review feedback.
+8. Merge after one approval and all required checks pass.
+9. Delete the branch, then ask for the next Ready task.
 
-| Cycle | Dan | Han | Minh Anh | Hieu |
-|---|---|---|---|---|
-| 1 | Registration and login | Category create and update | Category detail and recipe cards | Draft recipe and base model |
-| 2 | Tokens, publication, and ownership checks | Recipe create/update, ingredients, steps, and safe deletion | Profiles and recipe details | Public recipe list, filters, sorting, and paging |
-| 3 | OAuth, security, health, logging foundation, and integration | MinIO, welcome email, deployment, and backup | SEO, accessibility, sitemap, and user docs | Images, resize job, search, Redis, and performance |
+Dan reviews member Pull Requests. Han reviews Dan's Pull Requests. A large feature may use several small linked Pull Requests.
 
-Han also owns safe category deletion. Hieu owns recipe archive and external image cleanup. Han owns the recipe database delete flow and its ownership checks.
+PR titles use this format:
 
-S = 1, M = 2, and L = 3 are simple planning guides. Minh Anh has lower-risk work at about 70-80% of a normal member's load. Dan has less feature coding because he reviews Pull Requests, solves integration problems, and supports the team. Han and Hieu have more connected feature work, but it follows clear data and media dependencies.
+```text
+Full Name - Student ID: short English title
+```
 
-## Git Workflow
-
-1. Pull the latest `main` and choose the assigned Issue.
-2. Create one branch, such as `feat/2-category-management`.
-3. Build and test the full feature.
-4. Push the branch and open a small Pull Request.
-5. Dan reviews member Pull Requests. Han reviews Dan's Pull Requests.
-6. Dan merges after CI passes, then the branch is deleted.
-
-When Cycle 1 is almost complete, create four Cycle 2 Issues. Keep future work in [ROADMAP.md](ROADMAP.md) until then.
+Example: `Nguyễn Ngọc Hân - 2312607: add category management`
 
 ## Six Team Rules
 
-1. Work from the latest `main` and use one branch per task.
-2. Do not push feature code directly to `main`.
-3. Keep a Pull Request small enough for another student to review.
-4. Tell the team before changing a shared API, database schema, or common component.
-5. A task is done when real data works, important tests pass, and the Pull Request is merged.
-6. Ask for help early when blocked or when the deadline may be missed.
+1. Start from current `main`; do not push feature work directly to `main`.
+2. Work on one In Progress Issue at a time.
+3. Keep Pull Requests small enough to review.
+4. Tell the team before changing a shared API, model, error shape, or component.
+5. Never commit secrets or production test identities.
+6. Ask early when blocked or late.
 
 ## Definition Of Done
 
-- The feature works from UI to API and database when those layers apply.
-- Permissions and validation follow the SRS.
-- Useful logs and important success and error tests are included.
-- CI passes and no secrets are committed.
-- The Pull Request is reviewed and merged.
+- Acceptance criteria and SRS rules are met.
+- Database, API, UI, and tests work together when they apply.
+- Validation, permissions, and useful errors are included.
+- Relevant local checks and required CI checks pass.
+- Documentation changes are included when needed.
+- The Pull Request has the required review and is merged.
+
+## Shared Foundation
+
+All Cycle 1 work uses these rules:
+
+- Run locally with `docker compose up --build`.
+- Put HTTP routes under `/api/v1`.
+- Use explicit request and response schemas.
+- Return the existing RFC 7807-style error shape: `type`, `title`, `status`, and `detail`.
+- Create schema changes with Alembic; do not edit a shared migration after merge.
+- Keep the existing frontend layout and loading, empty, and error patterns.
+- Use development seed data only in development and tests.
+
+The current seed has categories but no Admin or Author identity. Cycle 1 tasks may start with documented test fixtures or local mock identity adapters on their own branches. Those helpers must be disabled outside development and tests. Merge the real user/auth model from Issue #1 before category or recipe permission integration is complete.

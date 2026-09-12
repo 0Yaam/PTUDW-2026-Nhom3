@@ -1,17 +1,15 @@
-## What changed?
+## Related Issue
 
-A short explanation.
+Issue #
+
+## What changed
+
+- Describe the change.
 
 ## How to test
 
-1. Step one
-2. Step two
+1. Add test steps.
 
-## Checklist
+## Screenshot
 
-- [ ] I tested the main flow
-- [ ] Tests and CI pass
-- [ ] I did not commit secrets
-- [ ] I updated docs if needed
-
-Closes #
+Add one when the UI changes.
