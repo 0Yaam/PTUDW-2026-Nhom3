@@ -4,8 +4,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..problem import ApiProblem
 from .model import RefreshToken, User
-from .problem import AuthProblem
 from .schemas import AuthResponse, LoginRequest, RegisterRequest, UserRead
 from .security import (
     DUMMY_PASSWORD_HASH,
@@ -57,7 +57,7 @@ async def register_user(session: AsyncSession, request: RegisterRequest) -> Auth
         )
     )
     if existing:
-        raise AuthProblem(
+        raise ApiProblem(
             409,
             "ACCOUNT_ALREADY_EXISTS",
             "Conflict",
@@ -75,7 +75,7 @@ async def register_user(session: AsyncSession, request: RegisterRequest) -> Auth
         await session.flush()
     except IntegrityError as error:
         await session.rollback()
-        raise AuthProblem(
+        raise ApiProblem(
             409,
             "ACCOUNT_ALREADY_EXISTS",
             "Conflict",
@@ -88,14 +88,14 @@ async def login_user(session: AsyncSession, request: LoginRequest) -> AuthRespon
     user = await session.scalar(select(User).where(User.email == request.email))
     if user is None:
         verify_password(request.password, DUMMY_PASSWORD_HASH)
-        raise AuthProblem(401, "INVALID_CREDENTIALS", "Unauthorized", GENERIC_LOGIN_ERROR)
+        raise ApiProblem(401, "INVALID_CREDENTIALS", "Unauthorized", GENERIC_LOGIN_ERROR)
 
     now = datetime.now(UTC)
     lockout_until = user.lockout_until
     if lockout_until and lockout_until.tzinfo is None:
         lockout_until = lockout_until.replace(tzinfo=UTC)
     if lockout_until and lockout_until > now:
-        raise AuthProblem(
+        raise ApiProblem(
             423,
             "ACCOUNT_LOCKED",
             "Locked",
@@ -107,14 +107,14 @@ async def login_user(session: AsyncSession, request: LoginRequest) -> AuthRespon
         if user.access_failed_count >= LOCKOUT_ATTEMPTS:
             user.lockout_until = now + LOCKOUT_DURATION
             await session.commit()
-            raise AuthProblem(
+            raise ApiProblem(
                 423,
                 "ACCOUNT_LOCKED",
                 "Locked",
                 "Account is temporarily locked. Try again later.",
             )
         await session.commit()
-        raise AuthProblem(401, "INVALID_CREDENTIALS", "Unauthorized", GENERIC_LOGIN_ERROR)
+        raise ApiProblem(401, "INVALID_CREDENTIALS", "Unauthorized", GENERIC_LOGIN_ERROR)
 
     user.access_failed_count = 0
     user.lockout_until = None

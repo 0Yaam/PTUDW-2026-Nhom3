@@ -8,10 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .api.health import router as health_router
-from .auth import AuthProblem
 from .auth import router as auth_router
 from .categories import router as categories_router
 from .config import get_settings
+from .problem import ApiProblem
 
 settings = get_settings()
 logger = structlog.get_logger()
@@ -26,8 +26,8 @@ app.add_middleware(
 )
 
 
-@app.exception_handler(AuthProblem)
-async def auth_problem_handler(_request: Request, error: AuthProblem) -> JSONResponse:
+@app.exception_handler(ApiProblem)
+async def problem_handler(_request: Request, error: ApiProblem) -> JSONResponse:
     return JSONResponse(status_code=error.status, content=error.as_dict())
 
 

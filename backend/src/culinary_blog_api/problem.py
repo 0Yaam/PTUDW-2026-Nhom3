@@ -1,4 +1,4 @@
-class AuthProblem(Exception):
+class ApiProblem(Exception):
     def __init__(self, status: int, problem_type: str, title: str, detail: str) -> None:
         self.status = status
         self.problem_type = problem_type
