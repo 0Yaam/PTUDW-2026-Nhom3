@@ -9,47 +9,43 @@ $RootPath = $PSScriptRoot
 
 function Show-Title {
     param([string]$text)
-    Write-Host "`n========================================================" -ForegroundColor Cyan
-    Write-Host "  $text" -ForegroundColor Green
-    Write-Host "========================================================`n" -ForegroundColor Cyan
+    Write-Host "`n--- $text ---" -ForegroundColor Cyan
 }
 
 function Show-Success {
     param([string]$text)
-    Write-Host "[OK] $text" -ForegroundColor Green
+    Write-Host "[Ok] $text" -ForegroundColor Green
 }
 
 function Show-Info {
     param([string]$text)
-    Write-Host "[INFO] $text" -ForegroundColor Yellow
+    Write-Host "[Info] $text" -ForegroundColor Yellow
 }
 
 function Show-Error {
     param([string]$text)
-    Write-Host "[ERROR] $text" -ForegroundColor Red
+    Write-Host "[Error] $text" -ForegroundColor Red
 }
 
 switch ($Mode) {
     "docker" {
-        Show-Title "KHOI DONG DU AN VOI DOCKER COMPOSE"
+        Show-Title "Run Docker Compose"
         Show-Info "Dang build va khoi chay Postgres, Backend (API), Frontend (Web)..."
         
         docker compose -f "$RootPath\compose.yaml" up --build -d
         
         Write-Host ""
         Show-Success "He thong da duoc khoi dong ngam thanh cong!"
-        Write-Host "--------------------------------------------------------" -ForegroundColor DarkGray
-        Write-Host " Frontend Web        : http://localhost:3000" -ForegroundColor Cyan
-        Write-Host " Backend API Swagger : http://localhost:8000/docs" -ForegroundColor Cyan
-        Write-Host " Backend Healthcheck : http://localhost:8000/health" -ForegroundColor Cyan
-        Write-Host "--------------------------------------------------------" -ForegroundColor DarkGray
+        Write-Host "  - Frontend Web        : http://localhost:3000" -ForegroundColor Cyan
+        Write-Host "  - Backend API Swagger : http://localhost:8000/docs" -ForegroundColor Cyan
+        Write-Host "  - Backend Healthcheck : http://localhost:8000/health" -ForegroundColor Cyan
         Show-Info "Xem trang thai: docker compose ps"
         Show-Info "Xem log live  : docker compose logs -f"
         Show-Info "Dung he thong : .\start-all.ps1 -Mode down"
     }
 
     "check" {
-        Show-Title "KIEM TRA CODE VA BUILD TOAN BO"
+        Show-Title "Kiem Tra Code Va Build Toan Bo"
 
         # 1. Backend Lint
         Show-Info "1/5. Kiem tra Backend Lint (Ruff)..."
@@ -76,17 +72,17 @@ switch ($Mode) {
         docker compose -f "$RootPath\compose.yaml" build
         Show-Success "Docker Compose Build: Passed"
 
-        Show-Title "TAT CA CAC BUOC KIEM TRA VA BUILD DEU THANH CONG!"
+        Show-Title "Tat Ca Cac Buoc Kiem Tra Va Build Deu Thanh Cong!"
     }
 
     "down" {
-        Show-Title "DUNG HE THONG DOCKER"
+        Show-Title "Dung He Thong Docker"
         docker compose -f "$RootPath\compose.yaml" down
         Show-Success "Da dung tat ca cac container an toan."
     }
 
     "local" {
-        Show-Title "CHAY TRUC TIEP TREN MAY (LOCAL DEV)"
+        Show-Title "Chay Truc Tiep Tren May (Local Dev)"
         Show-Info "Khoi dong Backend tren cua so moi..."
         Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$RootPath\backend'; uv run uvicorn culinary_blog_api.main:app --reload --port 8000"
         
@@ -97,8 +93,8 @@ switch ($Mode) {
     }
 
     "help" {
-        Write-Host "HUONG DAN SU DUNG: .\start-all.ps1 [-Mode <che_do>]" -ForegroundColor Cyan
-        Write-Host "  .\start-all.ps1             : Khoi dong toan bo qua Docker Compose (mac dinh)"
+        Write-Host "Huong Dan Su Dung: .\start-all.ps1 [-Mode <che_do>]" -ForegroundColor Cyan
+        Write-Host "  .\start-all.ps1             : Khoi dong toan bo qua Docker Compose (Mac dinh)"
         Write-Host "  .\start-all.ps1 -Mode check : Kiem tra lint, tests va build toan bo"
         Write-Host "  .\start-all.ps1 -Mode down  : Dung cac container Docker"
         Write-Host "  .\start-all.ps1 -Mode local : Chay dev truc tiep qua uv va npm"
