@@ -1,3 +1,10 @@
+# Student Information
+| MSSV | Họ Và Tên | Email cá nhân | Tên Tài khoản Github |
+|---|---|---|---|
+| 2312607 | Nguyễn Ngọc Hân | eric.wk08@gmail.com | meranh05 |
+| 2312590 | Nguyễn Ngọc Trường Dân | 2312590@dlu.edu.vn | 0Yaam |
+| 2312571 | Nguyễn Minh Anh | nguyenminanh5@gmail.com | MinhAnhhhhhh |
+| 2312617 | Trần Xuân Hiếu | 2312617@dlu.edu.vn | ThanhXuanHieu |
 # Culinary Blog
 
 Culinary Blog is a student project for sharing cooking recipes. The Agent Bootstrap includes one working path from PostgreSQL to a FastAPI category endpoint and a Next.js category page.
