@@ -1,4 +1,5 @@
 import { CategoryGrid } from "@/components/category-grid";
+import { AuthPanel } from "@/components/auth-panel";
 import { getCategories } from "@/lib/api/categories";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function Home() {
           </a>
           <div className="nav-links">
             <a href="#categories">Categories</a>
+            <a href="#auth">Account</a>
             <a href="#story">Our start</a>
             <span className="soon">Recipes - coming soon</span>
           </div>
@@ -51,6 +53,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <AuthPanel />
 
       <section className="category-section" id="categories">
         <div className="section-heading">

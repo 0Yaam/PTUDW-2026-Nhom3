@@ -3,10 +3,13 @@ import uuid
 
 import structlog
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .api.health import router as health_router
+from .auth import AuthProblem
+from .auth import router as auth_router
 from .categories import router as categories_router
 from .config import get_settings
 
@@ -21,6 +24,31 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Correlation-ID"],
 )
+
+
+@app.exception_handler(AuthProblem)
+async def auth_problem_handler(_request: Request, error: AuthProblem) -> JSONResponse:
+    return JSONResponse(status_code=error.status, content=error.as_dict())
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_problem_handler(
+    _request: Request, error: RequestValidationError
+) -> JSONResponse:
+    errors: dict[str, list[str]] = {}
+    for item in error.errors():
+        field = ".".join(str(part) for part in item["loc"] if part != "body") or "body"
+        errors.setdefault(field, []).append(item["msg"])
+    return JSONResponse(
+        status_code=422,
+        content={
+            "type": "VALIDATION_ERROR",
+            "title": "Validation Error",
+            "status": 422,
+            "detail": "One or more fields are invalid.",
+            "errors": errors,
+        },
+    )
 
 
 @app.middleware("http")
@@ -54,4 +82,5 @@ async def request_context(request: Request, call_next):
 
 
 app.include_router(health_router)
+app.include_router(auth_router)
 app.include_router(categories_router)
