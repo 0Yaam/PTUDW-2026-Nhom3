@@ -43,7 +43,7 @@ S = 1, M = 2, and L = 3 are simple planning guides. Minh Anh has lower-risk work
 3. Build and test the full feature.
 4. Push the branch and open a small Pull Request.
 5. Dan reviews member Pull Requests. Han reviews Dan's Pull Requests.
-6. Dan merges after CI passes, then the branch is deleted.
+6. Merge after review when useful, then delete the branch.
 
 When Cycle 1 is almost complete, create four Cycle 2 Issues. Keep future work in [ROADMAP.md](ROADMAP.md) until then.
 
@@ -61,5 +61,5 @@ When Cycle 1 is almost complete, create four Cycle 2 Issues. Keep future work in
 - The feature works from UI to API and database when those layers apply.
 - Permissions and validation follow the SRS.
 - Useful logs and important success and error tests are included.
-- CI passes and no secrets are committed.
-- The Pull Request is reviewed and merged.
+- Relevant local checks pass and no secrets are committed.
+- The Pull Request is merged.
