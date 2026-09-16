@@ -45,7 +45,7 @@ Do not add `-v` unless you want to delete local database data.
 backend/      FastAPI app, migration, seed, and tests
 frontend/     Next.js app and category page
 docs/         Team guide, roadmap, SRS map, and source PDFs
-.github/      CI, Issue template, and Pull Request template
+.github/      Issue and Pull Request templates
 compose.yaml  Local services
 ```
 

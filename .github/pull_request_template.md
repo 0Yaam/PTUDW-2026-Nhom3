@@ -10,7 +10,7 @@ A short explanation.
 ## Checklist
 
 - [ ] I tested the main flow
-- [ ] Tests and CI pass
+- [ ] Relevant local checks pass
 - [ ] I did not commit secrets
 - [ ] I updated docs if needed
 
