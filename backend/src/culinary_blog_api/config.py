@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,6 +9,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str = "postgresql+asyncpg://culinary:culinary@localhost:5432/culinary_blog"
     frontend_origin: str = "http://localhost:3000"
+    jwt_secret: SecretStr = SecretStr("development-only-change-me")
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore")
 
