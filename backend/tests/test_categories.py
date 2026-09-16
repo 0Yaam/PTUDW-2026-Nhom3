@@ -43,3 +43,22 @@ async def test_aggregate_health_uses_readiness(client) -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "Healthy"
+
+
+async def test_category_detail_returns_category_with_empty_recipes(client) -> None:
+    async with SessionFactory() as session:
+        session.add(Category(name="Banh", slug="banh", description="Sweet things."))
+        await session.commit()
+
+    response = await client.get("/api/v1/categories/banh")
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Banh"
+    assert response.json()["recipes"] == []
+
+
+async def test_category_detail_returns_problem_for_unknown_slug(client) -> None:
+    response = await client.get("/api/v1/categories/not-a-category")
+
+    assert response.status_code == 404
+    assert response.json()["type"] == "CATEGORY_NOT_FOUND"
