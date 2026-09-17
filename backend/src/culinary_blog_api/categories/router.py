@@ -7,8 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth.dependencies import require_admin
 from ..auth.model import User
 from ..db import get_session
-from .schemas import CategoryCreate, CategoryRead, CategoryUpdate
-from .service import create_category, list_categories, update_category
+from .schemas import CategoryCreate, CategoryDetail, CategoryRead, CategoryUpdate
+from .service import (
+    create_category,
+    get_category_by_slug,
+    list_categories,
+    update_category,
+)
 
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 
@@ -43,3 +48,12 @@ async def put_category(
 ) -> CategoryRead:
     """Edit category content; an omitted slug preserves the public URL."""
     return await update_category(session, category_id, data)
+
+
+@router.get("/{slug}", response_model=CategoryDetail)
+async def get_category(
+    slug: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> CategoryDetail:
+    """Return one category by its stable slug, with its published recipe cards."""
+    return await get_category_by_slug(session, slug)
