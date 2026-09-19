@@ -274,3 +274,30 @@ h1, h2, h3 { font-weight: 500; }
   .hero-dish-3 { right: -85px; bottom: -70px; width: 210px; height: 210px; }
   .hero-dish-4 { bottom: -65px; left: -85px; width: 180px; height: 180px; }
 }
+
+.detail-shell { padding: 70px max(32px, calc((100vw - 1280px) / 2)) 100px; background: var(--paper); }
+.back-link { display: inline-block; margin-bottom: 34px; color: var(--clay); font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.back-link span { margin-right: 8px; }
+.detail-header { padding-bottom: 38px; border-bottom: 1px solid var(--line); }
+.detail-header h1 { max-width: 900px; margin: 0; font-size: clamp(44px, 5vw, 72px); line-height: 1.04; letter-spacing: -.06em; }
+.detail-header .lead { max-width: 640px; margin: 22px 0 0; color: var(--muted); }
+.detail-count { margin: 26px 0 0; color: var(--clay); font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.detail-recipes { margin-top: 54px; }
+.detail-recipes > h2 { margin: 0 0 30px; font-size: clamp(30px, 3vw, 42px); letter-spacing: -.03em; }
+.recipe-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 0; padding: 0; list-style: none; }
+.recipe-card { display: flex; flex-direction: column; min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: 8px; background: white; box-shadow: 0 8px 26px rgba(22,29,35,.04); transition: transform .2s, box-shadow .2s; }
+.recipe-card:hover { transform: translateY(-5px); box-shadow: 0 20px 35px rgba(22,29,35,.12); }
+.recipe-card-meta { margin: 0 0 12px; color: var(--clay); font-size: 10px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
+.recipe-card h3 { margin: 0 0 10px; font-size: 23px; font-weight: 900; line-height: 1.15; }
+.recipe-card-description { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.recipe-card-facts { display: flex; gap: 32px; margin: 20px 0 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.recipe-card-facts dt { color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.recipe-card-facts dd { margin: 5px 0 0; font-size: 14px; font-weight: 900; }
+
+@media (max-width: 1100px) {
+  .recipe-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .recipe-cards { grid-template-columns: 1fr; }
+}
