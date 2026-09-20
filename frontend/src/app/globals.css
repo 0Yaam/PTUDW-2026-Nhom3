@@ -301,3 +301,9 @@ h1, h2, h3 { font-weight: 500; }
 @media (max-width: 700px) {
   .recipe-cards { grid-template-columns: 1fr; }
 }
+
+/* The title is the link, so its text names the destination. The stretched
+   pseudo-element makes the whole card a comfortable click target. */
+.category-card { position: relative; }
+.category-card h3 a::after { content: ""; position: absolute; inset: 0; }
+.category-card h3 a:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; }
