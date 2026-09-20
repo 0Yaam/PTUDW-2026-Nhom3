@@ -157,3 +157,19 @@ h1 em { display: block; color: var(--clay); font-weight: 500; }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+
+.detail-shell { padding: 6vw 5vw 8vw; }
+.back-link { display: inline-block; margin-bottom: 40px; font-size: 12px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; }
+.detail-header { margin-bottom: 64px; padding-bottom: 40px; border-bottom: 1px solid var(--line); }
+.detail-header h1 { margin: 0 0 24px; font-size: clamp(48px, 7vw, 96px); line-height: .92; letter-spacing: -.04em; }
+.detail-header .lead { max-width: 620px; }
+.detail-header .recipe-count { display: block; margin-top: 24px; }
+.detail-subtitle { margin: 0 0 32px; font-size: 28px; }
+.recipe-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 0; padding: 0; list-style: none; }
+.recipe-card { padding: 28px; border: 1px solid var(--line); }
+.recipe-card h3 { margin: 0 0 10px; font-size: 26px; line-height: 1.1; }
+.recipe-meta { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; opacity: .72; }
+
+@media (max-width: 900px) {
+  .recipe-cards { grid-template-columns: 1fr; }
+}
