@@ -149,6 +149,11 @@ export default function ManageCategories() {
         <section className={styles.login} aria-labelledby="admin-login">
           <p className={styles.kicker}>Admin access</p>
           <h2 id="admin-login">Sign in to manage categories</h2>
+          <p className={styles.help}>
+            New here? <Link href="/#auth">Create an account on the homepage</Link> first.
+            New accounts have the Author role; an existing Admin must grant Admin
+            access before this page can manage categories.
+          </p>
           <form onSubmit={signIn} className={styles.form}>
             <label>Email<input name="email" type="email" autoComplete="email" required /></label>
             <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
