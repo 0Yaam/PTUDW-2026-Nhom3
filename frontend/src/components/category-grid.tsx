@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export type Category = {
   id: string;
   name: string;
@@ -7,33 +9,26 @@ export type Category = {
   recipe_count: number;
 };
 
-const accents = ["accent-clay", "accent-leaf", "accent-saffron", "accent-ink"];
+const previewDishes = ["/images/vietnamese-table.png", "/images/breakfast.png", "/images/plant-based.png", "/images/dessert.png"];
+
+function previewForCategory(name: string, index: number): string {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("viet") || normalized.includes("pho") || normalized.includes("phở")) return "/images/vietnamese-table.png";
+  if (normalized.includes("breakfast")) return "/images/breakfast.png";
+  if (normalized.includes("plant") || normalized.includes("vegetable")) return "/images/plant-based.png";
+  if (normalized.includes("baking") || normalized.includes("dessert")) return "/images/dessert.png";
+  return previewDishes[index % previewDishes.length];
+}
 
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   if (categories.length === 0) {
-    return (
-      <div className="empty-state">
-        <span>No categories yet</span>
-        <p>Run the seed command from the README to add the starter data.</p>
-      </div>
-    );
+    return <div className="empty-state"><span aria-hidden="true">✳</span><h3>Our kitchen is getting ready.</h3><p>No categories have been added yet. An Admin can start the collection.</p></div>;
   }
 
-  return (
-    <div className="category-grid">
-      {categories.map((category, index) => (
-        <article className={`category-card ${accents[index % accents.length]}`} key={category.id}>
-          <span className="card-index">{String(index + 1).padStart(2, "0")}</span>
-          <div className="card-symbol" aria-hidden="true">
-            {category.name.slice(0, 1)}
-          </div>
-          <h3>{category.name}</h3>
-          <p>{category.description ?? "This category is ready for its first recipe."}</p>
-          <span className="recipe-count">
-            {category.recipe_count} {category.recipe_count === 1 ? "recipe" : "recipes"}
-          </span>
-        </article>
-      ))}
-    </div>
-  );
+  return <div className="category-grid">{categories.map((category, index) => (
+    <article className="category-card" key={category.id}>
+      <div className="category-card-art"><span className="category-number">{String(index + 1).padStart(2, "0")}</span><div className={`category-dish${category.image_url ? " custom-image" : ""}`}><Image src={category.image_url || previewForCategory(category.name, index)} alt="" fill unoptimized={Boolean(category.image_url)} sizes="(max-width: 560px) 85vw, (max-width: 1100px) 42vw, 22vw" /></div></div>
+      <div className="category-card-body"><p className="category-card-meta">Kitchen category</p><h3>{category.name}</h3><p>{category.description ?? "A new corner of the kitchen, ready to explore."}</p><span className="recipe-count">{category.recipe_count} {category.recipe_count === 1 ? "recipe" : "recipes"}<span aria-hidden="true">↗</span></span></div>
+    </article>
+  ))}</div>;
 }

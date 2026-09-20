@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <main className="loading-shell" aria-busy="true" aria-label="Loading data">
+    <main id="main-content" className="loading-shell" aria-busy="true" aria-label="Loading data">
       <div className="loading-line short" />
       <div className="loading-line title" />
       <div className="loading-line" />

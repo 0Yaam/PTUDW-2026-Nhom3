@@ -134,11 +134,7 @@ export default function ManageCategories() {
   }
 
   return (
-    <main className={styles.shell}>
-      <header className={styles.header}>
-        <Link className={styles.brand} href="/">SK <span>Small Kitchen</span></Link>
-        <Link href="/">Back to home &rarr;</Link>
-      </header>
+    <main id="main-content" className={styles.shell}>
       <div className={styles.intro}>
         <p className={styles.kicker}>Kitchen administration / Categories</p>
         <h1>Shape the menu.</h1>
@@ -146,20 +142,25 @@ export default function ManageCategories() {
       </div>
 
       {!token ? (
-        <section className={styles.login} aria-labelledby="admin-login">
-          <p className={styles.kicker}>Admin access</p>
-          <h2 id="admin-login">Sign in to manage categories</h2>
-          <p className={styles.help}>
-            New here? <Link href="/#auth">Create an account on the homepage</Link> first.
-            New accounts have the Author role; an existing Admin must grant Admin
-            access before this page can manage categories.
-          </p>
-          <form onSubmit={signIn} className={styles.form}>
-            <label>Email<input name="email" type="email" autoComplete="email" required /></label>
-            <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
-            <button type="submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
-          </form>
-        </section>
+        <div className={styles.gate}>
+          <section className={styles.login} aria-labelledby="admin-login">
+            <p className={styles.kicker}>Admin access</p>
+            <h2 id="admin-login">Sign in to manage categories</h2>
+            <p className={styles.help}>
+              New here? <Link href="/#auth">Create an account on the homepage</Link> first.
+              New accounts have the Author role; an existing Admin must grant Admin
+              access before this page can manage categories.
+            </p>
+            <form onSubmit={signIn} className={styles.form}>
+              <label>Email<input name="email" type="email" autoComplete="email" required /></label>
+              <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
+              <button type="submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
+            </form>
+          </section>
+          <aside className={styles.gatePhoto} aria-label="Small Kitchen food photograph">
+            <p>Every great menu begins with a good story.</p>
+          </aside>
+        </div>
       ) : (
         <div className={styles.workspace}>
           <section aria-labelledby="list-title" className={styles.listPanel}>

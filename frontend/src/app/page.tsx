@@ -1,87 +1,52 @@
-import { CategoryGrid } from "@/components/category-grid";
+import Image from "next/image";
 import { AuthPanel } from "@/components/auth-panel";
+import { CategoryGrid } from "@/components/category-grid";
 import { getCategories } from "@/lib/api/categories";
 
 export const dynamic = "force-dynamic";
+
+const previewDishes = ["/images/vietnamese-table.png", "/images/breakfast.png", "/images/plant-based.png", "/images/dessert.png"];
 
 export default async function Home() {
   const categories = await getCategories();
 
   return (
-    <main>
-      <section className="hero">
-        <nav className="nav" aria-label="Main navigation">
-          <a className="brand" href="#top" aria-label="Small Kitchen home">
-            <span className="brand-mark">SK</span>
-            <span>Small Kitchen</span>
-          </a>
-          <div className="nav-links">
-            <a href="#categories">Categories</a>
-            <a href="#auth">Account</a>
-            <a href="#story">Our start</a>
-            <span className="soon">Recipes - coming soon</span>
+    <main id="main-content">
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="hero-inner">
+          <div className="hero-collage" aria-hidden="true">
+            {previewDishes.map((dish, index) => (
+              <div className={`hero-dish hero-dish-${index + 1}`} key={dish}>
+                <Image src={dish} alt="" fill priority={index === 0} sizes="(max-width: 800px) 45vw, 28vw" />
+              </div>
+            ))}
           </div>
-        </nav>
-
-        <div className="hero-grid" id="top">
           <div className="hero-copy">
-            <p className="eyebrow">Culinary Blog / Team 3</p>
-            <h1>
-              <span>Cook a meal,</span>
-              <span>share the story,</span>
-              <em>keep the memory.</em>
-            </h1>
-            <p className="lead">
-              A simple place for clear recipes, useful cooking notes, and food stories
-              from real home kitchens.
-            </p>
-            <a className="primary-action" href="#categories">
-              Browse categories <span aria-hidden="true">-&gt;</span>
-            </a>
-          </div>
-
-          <div className="hero-art" aria-hidden="true">
-            <div className="sun" />
-            <div className="plate">
-              <div className="leaf leaf-one" />
-              <div className="leaf leaf-two" />
-              <div className="noodle noodle-one" />
-              <div className="noodle noodle-two" />
-              <div className="noodle noodle-three" />
+            <p className="eyebrow">Your kitchen, your story <span aria-hidden="true">✳</span> Est. 2026</p>
+            <h1 id="hero-title">Your favorite food.<br /><span>Make it good.</span></h1>
+            <p className="lead">Discover the dishes you love, explore new flavors, and share the joy of cooking at home.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href="#categories">Explore the kitchen <span aria-hidden="true">↗</span></a>
+              <a className="text-action" href="#about">Get to know us <span aria-hidden="true">→</span></a>
             </div>
-            <p className="art-note">One season, one taste<br />One home, one kitchen</p>
+            <div className="hero-social-proof"><span className="proof-stars" aria-hidden="true">✳ ✳ ✳</span><span>Good things happen around food</span></div>
           </div>
         </div>
+        <div className="hero-bottom" aria-hidden="true"><span>DISCOVER</span><span>COOK</span><span>SHARE</span><span>ENJOY</span></div>
+      </section>
+
+      <section className="category-section" id="categories" aria-labelledby="categories-title">
+        <div className="section-heading"><div><p className="eyebrow">Explore the kitchen</p><h2 id="categories-title">Find your next <em>favorite.</em></h2></div><p>Every great meal starts somewhere. Browse real categories from our kitchen and find the flavors that speak to you.</p></div>
+        <CategoryGrid categories={categories} />
+        <p className="section-footnote">{categories.length} {categories.length === 1 ? "category" : "categories"} to explore</p>
+      </section>
+
+      <section className="story" id="about" aria-labelledby="story-title">
+        <div className="story-visual" aria-hidden="true">{previewDishes.map((dish, index) => <div className="story-dish" key={dish}><Image src={dish} alt="" fill sizes="(max-width: 560px) 42vw, 220px" /><span>{String(index + 1).padStart(2, "0")}</span></div>)}</div>
+        <div className="story-content"><p className="eyebrow">The story behind the plate</p><h2 id="story-title">A kitchen for <em>everybody.</em></h2><p>Food has a way of bringing people together. Small Kitchen is a space to explore flavors, learn from one another, and celebrate what we make at home.</p><p>Our recipe collection is growing with the team. Start with the categories and join the kitchen today.</p><a className="primary-action" href="#auth">Join the kitchen <span aria-hidden="true">↗</span></a></div>
       </section>
 
       <AuthPanel />
-
-      <section className="category-section" id="categories">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Live database data</p>
-            <h2>What should we cook today?</h2>
-          </div>
-          <p>
-            These categories come from PostgreSQL through FastAPI. The seed command is
-            safe to run more than once.
-          </p>
-        </div>
-        <CategoryGrid categories={categories} />
-      </section>
-
-      <section className="story" id="story">
-        <span className="story-number">01</span>
-        <div>
-          <p className="eyebrow">Agent Bootstrap</p>
-          <h2>Start small and make it work.</h2>
-        </div>
-        <p>
-          This first slice connects a migration, safe seed data, an API, a page, and
-          tests. The students will build the remaining features through their own
-          Issues and Pull Requests.
-        </p>
-      </section>
     </main>
   );
 }
