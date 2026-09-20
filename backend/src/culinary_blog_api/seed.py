@@ -26,10 +26,7 @@ async def seed() -> None:
                         order_index=order_index,
                     )
                 )
-            else:
-                existing.name = name
-                existing.description = description
-                existing.order_index = order_index
+            # Seed data is a starting point, not the source of truth after an Admin edits it.
         await session.commit()
 
 

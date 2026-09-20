@@ -1,8 +1,91 @@
-from sqlalchemy import select
+import re
+import unicodedata
+import uuid
+
+import structlog
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .model import Category
-from .schemas import CategoryRead
+from .problem import CategoryProblem
+from .schemas import CategoryCreate, CategoryRead, CategoryUpdate
+
+logger = structlog.get_logger()
+
+
+def slugify(name: str) -> str:
+    """Turn a Vietnamese category name into a stable URL segment."""
+    # Unicode decomposition does not convert Vietnamese đ on its own.
+    normalized = unicodedata.normalize("NFKD", name.replace("đ", "d").replace("Đ", "D"))
+    ascii_name = normalized.encode("ascii", "ignore").decode("ascii").lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_name).strip("-")
+    if not slug:
+        raise CategoryProblem(
+            422, "INVALID_CATEGORY", "Validation Error", "Name cannot form a slug."
+        )
+    return slug
+
+
+async def _name_exists(
+    session: AsyncSession, name: str, *, excluding: uuid.UUID | None = None
+) -> bool:
+    """Compare names without case, excluding the category being edited."""
+    query = select(Category.id).where(func.lower(Category.name) == name.lower())
+    if excluding is not None:
+        query = query.where(Category.id != excluding)
+    return await session.scalar(query) is not None
+
+
+def _duplicate_name() -> CategoryProblem:
+    return CategoryProblem(409, "CATEGORY_NAME_EXISTS", "Conflict", "Category name already exists.")
+
+
+async def create_category(session: AsyncSession, data: CategoryCreate) -> CategoryRead:
+    """Create one category, retrying slug collisions under concurrent requests."""
+    if await _name_exists(session, data.name):
+        raise _duplicate_name()
+
+    base_slug = slugify(data.name)
+    for suffix in range(1, 1001):
+        slug = base_slug if suffix == 1 else f"{base_slug}-{suffix}"
+        if await session.scalar(select(Category.id).where(Category.slug == slug)) is not None:
+            continue
+        category = Category(name=data.name, slug=slug, description=data.description)
+        session.add(category)
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            if await _name_exists(session, data.name):
+                raise _duplicate_name() from None
+            # A different name can normalize to the same slug. Try the next suffix.
+            continue
+        logger.info("category_created", category_id=str(category.id), slug=category.slug)
+        return CategoryRead.model_validate(category)
+
+    raise CategoryProblem(409, "CATEGORY_SLUG_EXISTS", "Conflict", "No unique slug is available.")
+
+
+async def update_category(
+    session: AsyncSession, category_id: uuid.UUID, data: CategoryUpdate
+) -> CategoryRead:
+    """Update editable fields only; the existing slug remains unchanged."""
+    category = await session.get(Category, category_id)
+    if category is None:
+        raise CategoryProblem(404, "CATEGORY_NOT_FOUND", "Not Found", "Category was not found.")
+    if await _name_exists(session, data.name, excluding=category_id):
+        raise _duplicate_name()
+
+    category.name = data.name
+    category.description = data.description
+    try:
+        await session.commit()
+    except IntegrityError as error:
+        await session.rollback()
+        raise _duplicate_name() from error
+    logger.info("category_updated", category_id=str(category.id), slug=category.slug)
+    return CategoryRead.model_validate(category)
 
 
 async def list_categories(session: AsyncSession) -> list[CategoryRead]:
