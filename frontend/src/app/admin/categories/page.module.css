@@ -11,6 +11,8 @@
 .login, .listPanel, .editor { padding: 30px; border: 1px solid var(--ink); background: var(--cream); box-shadow: 8px 8px 0 var(--moss); }
 .login { max-width: 510px; }
 .login h2, .panelHead h2, .editor h2 { margin: 0 0 26px; font-size: clamp(30px, 3vw, 44px); line-height: 1.08; }
+.help { margin: 0 0 24px; font-size: 14px; line-height: 1.7; }
+.help a { color: var(--clay); text-decoration: underline; }
 .form { display: grid; gap: 20px; }
 .form label { display: grid; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .form input, .form textarea { width: 100%; padding: 13px 14px; border: 1px solid var(--line); background: white; color: var(--ink); font: inherit; font-weight: 400; letter-spacing: normal; text-transform: none; }
