@@ -28,7 +28,11 @@ app.add_middleware(
 
 @app.exception_handler(AuthProblem)
 async def auth_problem_handler(_request: Request, error: AuthProblem) -> JSONResponse:
-    return JSONResponse(status_code=error.status, content=error.as_dict())
+    return JSONResponse(
+        status_code=error.status,
+        content=error.as_dict(),
+        media_type="application/problem+json",
+    )
 
 
 @app.exception_handler(RequestValidationError)
@@ -41,6 +45,7 @@ async def validation_problem_handler(
         errors.setdefault(field, []).append(item["msg"])
     return JSONResponse(
         status_code=422,
+        media_type="application/problem+json",
         content={
             "type": "VALIDATION_ERROR",
             "title": "Validation Error",
@@ -61,6 +66,7 @@ async def request_context(request: Request, call_next):
         logger.exception("unhandled_request_error", correlation_id=correlation_id)
         response = JSONResponse(
             status_code=500,
+            media_type="application/problem+json",
             content={
                 "type": "INTERNAL_SERVER_ERROR",
                 "title": "Internal Server Error",
