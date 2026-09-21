@@ -37,8 +37,22 @@ async def _name_exists(
     return await session.scalar(query) is not None
 
 
+async def _slug_exists(
+    session: AsyncSession, slug: str, *, excluding: uuid.UUID | None = None
+) -> bool:
+    """Check public URL uniqueness, excluding the category being edited."""
+    query = select(Category.id).where(Category.slug == slug)
+    if excluding is not None:
+        query = query.where(Category.id != excluding)
+    return await session.scalar(query) is not None
+
+
 def _duplicate_name() -> CategoryProblem:
     return CategoryProblem(409, "CATEGORY_NAME_EXISTS", "Conflict", "Category name already exists.")
+
+
+def _duplicate_slug() -> CategoryProblem:
+    return CategoryProblem(409, "CATEGORY_SLUG_EXISTS", "Conflict", "Category slug already exists.")
 
 
 async def create_category(session: AsyncSession, data: CategoryCreate) -> CategoryRead:
@@ -70,19 +84,25 @@ async def create_category(session: AsyncSession, data: CategoryCreate) -> Catego
 async def update_category(
     session: AsyncSession, category_id: uuid.UUID, data: CategoryUpdate
 ) -> CategoryRead:
-    """Update editable fields only; the existing slug remains unchanged."""
+    """Update content and change the public slug only when explicitly supplied."""
     category = await session.get(Category, category_id)
     if category is None:
         raise CategoryProblem(404, "CATEGORY_NOT_FOUND", "Not Found", "Category was not found.")
     if await _name_exists(session, data.name, excluding=category_id):
         raise _duplicate_name()
+    if data.slug is not None and await _slug_exists(session, data.slug, excluding=category_id):
+        raise _duplicate_slug()
 
     category.name = data.name
     category.description = data.description
+    if data.slug is not None:
+        category.slug = data.slug
     try:
         await session.commit()
     except IntegrityError as error:
         await session.rollback()
+        if data.slug is not None and await _slug_exists(session, data.slug, excluding=category_id):
+            raise _duplicate_slug() from error
         raise _duplicate_name() from error
     logger.info("category_updated", category_id=str(category.id), slug=category.slug)
     return CategoryRead.model_validate(category)

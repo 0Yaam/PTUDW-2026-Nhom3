@@ -10,7 +10,7 @@ Only the useful dashboard patterns were adapted: sidebar, top bar, summary cards
 
 The browser treats the dashboard as presentation. Sign-in calls `/api/v1/auth/login`; the screen opens only when the response contains the `Admin` role. Every `POST /api/v1/categories` and `PUT /api/v1/categories/{id}` also sends the Bearer token. The FastAPI `require_admin` dependency loads the current user from the database and returns 401/403 when appropriate, so hiding the dashboard is not the security boundary. The token remains in component memory and is cleared on sign-out, 401, or 403.
 
-The sidebar links only to category management and the public site. Other SRS modules are not rendered as fake or disabled pages. Teammates can add a route and then add its authorized navigation item without changing the category form.
+The sidebar provides the full shared Admin information architecture. Categories and the public-site link are active. Overview, recipes, posts, media, users, comments, analytics, and settings are labelled as upcoming, use non-interactive elements, and have no route or click handler. Their owners can replace one placeholder with an authorized route without changing the category form or API logic.
 
 ## English and Vietnamese
 
@@ -24,7 +24,8 @@ The sidebar links only to category management and the public site. Other SRS mod
 | Name 2–50 characters, no HTML | Pydantic validation in `categories/schemas.py`, plus matching HTML constraints. |
 | Unique name | Case-insensitive service check and database unique constraint; 409 Problem Details. |
 | Vietnamese slug and suffix | `slugify` removes Vietnamese marks and retries `-2`, `-3`, etc.; tested. |
-| Stable slug on rename | Update changes name/description only; tested. |
+| Stable slug on rename | Omitting `slug` keeps the current URL; tested. |
+| Explicit slug edit | Admin enables the URL control and PUT sends a validated optional `slug`; duplicate/invalid cases return 409/422. |
 | 201 + Location / 200 | Router sets status and Location; tests cover create and update. |
 | 401/403/404/409/422 | Backend route/service tests cover permission and error cases. |
 | Cache invalidation | The current FastAPI category list deliberately uses no application cache, and the frontend requests it with `no-store`, so there is no stale `categories:all` entry to invalidate. Shared caching is assigned to NFR-PERF in `docs/SRS-MAP.md`; when that owner adds a cache, create/update must invalidate the shared key in that same integration. |

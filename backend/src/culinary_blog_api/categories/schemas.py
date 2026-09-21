@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class CategoryWrite(BaseModel):
-    """Fields an Admin may set; slug and IDs always belong to the server."""
+    """Shared category fields an Admin may set."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -37,7 +37,25 @@ class CategoryCreate(CategoryWrite):
 
 
 class CategoryUpdate(CategoryWrite):
-    """Request body for PUT /categories/{id}; omission clears description."""
+    """Update fields; an omitted slug preserves the existing public URL."""
+
+    slug: str | None = None
+
+    @field_validator("slug")
+    @classmethod
+    def validate_slug(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if not 2 <= len(value) <= 100:
+            raise ValueError("Slug must contain 2 to 100 characters.")
+        if not value.isascii() or value != value.lower():
+            raise ValueError("Slug must use lowercase ASCII letters, numbers, and hyphens.")
+        if value.startswith("-") or value.endswith("-") or "--" in value:
+            raise ValueError("Slug must not start, end, or repeat a hyphen.")
+        if not all(character.isalnum() or character == "-" for character in value):
+            raise ValueError("Slug must use lowercase ASCII letters, numbers, and hyphens.")
+        return value
 
 
 class CategoryRead(BaseModel):

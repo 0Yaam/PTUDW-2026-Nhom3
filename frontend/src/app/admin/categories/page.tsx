@@ -12,6 +12,16 @@ type LoginResponse = { accessToken: string; user: { fullName: string; roles: str
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+function normalizeSlug(value: string): string {
+  return value
+    .replace(/[đĐ]/g, "d")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export default function ManageCategories() {
   const t = useTranslations("admin");
   const errors = useTranslations("errors");
@@ -21,6 +31,9 @@ export default function ManageCategories() {
   const [selected, setSelected] = useState<Category | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [slug, setSlug] = useState("");
+  const [editSlug, setEditSlug] = useState(false);
+  const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -30,6 +43,14 @@ export default function ManageCategories() {
     () => categories.reduce((sum, category) => sum + category.recipe_count, 0),
     [categories],
   );
+  const filteredCategories = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    if (!query) return categories;
+    return categories.filter((category) =>
+      [category.name, category.slug, category.description ?? ""]
+        .some((value) => value.toLocaleLowerCase().includes(query)),
+    );
+  }, [categories, search]);
 
   function problemText(problem: Problem): string {
     const fieldError = Object.values(problem.errors ?? {}).flat()[0];
@@ -98,6 +119,8 @@ export default function ManageCategories() {
     setSelected(category);
     setName(category?.name ?? "");
     setDescription(category?.description ?? "");
+    setSlug(category?.slug ?? "");
+    setEditSlug(false);
     setError("");
     setMessage("");
   }
@@ -114,12 +137,17 @@ export default function ManageCategories() {
     setMessage("");
     setBusy(true);
     try {
+      const payload: { name: string; description: string | null; slug?: string } = {
+        name,
+        description: description || null,
+      };
+      if (selected && editSlug) payload.slug = slug;
       const response = await fetch(
         selected ? `${apiUrl}/api/v1/categories/${selected.id}` : `${apiUrl}/api/v1/categories`,
         {
           method: selected ? "PUT" : "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ name, description: description || null }),
+          body: JSON.stringify(payload),
         },
       );
       if (!response.ok) {
@@ -132,10 +160,13 @@ export default function ManageCategories() {
         return;
       }
       const saved = (await response.json()) as Category;
-      setMessage(selected ? t("updated") : t("created"));
+      const slugChanged = Boolean(selected && saved.slug !== selected.slug);
+      setMessage(selected ? t(slugChanged ? "updatedSlug" : "updated") : t("created"));
       setSelected(saved);
       setName(saved.name);
       setDescription(saved.description ?? "");
+      setSlug(saved.slug);
+      setEditSlug(false);
       await loadCategories();
     } catch {
       setError(t("apiUnavailable"));
@@ -174,10 +205,26 @@ export default function ManageCategories() {
         <Link className={styles.brand} href="/"><span aria-hidden="true">✳</span>{t("brand")}</Link>
         <p className={styles.navLabel}>{t("workspace")}</p>
         <nav aria-label={t("workspace")}>
-          <a className={styles.navItemActive} href="#category-list"><span aria-hidden="true">▦</span>{t("categories")}</a>
+          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">⌂</span>{t("navOverview")}<small>{t("comingSoon")}</small></div>
         </nav>
         <p className={styles.navLabel}>{t("content")}</p>
-        <Link className={styles.navItem} href="/"><span aria-hidden="true">↗</span>{t("visitSite")}</Link>
+        <nav aria-label={t("content")}>
+          <a className={styles.navItemActive} href="#category-list"><span aria-hidden="true">▦</span>{t("categories")}</a>
+          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">⌑</span>{t("navRecipes")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">▤</span>{t("navPosts")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">▧</span>{t("navMedia")}<small>{t("comingSoon")}</small></div>
+        </nav>
+        <p className={styles.navLabel}>{t("management")}</p>
+        <nav aria-label={t("management")}>
+          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">♙</span>{t("navUsers")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">◫</span>{t("navComments")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">⌁</span>{t("navAnalytics")}<small>{t("comingSoon")}</small></div>
+        </nav>
+        <p className={styles.navLabel}>{t("system")}</p>
+        <nav aria-label={t("system")}>
+          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">⚙</span>{t("navSettings")}<small>{t("comingSoon")}</small></div>
+          <Link className={styles.navItem} href="/"><span aria-hidden="true">↗</span>{t("visitSite")}</Link>
+        </nav>
         <div className={styles.sidebarAccount}>
           <span className={styles.avatar} aria-hidden="true">{adminName.slice(0, 1).toUpperCase()}</span>
           <div><strong>{adminName}</strong><small>{t("signedInAs")}</small></div>
@@ -189,6 +236,7 @@ export default function ManageCategories() {
         <header className={styles.topbar}>
           <button className={styles.mobileBrand} type="button" aria-label={t("categories")}>✳</button>
           <span>{t("breadcrumb")}</span>
+          <div className={styles.activeModule}><i aria-hidden="true" />{t("activeModule")}</div>
           <LocaleSwitcher compact />
         </header>
         <div className={styles.page}>
@@ -205,11 +253,14 @@ export default function ManageCategories() {
 
           <div className={styles.workspace}>
             <section id="category-list" className={styles.tablePanel} aria-labelledby="list-title">
-              <div className={styles.panelHead}><div><h2 id="list-title">{t("listTitle")}</h2><p>{t("listHint")}</p></div></div>
+              <div className={styles.panelHead}>
+                <div><h2 id="list-title">{t("listTitle")}</h2><p>{t("listHint")}</p></div>
+                <label className={styles.searchBox}><span aria-hidden="true">⌕</span><span className={styles.srOnly}>{t("search")}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("searchPlaceholder")} /></label>
+              </div>
               {loading ? <p className={styles.state}>{t("loading")}</p> : categories.length === 0 ? <p className={styles.state}>{t("empty")}</p> : (
-                <div className={styles.tableScroll}><table>
+                filteredCategories.length === 0 ? <p className={styles.state}>{t("noResults")}</p> : <div className={styles.tableScroll}><table>
                   <thead><tr><th>{t("tableName")}</th><th>{t("tableSlug")}</th><th>{t("tableRecipes")}</th><th><span className={styles.srOnly}>{t("tableAction")}</span></th></tr></thead>
-                  <tbody>{categories.map((category) => (
+                  <tbody>{filteredCategories.map((category) => (
                     <tr key={category.id} className={selected?.id === category.id ? styles.selectedRow : ""}>
                       <td><strong>{category.name}</strong><small>{category.description ?? "—"}</small></td>
                       <td><code>/{category.slug}</code></td><td>{category.recipe_count}</td>
@@ -227,7 +278,11 @@ export default function ManageCategories() {
               <form onSubmit={save} className={styles.form}>
                 <label>{t("name")}<input value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={50} required /></label>
                 <label>{t("description")}<textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t("descriptionPlaceholder")} rows={5} /></label>
-                {selected && <p className={styles.slugNote}>{t("slugHint", { slug: selected.slug })}</p>}
+                {selected && <div className={styles.slugControl}>
+                  <div className={styles.slugSummary}><span>{t("currentUrl")}</span><code>/{selected.slug}</code></div>
+                  <label className={styles.slugToggle}><input type="checkbox" checked={editSlug} onChange={(event) => { setEditSlug(event.target.checked); setSlug(selected.slug); }} /><span><strong>{t("editSlugLabel")}</strong><small>{t("editSlugHelp")}</small></span></label>
+                  {editSlug && <label>{t("slug")}<div className={styles.slugInput}><span>/</span><input value={slug} onChange={(event) => setSlug(normalizeSlug(event.target.value))} minLength={2} maxLength={100} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /></div><small className={styles.warning}>{t("slugWarning")}</small></label>}
+                </div>}
                 <div className={styles.formActions}><button type="submit" disabled={busy}>{busy ? t("saving") : selected ? t("save") : t("create")}</button>{selected && <button type="button" className={styles.secondaryButton} onClick={() => choose(null)}>{t("cancel")}</button>}</div>
               </form>
               {error && <p role="alert" className={styles.error}>{error}</p>}
