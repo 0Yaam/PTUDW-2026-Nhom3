@@ -7,6 +7,7 @@ from culinary_blog_api.auth import RefreshToken, User  # noqa: F401
 from culinary_blog_api.categories import Category  # noqa: F401
 from culinary_blog_api.config import get_settings
 from culinary_blog_api.db import Base
+from culinary_blog_api.recipes import Recipe  # noqa: F401
 
 config = context.config
 config.set_main_option(

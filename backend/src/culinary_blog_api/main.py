@@ -12,6 +12,8 @@ from .auth import AuthProblem
 from .auth import router as auth_router
 from .categories import router as categories_router
 from .config import get_settings
+from .recipes import RecipeProblem
+from .recipes import router as recipes_router
 
 settings = get_settings()
 logger = structlog.get_logger()
@@ -31,6 +33,15 @@ async def auth_problem_handler(_request: Request, error: AuthProblem) -> JSONRes
     return JSONResponse(status_code=error.status, content=error.as_dict())
 
 
+@app.exception_handler(RecipeProblem)
+async def recipe_problem_handler(_request: Request, error: RecipeProblem) -> JSONResponse:
+    return JSONResponse(
+        status_code=error.status,
+        content=error.as_dict(),
+        media_type="application/problem+json",
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_problem_handler(
     _request: Request, error: RequestValidationError
@@ -41,6 +52,7 @@ async def validation_problem_handler(
         errors.setdefault(field, []).append(item["msg"])
     return JSONResponse(
         status_code=422,
+        media_type="application/problem+json",
         content={
             "type": "VALIDATION_ERROR",
             "title": "Validation Error",
@@ -84,3 +96,4 @@ async def request_context(request: Request, call_next):
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(categories_router)
+app.include_router(recipes_router)
