@@ -1,0 +1,86 @@
+{
+  "language": { "choose": "Choose language" },
+  "nav": {
+    "skip": "Skip to content", "categories": "Categories", "story": "Our story",
+    "account": "Account", "manage": "Manage categories", "menu": "Menu",
+    "home": "Home", "admin": "Admin", "main": "Main navigation", "mobile": "Mobile navigation"
+  },
+  "site": {
+    "tagline": "Food stories & recipes", "journal": "The culinary journal",
+    "footerLine1": "LET’S MAKE", "footerLine2": "SOMETHING GOOD.",
+    "footerDescription": "Good food tastes even better together.",
+    "footerMotto": "Cook. Share. Remember."
+  },
+  "home": {
+    "heroEyebrow": "Your kitchen, your story", "heroTitle1": "Your favorite food.",
+    "heroTitle2": "Make it good.",
+    "heroDescription": "Discover the dishes you love, explore new flavors, and share the joy of cooking at home.",
+    "explore": "Explore the kitchen", "knowUs": "Get to know us",
+    "heroProof": "Good things happen around food",
+    "ribbonDiscover": "DISCOVER", "ribbonCook": "COOK", "ribbonShare": "SHARE", "ribbonEnjoy": "ENJOY",
+    "categoryEyebrow": "Explore the kitchen", "categoryTitle1": "Find your next", "categoryTitle2": "favorite.",
+    "categoryDescription": "Every great meal starts somewhere. Browse real categories from our kitchen and find the flavors that speak to you.",
+    "categoryTotal": "{count, plural, =1 {# category to explore} other {# categories to explore}}",
+    "storyEyebrow": "The story behind the plate", "storyTitle1": "A kitchen for", "storyTitle2": "everybody.",
+    "storyParagraph1": "Food has a way of bringing people together. Small Kitchen is a space to explore flavors, learn from one another, and celebrate what we make at home.",
+    "storyParagraph2": "Our recipe collection is growing with the team. Start with the categories and join the kitchen today.",
+    "join": "Join the kitchen"
+  },
+  "category": {
+    "label": "Kitchen category", "fallback": "A new corner of the kitchen, ready to explore.",
+    "recipeCount": "{count, plural, =1 {# recipe} other {# recipes}}",
+    "emptyTitle": "Our kitchen is getting ready.",
+    "emptyDescription": "No categories have been added yet. An Admin can start the collection."
+  },
+  "auth": {
+    "eyebrow": "Your kitchen account", "title": "Save a seat at the table.",
+    "description": "Create an Author account, or sign in with email and password. Passwords are hashed before storage.",
+    "register": "Create account", "login": "Sign in", "fullName": "Full name", "userName": "User name",
+    "email": "Email", "password": "Password", "passwordHint": "Use 8+ characters with uppercase, lowercase, number, and symbol.",
+    "working": "Working...", "registered": "Account created and signed in.", "signedIn": "Signed in.",
+    "welcome": "{message} Welcome, {name} ({roles}).", "requestFailed": "Request failed. Please try again.",
+    "apiUnavailable": "Cannot reach the API. Check that the backend is running."
+  },
+  "admin": {
+    "brand": "Small Kitchen", "workspace": "WORKSPACE", "content": "CONTENT", "categories": "Categories",
+    "visitSite": "View website", "signOut": "Sign out", "signedInAs": "Signed in as Admin",
+    "access": "Admin access", "loginTitle": "Welcome back", "loginDescription": "Sign in with an Admin account to manage recipe categories.",
+    "newHere": "New here?", "registerLink": "Create an account on the homepage",
+    "roleHint": "New accounts start as Authors. An existing Admin must grant Admin access.",
+    "email": "Email", "password": "Password", "signIn": "Sign in", "signingIn": "Signing in...",
+    "loginQuote": "Every great menu begins with a good story.",
+    "breadcrumb": "Content / Categories", "title": "Category management",
+    "subtitle": "Create and update the sections of your recipe collection.",
+    "totalCategories": "Total categories", "totalRecipes": "Recipes in categories", "stableSlugs": "Stable category URLs",
+    "listTitle": "All categories", "listHint": "Choose a category to edit, or add a new one.",
+    "new": "New category", "tableName": "Name", "tableDescription": "Description", "tableRecipes": "Recipes",
+    "tableSlug": "Slug", "tableAction": "Action", "edit": "Edit", "loading": "Loading categories...",
+    "empty": "No categories yet. Create the first one.",
+    "createKicker": "CREATE CATEGORY", "editKicker": "EDIT CATEGORY", "createTitle": "Add a category", "editTitle": "Edit category",
+    "formHint": "Names need 2–50 characters and cannot contain HTML. Slugs are generated automatically.",
+    "name": "Name", "description": "Description", "descriptionPlaceholder": "What kind of recipes belong here?",
+    "slugHint": "Stable URL: /{slug}. Changing the name will not change this slug.",
+    "create": "Create category", "save": "Save changes", "saving": "Saving...", "cancel": "Cancel edit",
+    "created": "Category created.", "updated": "Category updated. Its slug stayed the same.",
+    "notAdmin": "This account does not have Admin access.",
+    "sessionExpired": "Your Admin session is no longer valid. Sign in again.",
+    "loadFailed": "Cannot load categories. Check that the API is running.",
+    "apiUnavailable": "Cannot reach the API. Check that the backend is running.",
+    "requestFailed": "Request failed."
+  },
+  "errors": {
+    "CATEGORY_NAME_EXISTS": "This category name already exists.",
+    "CATEGORY_SLUG_EXISTS": "A unique slug could not be generated.",
+    "CATEGORY_NOT_FOUND": "Category was not found.",
+    "INVALID_CATEGORY": "This name cannot form a valid slug.",
+    "VALIDATION_ERROR": "Check the name (2–50 characters), description, and HTML restrictions.",
+    "FORBIDDEN": "Admin access is required.",
+    "UNAUTHORIZED": "Sign in is required.",
+    "fallback": "The request could not be completed."
+  },
+  "status": {
+    "connection": "Connection problem", "title": "The kitchen is not ready.",
+    "description": "Check FastAPI and PostgreSQL, then try again.", "retry": "Try again",
+    "loading": "Loading data"
+  }
+}

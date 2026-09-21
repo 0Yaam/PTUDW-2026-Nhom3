@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type Mode = "register" | "login";
 
@@ -14,18 +15,16 @@ type AuthResponse = {
 };
 
 type ProblemDetails = {
+  type?: string;
   detail?: string;
   errors?: Record<string, string[]>;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-function problemMessage(problem: ProblemDetails): string {
-  const fieldError = Object.values(problem.errors ?? {}).flat()[0];
-  return fieldError ?? problem.detail ?? "Request failed. Please try again.";
-}
-
 export function AuthPanel() {
+  const t = useTranslations("auth");
+  const errorT = useTranslations("errors");
   const [mode, setMode] = useState<Mode>("register");
   const [message, setMessage] = useState("");
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -54,15 +53,18 @@ export function AuthPanel() {
         body: JSON.stringify(payload),
       });
       if (!response.ok) {
-        setMessage(problemMessage((await response.json()) as ProblemDetails));
+        const problem = (await response.json()) as ProblemDetails;
+        const knownType = problem.type && errorT.has(problem.type) ? problem.type : null;
+        const fieldError = Object.values(problem.errors ?? {}).flat()[0];
+        setMessage(knownType ? errorT(knownType) : fieldError ?? problem.detail ?? t("requestFailed"));
         return;
       }
       const result = (await response.json()) as AuthResponse;
       setUser(result.user);
-      setMessage(mode === "register" ? "Account created and signed in." : "Signed in.");
+      setMessage(mode === "register" ? t("registered") : t("signedIn"));
       form.reset();
     } catch {
-      setMessage("Cannot reach the API. Check that the backend is running.");
+      setMessage(t("apiUnavailable"));
     } finally {
       setPending(false);
     }
@@ -71,12 +73,9 @@ export function AuthPanel() {
   return (
     <section className="auth-section" id="auth" aria-labelledby="auth-title">
       <div className="auth-copy">
-        <p className="eyebrow">Your kitchen account</p>
-        <h2 id="auth-title">Save a seat at the table.</h2>
-        <p>
-          Create an Author account, or sign in with email and password. Passwords are
-          hashed before storage.
-        </p>
+        <p className="eyebrow">{t("eyebrow")}</p>
+        <h2 id="auth-title">{t("title")}</h2>
+        <p>{t("description")}</p>
       </div>
       <div className="auth-card">
         <div className="auth-tabs" aria-label="Account action">
@@ -91,7 +90,7 @@ export function AuthPanel() {
                 setUser(null);
               }}
             >
-              {value === "register" ? "Create account" : "Sign in"}
+              {value === "register" ? t("register") : t("login")}
             </button>
           ))}
         </div>
@@ -99,11 +98,11 @@ export function AuthPanel() {
           {mode === "register" && (
             <>
               <label>
-                Full name
+                {t("fullName")}
                 <input name="fullName" autoComplete="name" maxLength={150} required />
               </label>
               <label>
-                User name
+                {t("userName")}
                 <input
                   name="userName"
                   autoComplete="username"
@@ -116,11 +115,11 @@ export function AuthPanel() {
             </>
           )}
           <label>
-            Email
+            {t("email")}
             <input name="email" type="email" autoComplete="email" required />
           </label>
           <label>
-            Password
+            {t("password")}
             <input
               name="password"
               type="password"
@@ -131,15 +130,15 @@ export function AuthPanel() {
           </label>
           {mode === "register" && (
             <p className="field-note">
-              Use 8+ characters with uppercase, lowercase, number, and symbol.
+              {t("passwordHint")}
             </p>
           )}
           <button className="auth-submit" type="submit" disabled={pending}>
-            {pending ? "Working..." : mode === "register" ? "Create account" : "Sign in"}
+            {pending ? t("working") : mode === "register" ? t("register") : t("login")}
           </button>
         </form>
         <p className={user ? "auth-message success" : "auth-message"} aria-live="polite">
-          {user ? `${message} Welcome, ${user.fullName} (${user.roles.join(", ")}).` : message}
+          {user ? t("welcome", { message, name: user.fullName, roles: user.roles.join(", ") }) : message}
         </p>
       </div>
     </section>

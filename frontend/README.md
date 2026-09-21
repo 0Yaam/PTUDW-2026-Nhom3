@@ -9,6 +9,11 @@ project-owned imagery, a responsive theme, and reusable page sections. See
 [the theme notes](../docs/UI-THEME-FOOD-WEBSITE.md) for provenance, SRS fit,
 and integration boundaries.
 
+The category Admin workspace uses a TailAdmin-inspired SaaS dashboard and
+supports English/Vietnamese UI text through `next-intl`. See
+[the Admin and i18n notes](../docs/ADMIN-DASHBOARD-I18N.md) for the license,
+authorization boundary, teammate integration rules, and FR-CAT trace.
+
 Issue #2 adds `/admin/categories`. Sign in with an existing Admin account,
 then create categories or select one to edit its name and description. The page
 shows validation, permission, network, loading, empty, and save states. Its

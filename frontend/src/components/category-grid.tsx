@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export type Category = {
   id: string;
@@ -21,14 +22,15 @@ function previewForCategory(name: string, index: number): string {
 }
 
 export function CategoryGrid({ categories }: { categories: Category[] }) {
+  const t = useTranslations("category");
   if (categories.length === 0) {
-    return <div className="empty-state"><span aria-hidden="true">✳</span><h3>Our kitchen is getting ready.</h3><p>No categories have been added yet. An Admin can start the collection.</p></div>;
+    return <div className="empty-state"><span aria-hidden="true">✳</span><h3>{t("emptyTitle")}</h3><p>{t("emptyDescription")}</p></div>;
   }
 
   return <div className="category-grid">{categories.map((category, index) => (
     <article className="category-card" key={category.id}>
       <div className="category-card-art"><span className="category-number">{String(index + 1).padStart(2, "0")}</span><div className={`category-dish${category.image_url ? " custom-image" : ""}`}><Image src={category.image_url || previewForCategory(category.name, index)} alt="" fill unoptimized={Boolean(category.image_url)} sizes="(max-width: 560px) 85vw, (max-width: 1100px) 42vw, 22vw" /></div></div>
-      <div className="category-card-body"><p className="category-card-meta">Kitchen category</p><h3>{category.name}</h3><p>{category.description ?? "A new corner of the kitchen, ready to explore."}</p><span className="recipe-count">{category.recipe_count} {category.recipe_count === 1 ? "recipe" : "recipes"}<span aria-hidden="true">↗</span></span></div>
+      <div className="category-card-body"><p className="category-card-meta">{t("label")}</p><h3>{category.name}</h3><p>{category.description ?? t("fallback")}</p><span className="recipe-count">{t("recipeCount", { count: category.recipe_count })}<span aria-hidden="true">↗</span></span></div>
     </article>
   ))}</div>;
 }
