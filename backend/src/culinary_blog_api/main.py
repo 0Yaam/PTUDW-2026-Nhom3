@@ -19,7 +19,7 @@ logger = structlog.get_logger()
 app = FastAPI(title=settings.app_name, version="0.1.0", docs_url="/docs")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=settings.frontend_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Correlation-ID"],

@@ -1,6 +1,7 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["FRONTEND_ORIGIN"] = "http://localhost:3000"
 
 from collections.abc import AsyncIterator
 
