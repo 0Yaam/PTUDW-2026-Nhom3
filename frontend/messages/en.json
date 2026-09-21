@@ -59,7 +59,7 @@
     "tableSlug": "Slug", "tableAction": "Action", "edit": "Edit", "loading": "Loading categories...",
     "empty": "No categories yet. Create the first one.",
     "createKicker": "CREATE CATEGORY", "editKicker": "EDIT CATEGORY", "createTitle": "Add a category", "editTitle": "Edit category",
-    "formHint": "Names need 2–50 characters and cannot contain HTML. Slugs are generated automatically.",
+    "formHint": "Names need 2–50 characters. Slugs are generated automatically.",
     "name": "Name", "description": "Description", "descriptionPlaceholder": "What kind of recipes belong here?",
     "currentUrl": "Current public URL", "editSlugLabel": "Customize URL slug", "editSlugHelp": "Leave this off to keep links stable when the name changes.",
     "slug": "New slug", "slugWarning": "Changing this URL may break existing links. Use lowercase letters, numbers, and single hyphens.",
