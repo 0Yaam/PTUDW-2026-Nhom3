@@ -7,7 +7,8 @@ const apiUrl =
 
 export async function getCategories(): Promise<Category[]> {
   const response = await fetch(`${apiUrl}/api/v1/categories`, {
-    next: { revalidate: 3600, tags: ["categories"] },
+    // Admin edits should appear on the public category list on the next request.
+    cache: "no-store",
   });
 
   if (!response.ok) {

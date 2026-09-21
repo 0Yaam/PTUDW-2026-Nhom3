@@ -21,7 +21,7 @@ logger = structlog.get_logger()
 app = FastAPI(title=settings.app_name, version="0.1.0", docs_url="/docs")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=settings.frontend_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Correlation-ID"],
@@ -30,7 +30,20 @@ app.add_middleware(
 
 @app.exception_handler(AuthProblem)
 async def auth_problem_handler(_request: Request, error: AuthProblem) -> JSONResponse:
-    return JSONResponse(status_code=error.status, content=error.as_dict())
+    return JSONResponse(
+        status_code=error.status,
+        content=error.as_dict(),
+        media_type="application/problem+json",
+    )
+
+
+@app.exception_handler(RecipeProblem)
+async def recipe_problem_handler(_request: Request, error: RecipeProblem) -> JSONResponse:
+    return JSONResponse(
+        status_code=error.status,
+        content=error.as_dict(),
+        media_type="application/problem+json",
+    )
 
 
 @app.exception_handler(RecipeProblem)
@@ -73,6 +86,7 @@ async def request_context(request: Request, call_next):
         logger.exception("unhandled_request_error", correlation_id=correlation_id)
         response = JSONResponse(
             status_code=500,
+            media_type="application/problem+json",
             content={
                 "type": "INTERNAL_SERVER_ERROR",
                 "title": "Internal Server Error",

@@ -1,0 +1,88 @@
+{
+  "language": { "choose": "Chọn ngôn ngữ" },
+  "nav": {
+    "skip": "Đến nội dung chính", "categories": "Danh mục", "story": "Câu chuyện",
+    "account": "Tài khoản", "manage": "Quản lý danh mục", "menu": "Menu",
+    "home": "Trang chủ", "admin": "Quản trị", "main": "Điều hướng chính", "mobile": "Điều hướng di động"
+  },
+  "site": {
+    "tagline": "Câu chuyện và công thức", "journal": "Nhật ký ẩm thực",
+    "footerLine1": "CÙNG NẤU", "footerLine2": "MÓN NGON.",
+    "footerDescription": "Món ngon sẽ vui hơn khi được sẻ chia.",
+    "footerMotto": "Nấu. Chia sẻ. Ghi nhớ."
+  },
+  "home": {
+    "heroEyebrow": "Căn bếp của bạn, câu chuyện của bạn", "heroTitle1": "Món ăn yêu thích.",
+    "heroTitle2": "Tự tay làm ngon.",
+    "heroDescription": "Khám phá món ăn bạn yêu thích, thử hương vị mới và chia sẻ niềm vui nấu nướng tại nhà.",
+    "explore": "Khám phá danh mục", "knowUs": "Về chúng tôi",
+    "heroProof": "Điều tốt đẹp bắt đầu từ căn bếp",
+    "ribbonDiscover": "KHÁM PHÁ", "ribbonCook": "NẤU ĂN", "ribbonShare": "CHIA SẺ", "ribbonEnjoy": "THƯỞNG THỨC",
+    "categoryEyebrow": "Khám phá căn bếp", "categoryTitle1": "Tìm món ăn", "categoryTitle2": "yêu thích.",
+    "categoryDescription": "Mỗi bữa ngon bắt đầu từ một ý tưởng. Xem những danh mục thực tế và tìm hương vị hợp với bạn.",
+    "categoryTotal": "{count} danh mục để khám phá",
+    "storyEyebrow": "Câu chuyện sau mỗi món ăn", "storyTitle1": "Căn bếp dành cho", "storyTitle2": "mọi người.",
+    "storyParagraph1": "Ẩm thực kết nối mọi người. Small Kitchen là nơi khám phá hương vị, học hỏi lẫn nhau và trân trọng những món ăn nhà làm.",
+    "storyParagraph2": "Bộ sưu tập công thức đang được nhóm phát triển. Hãy bắt đầu từ các danh mục và cùng tham gia căn bếp.",
+    "join": "Tham gia căn bếp"
+  },
+  "category": {
+    "label": "Danh mục món ăn", "fallback": "Một góc mới của căn bếp đang chờ bạn khám phá.",
+    "recipeCount": "{count} công thức", "emptyTitle": "Căn bếp đang được chuẩn bị.",
+    "emptyDescription": "Chưa có danh mục nào. Quản trị viên có thể tạo danh mục đầu tiên."
+  },
+  "auth": {
+    "eyebrow": "Tài khoản căn bếp", "title": "Cùng vào bếp nhé.",
+    "description": "Tạo tài khoản Tác giả hoặc đăng nhập bằng email và mật khẩu. Mật khẩu được mã hóa trước khi lưu.",
+    "register": "Tạo tài khoản", "login": "Đăng nhập", "fullName": "Họ và tên", "userName": "Tên người dùng",
+    "email": "Email", "password": "Mật khẩu", "passwordHint": "Dùng ít nhất 8 ký tự, có chữ hoa, chữ thường, số và ký hiệu.",
+    "working": "Đang xử lý...", "registered": "Đã tạo tài khoản và đăng nhập.", "signedIn": "Đã đăng nhập.",
+    "welcome": "{message} Chào {name} ({roles}).", "requestFailed": "Yêu cầu không thành công. Vui lòng thử lại.",
+    "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend."
+  },
+  "admin": {
+    "brand": "Small Kitchen", "workspace": "KHÔNG GIAN QUẢN TRỊ", "content": "NỘI DUNG", "management": "QUẢN LÝ", "system": "HỆ THỐNG", "categories": "Danh mục",
+    "navOverview": "Tổng quan", "navRecipes": "Công thức", "navPosts": "Bài viết", "navMedia": "Thư viện media", "navUsers": "Người dùng & quyền", "navComments": "Bình luận", "navAnalytics": "Thống kê", "navSettings": "Cài đặt", "comingSoon": "Sắp có", "activeModule": "Danh mục đang hoạt động",
+    "visitSite": "Xem website", "signOut": "Đăng xuất", "signedInAs": "Đã đăng nhập với vai trò Admin",
+    "access": "Quyền quản trị", "loginTitle": "Chào mừng trở lại", "loginDescription": "Đăng nhập bằng tài khoản Admin để quản lý danh mục công thức.",
+    "newHere": "Chưa có tài khoản?", "registerLink": "Tạo tài khoản tại trang chủ",
+    "roleHint": "Tài khoản mới có vai trò Tác giả. Admin hiện có cần cấp quyền quản trị.",
+    "email": "Email", "password": "Mật khẩu", "signIn": "Đăng nhập", "signingIn": "Đang đăng nhập...",
+    "loginQuote": "Mỗi thực đơn hay đều bắt đầu từ một câu chuyện.",
+    "breadcrumb": "Nội dung / Danh mục", "title": "Quản lý danh mục",
+    "subtitle": "Tạo và cập nhật các nhóm công thức của căn bếp.",
+    "totalCategories": "Tổng danh mục", "totalRecipes": "Công thức trong danh mục", "stableSlugs": "Đường dẫn danh mục ổn định",
+    "listTitle": "Tất cả danh mục", "listHint": "Chọn một danh mục để sửa hoặc tạo danh mục mới.",
+    "search": "Tìm kiếm danh mục", "searchPlaceholder": "Tìm tên, slug...", "noResults": "Không có danh mục phù hợp với từ khóa.",
+    "new": "Danh mục mới", "tableName": "Tên", "tableDescription": "Mô tả", "tableRecipes": "Công thức",
+    "tableSlug": "Slug", "tableAction": "Thao tác", "edit": "Sửa", "loading": "Đang tải danh mục...",
+    "empty": "Chưa có danh mục. Hãy tạo danh mục đầu tiên.",
+    "createKicker": "TẠO DANH MỤC", "editKicker": "SỬA DANH MỤC", "createTitle": "Thêm danh mục", "editTitle": "Sửa danh mục",
+    "formHint": "Tên dài 2–50 ký tự. Slug được tạo tự động.",
+    "name": "Tên", "description": "Mô tả", "descriptionPlaceholder": "Những công thức nào thuộc danh mục này?",
+    "currentUrl": "Đường dẫn công khai hiện tại", "editSlugLabel": "Tùy chỉnh slug đường dẫn", "editSlugHelp": "Để tắt nhằm giữ liên kết ổn định khi đổi tên.",
+    "slug": "Slug mới", "slugWarning": "Đổi đường dẫn có thể làm hỏng liên kết cũ. Chỉ dùng chữ thường, số và dấu gạch nối đơn.",
+    "create": "Tạo danh mục", "save": "Lưu thay đổi", "saving": "Đang lưu...", "cancel": "Hủy chỉnh sửa",
+    "created": "Đã tạo danh mục.", "updated": "Đã cập nhật danh mục. Slug được giữ nguyên.", "updatedSlug": "Đã cập nhật danh mục và đường dẫn công khai.",
+    "notAdmin": "Tài khoản này không có quyền Admin.",
+    "sessionExpired": "Phiên Admin đã hết hiệu lực. Vui lòng đăng nhập lại.",
+    "loadFailed": "Không tải được danh mục. Hãy kiểm tra API.",
+    "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend.",
+    "requestFailed": "Yêu cầu không thành công."
+  },
+  "errors": {
+    "CATEGORY_NAME_EXISTS": "Tên danh mục đã tồn tại.",
+    "CATEGORY_SLUG_EXISTS": "Không tạo được slug duy nhất.",
+    "CATEGORY_NOT_FOUND": "Không tìm thấy danh mục.",
+    "INVALID_CATEGORY": "Tên này không tạo được slug hợp lệ.",
+    "VALIDATION_ERROR": "Hãy kiểm tra tên (2–50 ký tự), mô tả và quy định không chứa HTML.",
+    "FORBIDDEN": "Cần quyền Admin để thực hiện thao tác.",
+    "UNAUTHORIZED": "Bạn cần đăng nhập.",
+    "fallback": "Không thể hoàn thành yêu cầu."
+  },
+  "status": {
+    "connection": "Lỗi kết nối", "title": "Căn bếp chưa sẵn sàng.",
+    "description": "Hãy kiểm tra FastAPI và PostgreSQL rồi thử lại.", "retry": "Thử lại",
+    "loading": "Đang tải dữ liệu"
+  }
+}
