@@ -31,6 +31,11 @@ npm run lint --prefix frontend
 npm run build --prefix frontend
 ```
 
-Use `docker compose up --build` for the full stack. Run migrations with `docker compose exec api alembic upgrade head` and seed data with `docker compose exec api seed`.
+Use `.\start-all.ps1` to build and start PostgreSQL, the backend, and the
+production-style frontend container. Run `npm run dev --prefix frontend` in
+another terminal only when frontend hot reload is useful; it runs on port 3001
+while the Docker frontend remains on port 3000. Run migrations with
+`docker compose exec api alembic upgrade head` and seed data with
+`docker compose exec api seed`.
 
 Never claim that a check passed unless you ran it and saw a successful result.

@@ -2,6 +2,17 @@
 
 This folder contains the Next.js App Router frontend. Use the root [README](../README.md) for setup and test commands.
 
+The default setup starts the complete Docker system on port `3000`. To monitor
+frontend edits with hot reload, run an additional dev server on port `3001`:
+
+```powershell
+.\start-all.ps1
+npm run dev --prefix frontend
+```
+
+Run these commands from the repository root. Install dependencies first with
+`npm ci --prefix frontend` when `node_modules` is missing or the lockfile changes.
+
 The Agent Bootstrap includes a category page with loading, empty, and error states.
 
 The shared visual design follows Han's selected food website reference with

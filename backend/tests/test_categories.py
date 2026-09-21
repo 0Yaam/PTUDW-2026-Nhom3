@@ -5,6 +5,7 @@ from sqlalchemy import select
 from culinary_blog_api.auth import User
 from culinary_blog_api.auth.security import create_access_token, hash_password
 from culinary_blog_api.categories import Category
+from culinary_blog_api.config import Settings
 from culinary_blog_api.db import SessionFactory
 from culinary_blog_api.seed import seed
 
@@ -198,3 +199,23 @@ async def test_aggregate_health_uses_readiness(client) -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "Healthy"
+
+
+async def test_docker_and_hot_reload_frontends_are_allowed_by_cors(client) -> None:
+    for origin in ("http://localhost:3000", "http://localhost:3001"):
+        response = await client.options(
+            "/api/v1/categories",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.headers["access-control-allow-origin"] == origin
+
+
+def test_hot_reload_origin_is_development_only() -> None:
+    settings = Settings(environment="production", frontend_origin="https://food.example.com")
+
+    assert settings.frontend_origins == ["https://food.example.com"]
