@@ -41,5 +41,5 @@ async def put_category(
     session: Annotated[AsyncSession, Depends(get_session)],
     _admin: Annotated[User, Depends(require_admin)],
 ) -> CategoryRead:
-    """Edit name and description without changing the category slug."""
+    """Edit category content; an omitted slug preserves the public URL."""
     return await update_category(session, category_id, data)

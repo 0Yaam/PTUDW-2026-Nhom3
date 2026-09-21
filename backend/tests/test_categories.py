@@ -114,6 +114,40 @@ async def test_admin_update_keeps_slug_and_checks_errors(client) -> None:
     assert missing.status_code == 404
 
 
+async def test_admin_can_explicitly_change_slug(client) -> None:
+    headers = await auth_headers("Admin")
+    first = await client.post(
+        "/api/v1/categories", json={"name": "Main dishes"}, headers=headers
+    )
+    await client.post(
+        "/api/v1/categories", json={"name": "Family meals"}, headers=headers
+    )
+    category_id = first.json()["id"]
+
+    updated = await client.put(
+        f"/api/v1/categories/{category_id}",
+        json={"name": "Main dishes", "slug": "featured-dishes"},
+        headers=headers,
+    )
+    duplicate = await client.put(
+        f"/api/v1/categories/{category_id}",
+        json={"name": "Main dishes", "slug": "family-meals"},
+        headers=headers,
+    )
+    invalid = await client.put(
+        f"/api/v1/categories/{category_id}",
+        json={"name": "Main dishes", "slug": "Invalid Slug"},
+        headers=headers,
+    )
+
+    assert updated.status_code == 200
+    assert updated.json()["slug"] == "featured-dishes"
+    assert duplicate.status_code == 409
+    assert duplicate.json()["type"] == "CATEGORY_SLUG_EXISTS"
+    assert invalid.status_code == 422
+    assert "slug" in invalid.json()["errors"]
+
+
 async def test_seed_does_not_overwrite_admin_edit(client) -> None:
     await seed()
     async with SessionFactory() as session:
