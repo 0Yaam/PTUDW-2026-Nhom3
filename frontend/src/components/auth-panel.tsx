@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
+import { saveAuthSession } from "@/lib/auth-session";
 
 type Mode = "register" | "login";
 
@@ -11,6 +13,8 @@ type AuthUser = {
 };
 
 type AuthResponse = {
+  accessToken: string;
+  expiresAt: string;
   user: AuthUser;
 };
 
@@ -60,6 +64,7 @@ export function AuthPanel() {
         return;
       }
       const result = (await response.json()) as AuthResponse;
+      saveAuthSession(result);
       setUser(result.user);
       setMessage(mode === "register" ? t("registered") : t("signedIn"));
       form.reset();
@@ -140,6 +145,7 @@ export function AuthPanel() {
         <p className={user ? "auth-message success" : "auth-message"} aria-live="polite">
           {user ? t("welcome", { message, name: user.fullName, roles: user.roles.join(", ") }) : message}
         </p>
+        {user && <Link className="primary-action" href="/recipes/new">{t("createRecipe")}</Link>}
       </div>
     </section>
   );
