@@ -46,15 +46,6 @@ async def recipe_problem_handler(_request: Request, error: RecipeProblem) -> JSO
     )
 
 
-@app.exception_handler(RecipeProblem)
-async def recipe_problem_handler(_request: Request, error: RecipeProblem) -> JSONResponse:
-    return JSONResponse(
-        status_code=error.status,
-        content=error.as_dict(),
-        media_type="application/problem+json",
-    )
-
-
 @app.exception_handler(RequestValidationError)
 async def validation_problem_handler(
     _request: Request, error: RequestValidationError
