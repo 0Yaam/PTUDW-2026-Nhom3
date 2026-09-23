@@ -26,6 +26,19 @@
 | 2312571 | Nguyễn Minh Anh        | nguyenminanh5@gmail.com | [MinhAnhhhhhh](https://github.com/MinhAnhhhhhh)   |
 | 2312617 | Trần Xuân Hiếu         | 2312617@dlu.edu.vn      | [ThanhXuanHieu](https://github.com/ThanhXuanHieu) |
 
+## Work Assignment
+
+| Issue | Main work | Assigned member | SRS | Status |
+| --- | --- | --- | --- | --- |
+| [#1](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/1) | Local registration and login: User migration, auth API, UI, validation, security tests | Nguyễn Ngọc Trường Dân (`0Yaam`) | FR-AUTH-001, FR-AUTH-002, NFR-SEC-001 | Completed |
+| [#2](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/2) | Admin category creation and update: API, UI, authorization, tests | Nguyễn Ngọc Hân (`Meranh05`) | FR-CAT-003, FR-CAT-004 | Completed |
+| [#3](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/3) | Category detail page: detail API, recipe list, empty and not-found states | Nguyễn Minh Anh (`MinhAnhhhhhh`) | FR-CAT-002 | Completed |
+| [#4](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/4) | Draft recipe creation: recipe API, form, validation, integration tests | Trần Xuân Hiếu (`ThanhXuanHieu`) | FR-RCP-003 | Completed |
+
+The assigned member owns the implementation and tests for the Issue. Dân coordinates
+integration and reviews team Pull Requests. Each change is developed on its own branch
+before being merged into `main`.
+
 ## Overview
 
 Small Kitchen is a student project for sharing cooking recipes. The current
