@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 export type Category = {
@@ -30,7 +31,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
   return <div className="category-grid">{categories.map((category, index) => (
     <article className="category-card" key={category.id}>
       <div className="category-card-art"><span className="category-number">{String(index + 1).padStart(2, "0")}</span><div className={`category-dish${category.image_url ? " custom-image" : ""}`}><Image src={category.image_url || previewForCategory(category.name, index)} alt="" fill unoptimized={Boolean(category.image_url)} sizes="(max-width: 560px) 85vw, (max-width: 1100px) 42vw, 22vw" /></div></div>
-      <div className="category-card-body"><p className="category-card-meta">{t("label")}</p><h3>{category.name}</h3><p>{category.description ?? t("fallback")}</p><span className="recipe-count">{t("recipeCount", { count: category.recipe_count })}<span aria-hidden="true">↗</span></span></div>
+      <div className="category-card-body"><p className="category-card-meta">{t("label")}</p><h3><Link href={`/categories/${category.slug}`}>{category.name}</Link></h3><p>{category.description ?? t("fallback")}</p><span className="recipe-count">{t("recipeCount", { count: category.recipe_count })}<span aria-hidden="true">↗</span></span></div>
     </article>
   ))}</div>;
 }

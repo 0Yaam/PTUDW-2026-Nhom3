@@ -67,3 +67,24 @@ class CategoryRead(BaseModel):
     description: str | None
     image_url: str | None
     recipe_count: int = 0
+
+
+class RecipeCard(BaseModel):
+    """Small recipe summary used by the category detail page (FR-CAT-002)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    slug: str
+    description: str
+    prep_time_minutes: int
+    cook_time_minutes: int
+    servings: int
+    difficulty: int
+
+
+class CategoryDetail(CategoryRead):
+    """One category with the recipe cards a reader may open."""
+
+    recipes: list[RecipeCard] = []

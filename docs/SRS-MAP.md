@@ -7,7 +7,7 @@
 | FR-AUTH-004 to FR-AUTH-005 | Refresh token and sign out | Dan | Cycle 2 |
 | FR-AUTH-006 to FR-AUTH-007 | View and update profiles | Minh Anh | Cycle 2 |
 | FR-CAT-001 | Category list | Agent Bootstrap | Ready |
-| FR-CAT-002 | Category detail and simple recipe cards | Minh Anh | Cycle 1 |
+| FR-CAT-002 | Category detail and simple recipe cards | Minh Anh | Ready |
 | FR-CAT-003 to FR-CAT-004 | Create and update categories | Han | Cycle 1 |
 | FR-CAT-005 | Delete an empty category safely | Han | Cycle 2 |
 | FR-RCP-001 | Public recipe list | Hieu | Cycle 2 |

@@ -15,6 +15,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -78,3 +79,63 @@ class Recipe(Base):
 
     category: Mapped["Category"] = relationship()
     author: Mapped["User"] = relationship()
+    ingredients: Mapped[list["RecipeIngredient"]] = relationship(
+        back_populates="recipe",
+        cascade="all, delete-orphan",
+        order_by="RecipeIngredient.order_index",
+    )
+    steps: Mapped[list["RecipeStep"]] = relationship(
+        back_populates="recipe",
+        cascade="all, delete-orphan",
+        order_by="RecipeStep.step_number",
+    )
+
+
+class Ingredient(Base):
+    __tablename__ = "ingredients"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class RecipeIngredient(Base):
+    __tablename__ = "recipe_ingredients"
+    __table_args__ = (
+        UniqueConstraint("recipe_id", "ingredient_id", name="uq_recipe_ingredient"),
+        CheckConstraint("quantity > 0", name="ck_recipe_ingredients_quantity_positive"),
+        CheckConstraint("order_index >= 0", name="ck_recipe_ingredients_order_nonnegative"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    recipe_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("recipes.id", ondelete="CASCADE"), index=True
+    )
+    ingredient_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("ingredients.id", ondelete="RESTRICT"), index=True
+    )
+    quantity: Mapped[Decimal] = mapped_column(Numeric(8, 2))
+    unit: Mapped[str] = mapped_column(String(30))
+    order_index: Mapped[int] = mapped_column(Integer(), default=0)
+
+    recipe: Mapped["Recipe"] = relationship(back_populates="ingredients")
+    ingredient: Mapped["Ingredient"] = relationship()
+
+
+class RecipeStep(Base):
+    __tablename__ = "recipe_steps"
+    __table_args__ = (
+        UniqueConstraint("recipe_id", "step_number", name="uq_recipe_step_number"),
+        CheckConstraint("step_number > 0", name="ck_recipe_steps_number_positive"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    recipe_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("recipes.id", ondelete="CASCADE"), index=True
+    )
+    step_number: Mapped[int] = mapped_column(Integer())
+    instruction: Mapped[str] = mapped_column(Text())
+
+    recipe: Mapped["Recipe"] = relationship(back_populates="steps")

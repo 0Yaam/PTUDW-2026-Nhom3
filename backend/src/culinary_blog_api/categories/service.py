@@ -7,9 +7,16 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..recipes.model import Recipe, RecipeStatus
 from .model import Category
 from .problem import CategoryProblem
-from .schemas import CategoryCreate, CategoryRead, CategoryUpdate
+from .schemas import (
+    CategoryCreate,
+    CategoryDetail,
+    CategoryRead,
+    CategoryUpdate,
+    RecipeCard,
+)
 
 logger = structlog.get_logger()
 
@@ -111,3 +118,28 @@ async def update_category(
 async def list_categories(session: AsyncSession) -> list[CategoryRead]:
     result = await session.scalars(select(Category).order_by(Category.order_index, Category.name))
     return [CategoryRead.model_validate(category) for category in result.all()]
+
+
+async def get_category_by_slug(session: AsyncSession, slug: str) -> CategoryDetail:
+    """Read one category by its stable public slug, with its published recipes."""
+    category = await session.scalar(select(Category).where(Category.slug == slug))
+    if category is None:
+        raise CategoryProblem(
+            404, "CATEGORY_NOT_FOUND", "Not Found", "Category was not found."
+        )
+
+    # Readers may only see published recipes. Drafts belong to their author alone.
+    recipes = await session.scalars(
+        select(Recipe)
+        .where(
+            Recipe.category_id == category.id,
+            Recipe.status == RecipeStatus.PUBLISHED,
+            Recipe.is_deleted.is_(False),
+        )
+        .order_by(Recipe.published_at.desc(), Recipe.title)
+    )
+    cards = [RecipeCard.model_validate(recipe) for recipe in recipes.all()]
+    detail = CategoryDetail.model_validate(category)
+    detail.recipes = cards
+    detail.recipe_count = len(cards)
+    return detail
