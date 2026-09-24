@@ -39,6 +39,8 @@ The assigned member owns the implementation and tests for the Issue. Dân coordi
 integration and reviews team Pull Requests. Each change is developed on its own branch
 before being merged into `main`.
 
+**Read more:** [Full work assignment and three-cycle plan on GitHub Projects](https://github.com/users/0Yaam/projects/1/views/3)
+
 ## Overview
 
 Small Kitchen is a student project for sharing cooking recipes. The current
