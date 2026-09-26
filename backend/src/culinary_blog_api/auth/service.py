@@ -9,6 +9,7 @@ from .problem import AuthProblem
 from .schemas import (
     AuthResponse,
     LoginRequest,
+    ProfileUpdateRequest,
     RefreshTokenRequest,
     RegisterRequest,
     UserRead,
@@ -27,7 +28,8 @@ LOCKOUT_ATTEMPTS = 5
 LOCKOUT_DURATION = timedelta(minutes=15)
 
 
-def _user_read(user: User) -> UserRead:
+def user_profile(user: User) -> UserRead:
+    """The only shape an account is exposed in: no password hash, no lockout state."""
     return UserRead.model_validate(
         {
             "id": user.id,
@@ -53,7 +55,7 @@ async def _issue_tokens(session: AsyncSession, user: User) -> AuthResponse:
         access_token=access_token,
         refresh_token=refresh_token,
         expires_at=expires_at,
-        user=_user_read(user),
+        user=user_profile(user),
     )
 
 
@@ -181,3 +183,33 @@ async def logout_user(
     ):
         stored_token.revoked_at = datetime.now(UTC)
         await session.commit()
+
+
+async def update_profile(
+    session: AsyncSession, user: User, request: ProfileUpdateRequest
+) -> UserRead:
+    """Replace the editable fields on the signed-in account (FR-AUTH-007)."""
+    if request.user_name != user.user_name:
+        taken = await session.scalar(
+            select(User).where(
+                User.user_name == request.user_name, User.id != user.id
+            )
+        )
+        if taken is not None:
+            raise AuthProblem(
+                409, "USER_NAME_TAKEN", "Conflict", "User name is already taken."
+            )
+
+    user.full_name = request.full_name
+    user.user_name = request.user_name
+    user.avatar_url = request.avatar_url
+    try:
+        await session.commit()
+    except IntegrityError as error:
+        # Another request may have claimed the same user name between the check
+        # and the commit; the unique index is what actually decides.
+        await session.rollback()
+        raise AuthProblem(
+            409, "USER_NAME_TAKEN", "Conflict", "User name is already taken."
+        ) from error
+    return user_profile(user)
