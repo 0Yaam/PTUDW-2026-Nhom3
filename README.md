@@ -21,7 +21,7 @@
 
 | MSSV    | Họ và tên              | Email                   | GitHub                                            |
 | ---------| ------------------------| -------------------------| ---------------------------------------------------|
-| 2312607 | Nguyễn Ngọc Hân        | eric.wk08@gmail.com     | [Meranh05](https://github.com/Meranh05)           |
+| 2312607 | Nguyễn Ngọc Hân        | eric.wk08@gmail.com     | [Ericismee](https://github.com/Ericismee)           |
 | 2312590 | Nguyễn Ngọc Trường Dân | 2312590@dlu.edu.vn      | [0Yaam](https://github.com/0Yaam)                 |
 | 2312571 | Nguyễn Minh Anh        | nguyenminanh5@gmail.com | [MinhAnhhhhhh](https://github.com/MinhAnhhhhhh)   |
 | 2312617 | Trần Xuân Hiếu         | 2312617@dlu.edu.vn      | [ThanhXuanHieu](https://github.com/ThanhXuanHieu) |
