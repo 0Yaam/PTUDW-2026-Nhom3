@@ -44,6 +44,52 @@ async def test_login_returns_new_tokens(client) -> None:
     assert response.json()["user"]["userName"] == "truongdan"
 
 
+async def test_refresh_rotates_token_and_logout_revokes_it(client) -> None:
+    registered = await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
+    first = registered.json()
+
+    refreshed = await client.post(
+        "/api/v1/auth/refresh",
+        json={"refreshToken": first["refreshToken"]},
+    )
+    assert refreshed.status_code == 200
+    second = refreshed.json()
+    assert second["accessToken"] != first["accessToken"]
+    assert second["refreshToken"] != first["refreshToken"]
+
+    reused = await client.post(
+        "/api/v1/auth/refresh",
+        json={"refreshToken": first["refreshToken"]},
+    )
+    assert reused.status_code == 401
+    assert reused.json()["type"] == "INVALID_REFRESH_TOKEN"
+
+    logged_out = await client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {second['accessToken']}"},
+        json={"refreshToken": second["refreshToken"]},
+    )
+    assert logged_out.status_code == 204
+
+    after_logout = await client.post(
+        "/api/v1/auth/refresh",
+        json={"refreshToken": second["refreshToken"]},
+    )
+    assert after_logout.status_code == 401
+
+
+async def test_logout_is_idempotent_for_unknown_refresh_token(client) -> None:
+    registered = await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
+    body = registered.json()
+
+    response = await client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {body['accessToken']}"},
+        json={"refreshToken": "unknown-token"},
+    )
+    assert response.status_code == 204
+
+
 async def test_duplicate_registration_returns_problem_details(client) -> None:
     await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
 

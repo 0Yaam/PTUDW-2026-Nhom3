@@ -12,7 +12,7 @@
 .section, .summary, .centerState, .successBanner { border: 1px solid #e1d8cb; border-radius: 8px; background: #fffdf9; box-shadow: 0 12px 32px #3c2c2210; }
 .section { padding: 28px; }
 .sectionHeading { display: flex; gap: 14px; margin-bottom: 24px; }
-.sectionHeading > span, .nutritionToggle > span > b { color: #d78967; font-family: var(--font-display); font-size: 23px; font-weight: 500; }
+.sectionHeading > span, .nutritionToggle > span > b { color: var(--clay); font-family: var(--font-display); font-size: 23px; font-weight: 500; }
 .sectionHeading h2, .summary h2 { margin: 0 0 5px; font-size: 24px; font-weight: 500; }
 .sectionHeading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .section label { display: block; color: var(--ink); font-size: 13px; font-weight: 700; }

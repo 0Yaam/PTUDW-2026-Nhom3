@@ -98,7 +98,10 @@ def read_access_token(token: str) -> uuid.UUID | None:
         return None
 
 
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 def create_refresh_token() -> tuple[str, str, datetime]:
     token = secrets.token_urlsafe(64)
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
-    return token, token_hash, datetime.now(UTC) + REFRESH_TOKEN_TTL
+    return token, hash_refresh_token(token), datetime.now(UTC) + REFRESH_TOKEN_TTL

@@ -6,12 +6,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .model import RefreshToken, User
 from .problem import AuthProblem
-from .schemas import AuthResponse, LoginRequest, RegisterRequest, UserRead
+from .schemas import (
+    AuthResponse,
+    LoginRequest,
+    RefreshTokenRequest,
+    RegisterRequest,
+    UserRead,
+)
 from .security import (
     DUMMY_PASSWORD_HASH,
     create_access_token,
     create_refresh_token,
     hash_password,
+    hash_refresh_token,
     verify_password,
 )
 
@@ -119,3 +126,58 @@ async def login_user(session: AsyncSession, request: LoginRequest) -> AuthRespon
     user.access_failed_count = 0
     user.lockout_until = None
     return await _issue_tokens(session, user)
+
+
+async def refresh_tokens(
+    session: AsyncSession, request: RefreshTokenRequest
+) -> AuthResponse:
+    now = datetime.now(UTC)
+    stored_token = await session.scalar(
+        select(RefreshToken)
+        .where(RefreshToken.token_hash == hash_refresh_token(request.refresh_token))
+        .with_for_update()
+    )
+    expires_at = stored_token.expires_at if stored_token else None
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if (
+        stored_token is None
+        or stored_token.revoked_at is not None
+        or expires_at is None
+        or expires_at <= now
+    ):
+        raise AuthProblem(
+            401,
+            "INVALID_REFRESH_TOKEN",
+            "Unauthorized",
+            "Refresh token is invalid or expired.",
+        )
+
+    user = await session.get(User, stored_token.user_id)
+    if user is None:
+        raise AuthProblem(
+            401,
+            "INVALID_REFRESH_TOKEN",
+            "Unauthorized",
+            "Refresh token is invalid or expired.",
+        )
+
+    stored_token.revoked_at = now
+    return await _issue_tokens(session, user)
+
+
+async def logout_user(
+    session: AsyncSession, user: User, request: RefreshTokenRequest
+) -> None:
+    stored_token = await session.scalar(
+        select(RefreshToken).where(
+            RefreshToken.token_hash == hash_refresh_token(request.refresh_token)
+        )
+    )
+    if (
+        stored_token is not None
+        and stored_token.user_id == user.id
+        and stored_token.revoked_at is None
+    ):
+        stored_token.revoked_at = datetime.now(UTC)
+        await session.commit()

@@ -72,6 +72,8 @@
     "servingsLabel": "Khẩu phần"
   },
   "auth": {
+    "signOut": "Đăng xuất",
+    "signedOut": "Đã đăng xuất.",
     "eyebrow": "Tài khoản căn bếp",
     "title": "Cùng vào bếp nhé.",
     "description": "Tạo tài khoản Tác giả hoặc đăng nhập bằng email và mật khẩu. Mật khẩu được mã hóa trước khi lưu.",

@@ -78,7 +78,7 @@
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 .loginShell { display: grid; grid-template-columns: 1.1fr .9fr; min-height: 100vh; background: white; color: #1d2939; }
-.loginBrand { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 100vh; padding: 45px; overflow: hidden; background: linear-gradient(0deg, #101828e8, #10182822), url('/images/vietnamese-table.png') center / cover; color: white; }
+.loginBrand { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 100vh; padding: 45px; overflow: hidden; background: linear-gradient(0deg, #101828e8, #10182822), url('/images/vietnamese-table.webp') center / cover; color: white; }
 .loginBrand .brand { color: white; }
 .loginBrand blockquote { position: relative; z-index: 1; max-width: 650px; margin: 0; font-family: var(--font-display); font-size: clamp(39px, 4.8vw, 74px); line-height: 1.03; }
 .loginCard { align-self: center; width: min(100% - 70px, 510px); margin: auto; padding: 30px 0; }

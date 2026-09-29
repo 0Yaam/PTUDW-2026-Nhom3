@@ -234,7 +234,7 @@ export default function ManageCategories() {
 
       <div className={styles.content}>
         <header className={styles.topbar}>
-          <button className={styles.mobileBrand} type="button" aria-label={t("categories")}>✳</button>
+          <span className={styles.mobileBrand} aria-hidden="true">✳</span>
           <span>{t("breadcrumb")}</span>
           <div className={styles.activeModule}><i aria-hidden="true" />{t("activeModule")}</div>
           <LocaleSwitcher compact />

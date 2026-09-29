@@ -85,8 +85,10 @@
     "working": "Working...",
     "registered": "Account created and signed in.",
     "signedIn": "Signed in.",
+    "signedOut": "Signed out.",
     "welcome": "{message} Welcome, {name} ({roles}).",
     "createRecipe": "Create a new recipe",
+    "signOut": "Sign out",
     "requestFailed": "Request failed. Please try again.",
     "apiUnavailable": "Cannot reach the API. Check that the backend is running."
   },

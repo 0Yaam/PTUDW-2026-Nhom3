@@ -70,6 +70,12 @@ class LoginRequest(BaseModel):
         return value
 
 
+class RefreshTokenRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    refresh_token: str = Field(alias="refreshToken", min_length=1, max_length=512)
+
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
