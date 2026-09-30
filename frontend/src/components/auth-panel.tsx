@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
-import { saveAuthSession } from "@/lib/auth-session";
+import { clearAuthSession, loadAuthSession, saveAuthSession } from "@/lib/auth-session";
 
 type Mode = "register" | "login";
 
@@ -14,6 +14,7 @@ type AuthUser = {
 
 type AuthResponse = {
   accessToken: string;
+  refreshToken: string;
   expiresAt: string;
   user: AuthUser;
 };
@@ -71,6 +72,28 @@ export function AuthPanel() {
     } catch {
       setMessage(t("apiUnavailable"));
     } finally {
+      setPending(false);
+    }
+  }
+
+  async function signOut() {
+    const session = loadAuthSession();
+    setPending(true);
+    try {
+      if (session) {
+        await fetch(`${apiUrl}/api/v1/auth/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify({ refreshToken: session.refreshToken }),
+        });
+      }
+    } finally {
+      clearAuthSession();
+      setUser(null);
+      setMessage(t("signedOut"));
       setPending(false);
     }
   }
@@ -145,7 +168,7 @@ export function AuthPanel() {
         <p className={user ? "auth-message success" : "auth-message"} aria-live="polite">
           {user ? t("welcome", { message, name: user.fullName, roles: user.roles.join(", ") }) : message}
         </p>
-        {user && <Link className="primary-action" href="/recipes/new">{t("createRecipe")}</Link>}
+        {user && <div className="hero-actions"><Link className="primary-action" href="/recipes/new">{t("createRecipe")}</Link><button className="primary-action" type="button" onClick={signOut} disabled={pending}>{t("signOut")}</button></div>}
       </div>
     </section>
   );

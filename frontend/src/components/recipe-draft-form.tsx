@@ -13,7 +13,7 @@ import {
 import {
   AUTH_SESSION_CHANGED,
   clearAuthSession,
-  loadAuthSession,
+  loadActiveAuthSession,
   type AuthSession,
 } from "@/lib/auth-session";
 import styles from "./recipe-draft-form.module.css";
@@ -66,7 +66,7 @@ export function RecipeDraftForm() {
   const totalTime = Math.max(0, Number(prepTime) || 0) + Math.max(0, Number(cookTime) || 0);
 
   useEffect(() => {
-    const updateSession = () => setSession(loadAuthSession());
+    const updateSession = () => void loadActiveAuthSession().then(setSession);
     updateSession();
     window.addEventListener(AUTH_SESSION_CHANGED, updateSession);
     return () => window.removeEventListener(AUTH_SESSION_CHANGED, updateSession);
@@ -220,26 +220,26 @@ export function RecipeDraftForm() {
             <form className={styles.form} onSubmit={submit} noValidate>
               <section className={styles.section}>
                 <div className={styles.sectionHeading}><span>01</span><div><h2>{t("basicTitle")}</h2><p>{t("basicDescription")}</p></div></div>
-                <label>{t("recipeTitle")} <b>*</b><input name="title" value={title} onChange={(event) => setTitle(event.target.value)} minLength={5} maxLength={200} aria-invalid={Boolean(fieldErrors.title)} /></label>
-                {fieldErrors.title && <p className={styles.fieldError}>{fieldErrors.title}</p>}
-                <label>{t("recipeDescription")} <b>*</b><textarea name="description" rows={4} maxLength={2000} aria-invalid={Boolean(fieldErrors.description)} /></label>
-                {fieldErrors.description && <p className={styles.fieldError}>{fieldErrors.description}</p>}
+                <label>{t("recipeTitle")} <b>*</b><input name="title" value={title} onChange={(event) => setTitle(event.target.value)} minLength={5} maxLength={200} aria-invalid={Boolean(fieldErrors.title)} aria-describedby={fieldErrors.title ? "title-error" : undefined} /></label>
+                {fieldErrors.title && <p id="title-error" className={styles.fieldError}>{fieldErrors.title}</p>}
+                <label>{t("recipeDescription")} <b>*</b><textarea name="description" rows={4} maxLength={2000} aria-invalid={Boolean(fieldErrors.description)} aria-describedby={fieldErrors.description ? "description-error" : undefined} /></label>
+                {fieldErrors.description && <p id="description-error" className={styles.fieldError}>{fieldErrors.description}</p>}
                 <label>{t("category")} <b>*</b>
-                  <select name="categoryId" value={categoryId} onChange={(event) => setCategoryId(event.target.value)} disabled={categoriesLoading || categoriesError} aria-invalid={Boolean(fieldErrors.categoryId)}>
+                  <select name="categoryId" value={categoryId} onChange={(event) => setCategoryId(event.target.value)} disabled={categoriesLoading || categoriesError} aria-invalid={Boolean(fieldErrors.categoryId)} aria-describedby={fieldErrors.categoryId ? "category-error" : undefined}>
                     <option value="">{categoriesLoading ? t("categoriesLoading") : categoriesError ? t("categoriesUnavailable") : t("categoryPlaceholder")}</option>
                     {categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}
                   </select>
                 </label>
-                {fieldErrors.categoryId && <p className={styles.fieldError}>{fieldErrors.categoryId}</p>}
+                {fieldErrors.categoryId && <p id="category-error" className={styles.fieldError}>{fieldErrors.categoryId}</p>}
                 {!categoriesLoading && !categoriesError && categories.length === 0 && <p className={styles.notice}>{t("noCategories")}</p>}
               </section>
 
               <section className={styles.section}>
                 <div className={styles.sectionHeading}><span>02</span><div><h2>{t("timingTitle")}</h2><p>{t("timingDescription")}</p></div></div>
                 <div className={styles.numberGrid}>
-                  <label>{t("prepTime")} <b>*</b><span className={styles.unitInput}><input name="prepTimeMinutes" type="number" min="1" value={prepTime} onChange={(event) => setPrepTime(event.target.value)} aria-invalid={Boolean(fieldErrors.prepTimeMinutes)} /><em>{t("minutes")}</em></span>{fieldErrors.prepTimeMinutes && <small>{fieldErrors.prepTimeMinutes}</small>}</label>
-                  <label>{t("cookTime")} <b>*</b><span className={styles.unitInput}><input name="cookTimeMinutes" type="number" min="0" value={cookTime} onChange={(event) => setCookTime(event.target.value)} aria-invalid={Boolean(fieldErrors.cookTimeMinutes)} /><em>{t("minutes")}</em></span>{fieldErrors.cookTimeMinutes && <small>{fieldErrors.cookTimeMinutes}</small>}</label>
-                  <label>{t("servings")} <b>*</b><span className={styles.unitInput}><input name="servings" type="number" min="1" value={servings} onChange={(event) => setServings(event.target.value)} aria-invalid={Boolean(fieldErrors.servings)} /><em>{t("people")}</em></span>{fieldErrors.servings && <small>{fieldErrors.servings}</small>}</label>
+                  <label>{t("prepTime")} <b>*</b><span className={styles.unitInput}><input name="prepTimeMinutes" type="number" min="1" value={prepTime} onChange={(event) => setPrepTime(event.target.value)} aria-invalid={Boolean(fieldErrors.prepTimeMinutes)} aria-describedby={fieldErrors.prepTimeMinutes ? "prep-time-error" : undefined} /><em>{t("minutes")}</em></span>{fieldErrors.prepTimeMinutes && <small id="prep-time-error">{fieldErrors.prepTimeMinutes}</small>}</label>
+                  <label>{t("cookTime")} <b>*</b><span className={styles.unitInput}><input name="cookTimeMinutes" type="number" min="0" value={cookTime} onChange={(event) => setCookTime(event.target.value)} aria-invalid={Boolean(fieldErrors.cookTimeMinutes)} aria-describedby={fieldErrors.cookTimeMinutes ? "cook-time-error" : undefined} /><em>{t("minutes")}</em></span>{fieldErrors.cookTimeMinutes && <small id="cook-time-error">{fieldErrors.cookTimeMinutes}</small>}</label>
+                  <label>{t("servings")} <b>*</b><span className={styles.unitInput}><input name="servings" type="number" min="1" value={servings} onChange={(event) => setServings(event.target.value)} aria-invalid={Boolean(fieldErrors.servings)} aria-describedby={fieldErrors.servings ? "servings-error" : undefined} /><em>{t("people")}</em></span>{fieldErrors.servings && <small id="servings-error">{fieldErrors.servings}</small>}</label>
                 </div>
                 <fieldset className={styles.difficulty}>
                   <legend>{t("difficulty")} <b>*</b></legend>
@@ -257,7 +257,7 @@ export function RecipeDraftForm() {
                 <button className={styles.nutritionToggle} type="button" aria-expanded={nutritionOpen} onClick={() => setNutritionOpen((open) => !open)}>
                   <span><b>04</b><span><strong>{t("nutritionTitle")}</strong><small>{t("nutritionDescription")}</small></span></span><span aria-hidden="true">{nutritionOpen ? "−" : "+"}</span>
                 </button>
-                {nutritionOpen && <div className={styles.nutritionGrid}>{nutritionFields.map((field) => <label key={field}>{t(field)}<span className={styles.unitInput}><input name={field} type="number" min="0" step="0.01" aria-invalid={Boolean(fieldErrors[`nutrition.${field}`])} /><em>{field === "calories" ? "kcal" : field === "sodium" ? "mg" : "g"}</em></span>{fieldErrors[`nutrition.${field}`] && <small>{fieldErrors[`nutrition.${field}`]}</small>}</label>)}</div>}
+                {nutritionOpen && <div className={styles.nutritionGrid}>{nutritionFields.map((field) => <label key={field}>{t(field)}<span className={styles.unitInput}><input name={field} type="number" min="0" step="0.01" aria-invalid={Boolean(fieldErrors[`nutrition.${field}`])} aria-describedby={fieldErrors[`nutrition.${field}`] ? `nutrition-${field}-error` : undefined} /><em>{field === "calories" ? "kcal" : field === "sodium" ? "mg" : "g"}</em></span>{fieldErrors[`nutrition.${field}`] && <small id={`nutrition-${field}-error`}>{fieldErrors[`nutrition.${field}`]}</small>}</label>)}</div>}
               </section>
             </form>
 

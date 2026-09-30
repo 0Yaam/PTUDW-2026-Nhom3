@@ -8,6 +8,22 @@ EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 USER_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_]+$")
 
 
+def clean_full_name(value: str) -> str:
+    """Shared by registration and profile updates so one rule governs both."""
+    value = value.strip()
+    if not value:
+        raise ValueError("Full name is required")
+    return value
+
+
+def clean_user_name(value: str) -> str:
+    """Shared by registration and profile updates so one rule governs both."""
+    value = value.strip()
+    if not USER_NAME_PATTERN.fullmatch(value):
+        raise ValueError("User name may contain only letters, numbers, and underscores")
+    return value
+
+
 class RegisterRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -19,10 +35,7 @@ class RegisterRequest(BaseModel):
     @field_validator("full_name")
     @classmethod
     def validate_full_name(cls, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError("Full name is required")
-        return value
+        return clean_full_name(value)
 
     @field_validator("email")
     @classmethod
@@ -35,10 +48,7 @@ class RegisterRequest(BaseModel):
     @field_validator("user_name")
     @classmethod
     def validate_user_name(cls, value: str) -> str:
-        value = value.strip()
-        if not USER_NAME_PATTERN.fullmatch(value):
-            raise ValueError("User name may contain only letters, numbers, and underscores")
-        return value
+        return clean_user_name(value)
 
     @field_validator("password")
     @classmethod
@@ -67,6 +77,47 @@ class LoginRequest(BaseModel):
         value = value.strip().lower()
         if not EMAIL_PATTERN.fullmatch(value):
             raise ValueError("Enter a valid email address")
+        return value
+
+
+class RefreshTokenRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    refresh_token: str = Field(alias="refreshToken", min_length=1, max_length=512)
+
+
+class ProfileUpdateRequest(BaseModel):
+    """Full replacement of the editable profile fields (FR-AUTH-007).
+
+    Email stays out: it is the login identifier, so changing it needs a
+    re-verification flow that belongs with the OAuth work in Cycle 4.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    full_name: str = Field(alias="fullName", min_length=1, max_length=150)
+    user_name: str = Field(alias="userName", min_length=3, max_length=50)
+    avatar_url: str | None = Field(alias="avatarUrl", default=None, max_length=500)
+
+    @field_validator("full_name")
+    @classmethod
+    def validate_full_name(cls, value: str) -> str:
+        return clean_full_name(value)
+
+    @field_validator("user_name")
+    @classmethod
+    def validate_user_name(cls, value: str) -> str:
+        return clean_user_name(value)
+
+    @field_validator("avatar_url")
+    @classmethod
+    def validate_avatar_url(cls, value: str | None) -> str | None:
+        # An empty box in the form means "no avatar", not an empty URL.
+        value = (value or "").strip()
+        if not value:
+            return None
+        if not value.startswith(("http://", "https://")):
+            raise ValueError("Avatar URL must start with http:// or https://")
         return value
 
 

@@ -6,12 +6,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .model import RefreshToken, User
 from .problem import AuthProblem
-from .schemas import AuthResponse, LoginRequest, RegisterRequest, UserRead
+from .schemas import (
+    AuthResponse,
+    LoginRequest,
+    ProfileUpdateRequest,
+    RefreshTokenRequest,
+    RegisterRequest,
+    UserRead,
+)
 from .security import (
     DUMMY_PASSWORD_HASH,
     create_access_token,
     create_refresh_token,
     hash_password,
+    hash_refresh_token,
     verify_password,
 )
 
@@ -20,7 +28,8 @@ LOCKOUT_ATTEMPTS = 5
 LOCKOUT_DURATION = timedelta(minutes=15)
 
 
-def _user_read(user: User) -> UserRead:
+def user_profile(user: User) -> UserRead:
+    """The only shape an account is exposed in: no password hash, no lockout state."""
     return UserRead.model_validate(
         {
             "id": user.id,
@@ -46,7 +55,7 @@ async def _issue_tokens(session: AsyncSession, user: User) -> AuthResponse:
         access_token=access_token,
         refresh_token=refresh_token,
         expires_at=expires_at,
-        user=_user_read(user),
+        user=user_profile(user),
     )
 
 
@@ -119,3 +128,88 @@ async def login_user(session: AsyncSession, request: LoginRequest) -> AuthRespon
     user.access_failed_count = 0
     user.lockout_until = None
     return await _issue_tokens(session, user)
+
+
+async def refresh_tokens(
+    session: AsyncSession, request: RefreshTokenRequest
+) -> AuthResponse:
+    now = datetime.now(UTC)
+    stored_token = await session.scalar(
+        select(RefreshToken)
+        .where(RefreshToken.token_hash == hash_refresh_token(request.refresh_token))
+        .with_for_update()
+    )
+    expires_at = stored_token.expires_at if stored_token else None
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if (
+        stored_token is None
+        or stored_token.revoked_at is not None
+        or expires_at is None
+        or expires_at <= now
+    ):
+        raise AuthProblem(
+            401,
+            "INVALID_REFRESH_TOKEN",
+            "Unauthorized",
+            "Refresh token is invalid or expired.",
+        )
+
+    user = await session.get(User, stored_token.user_id)
+    if user is None:
+        raise AuthProblem(
+            401,
+            "INVALID_REFRESH_TOKEN",
+            "Unauthorized",
+            "Refresh token is invalid or expired.",
+        )
+
+    stored_token.revoked_at = now
+    return await _issue_tokens(session, user)
+
+
+async def logout_user(
+    session: AsyncSession, user: User, request: RefreshTokenRequest
+) -> None:
+    stored_token = await session.scalar(
+        select(RefreshToken).where(
+            RefreshToken.token_hash == hash_refresh_token(request.refresh_token)
+        )
+    )
+    if (
+        stored_token is not None
+        and stored_token.user_id == user.id
+        and stored_token.revoked_at is None
+    ):
+        stored_token.revoked_at = datetime.now(UTC)
+        await session.commit()
+
+
+async def update_profile(
+    session: AsyncSession, user: User, request: ProfileUpdateRequest
+) -> UserRead:
+    """Replace the editable fields on the signed-in account (FR-AUTH-007)."""
+    if request.user_name != user.user_name:
+        taken = await session.scalar(
+            select(User).where(
+                User.user_name == request.user_name, User.id != user.id
+            )
+        )
+        if taken is not None:
+            raise AuthProblem(
+                409, "USER_NAME_TAKEN", "Conflict", "User name is already taken."
+            )
+
+    user.full_name = request.full_name
+    user.user_name = request.user_name
+    user.avatar_url = request.avatar_url
+    try:
+        await session.commit()
+    except IntegrityError as error:
+        # Another request may have claimed the same user name between the check
+        # and the commit; the unique index is what actually decides.
+        await session.rollback()
+        raise AuthProblem(
+            409, "USER_NAME_TAKEN", "Conflict", "User name is already taken."
+        ) from error
+    return user_profile(user)

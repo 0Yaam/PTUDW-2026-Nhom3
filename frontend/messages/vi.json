@@ -13,7 +13,8 @@
     "home": "Trang chủ",
     "admin": "Quản trị",
     "main": "Điều hướng chính",
-    "mobile": "Điều hướng di động"
+    "mobile": "Điều hướng di động",
+    "profile": "Trang cá nhân"
   },
   "site": {
     "tagline": "Câu chuyện và công thức",
@@ -72,6 +73,8 @@
     "servingsLabel": "Khẩu phần"
   },
   "auth": {
+    "signOut": "Đăng xuất",
+    "signedOut": "Đã đăng xuất.",
     "eyebrow": "Tài khoản căn bếp",
     "title": "Cùng vào bếp nhé.",
     "description": "Tạo tài khoản Tác giả hoặc đăng nhập bằng email và mật khẩu. Mật khẩu được mã hóa trước khi lưu.",
@@ -89,6 +92,41 @@
     "createRecipe": "Tạo công thức mới",
     "requestFailed": "Yêu cầu không thành công. Vui lòng thử lại.",
     "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend."
+  },
+  "profile": {
+    "eyebrow": "Tài khoản của bạn",
+    "title": "Trang cá nhân",
+    "description": "Cập nhật tên, tên người dùng và ảnh mà người khác thấy bên cạnh công thức của bạn.",
+    "back": "Về trang chủ",
+    "checkingSession": "Đang kiểm tra phiên đăng nhập…",
+    "loading": "Đang tải trang cá nhân…",
+    "signInTitle": "Đăng nhập để xem trang cá nhân",
+    "signInDescription": "Trang cá nhân là riêng tư, chỉ mở cho tài khoản đang đăng nhập.",
+    "signIn": "Đến trang đăng nhập",
+    "loadErrorTitle": "Không tải được trang cá nhân",
+    "loadErrorDescription": "API không phản hồi. Tài khoản của bạn không bị thay đổi gì.",
+    "retry": "Thử lại",
+    "fullName": "Họ và tên",
+    "userName": "Tên người dùng",
+    "userNameHint": "Chỉ chữ, số và dấu gạch dưới, từ 3 đến 50 ký tự.",
+    "avatarUrl": "Đường dẫn ảnh đại diện",
+    "avatarUrlHint": "Liên kết tới một ảnh. Để trống thì dùng chữ cái đầu của tên.",
+    "email": "Email",
+    "emailHint": "Email là thứ bạn dùng để đăng nhập nên không sửa được ở đây.",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu…",
+    "discard": "Bỏ thay đổi",
+    "savedTitle": "Đã lưu trang cá nhân",
+    "savedDescription": "Thông tin mới của bạn đã được áp dụng.",
+    "validationSummary": "Một vài ô cần sửa lại trước khi lưu.",
+    "requestFailed": "Không lưu được trang cá nhân.",
+    "sessionExpired": "Phiên đăng nhập đã hết. Hãy đăng nhập lại để lưu.",
+    "apiUnavailable": "Không kết nối được API. Thử lại sau một chút.",
+    "validation": {
+      "fullName": "Nhập họ tên từ 1 đến 150 ký tự.",
+      "userName": "Dùng 3 đến 50 chữ, số hoặc gạch dưới, không có dấu cách.",
+      "avatarUrl": "Nhập liên kết bắt đầu bằng http:// hoặc https://, tối đa 500 ký tự."
+    }
   },
   "recipeForm": {
     "back": "Quay lại trang chủ",
@@ -246,7 +284,8 @@
     "AUTH_TOKEN_EXPIRED": "Phiên đăng nhập đã hết hạn.",
     "RECIPE_FORBIDDEN": "Tài khoản cần quyền Author hoặc Admin.",
     "RECIPE_SLUG_EXISTS": "Tiêu đề này đã được sử dụng. Hãy chọn tiêu đề khác.",
-    "fallback": "Không thể hoàn thành yêu cầu."
+    "fallback": "Không thể hoàn thành yêu cầu.",
+    "USER_NAME_TAKEN": "Tên người dùng đó đã có người dùng."
   },
   "status": {
     "connection": "Lỗi kết nối",
