@@ -13,7 +13,8 @@
     "home": "Home",
     "admin": "Admin",
     "main": "Main navigation",
-    "mobile": "Mobile navigation"
+    "mobile": "Mobile navigation",
+    "profile": "Profile"
   },
   "site": {
     "tagline": "Food stories & recipes",
@@ -91,6 +92,41 @@
     "signOut": "Sign out",
     "requestFailed": "Request failed. Please try again.",
     "apiUnavailable": "Cannot reach the API. Check that the backend is running."
+  },
+  "profile": {
+    "eyebrow": "Your account",
+    "title": "Profile",
+    "description": "Update the name, handle and picture other cooks see next to your recipes.",
+    "back": "Back to home",
+    "checkingSession": "Checking your session…",
+    "loading": "Loading your profile…",
+    "signInTitle": "Sign in to see your profile",
+    "signInDescription": "Your profile is private, so it opens only for the signed-in account.",
+    "signIn": "Go to sign in",
+    "loadErrorTitle": "Your profile could not be loaded",
+    "loadErrorDescription": "The API did not answer. Nothing was changed on your account.",
+    "retry": "Try again",
+    "fullName": "Full name",
+    "userName": "User name",
+    "userNameHint": "Letters, numbers and underscores only, 3 to 50 characters.",
+    "avatarUrl": "Avatar URL",
+    "avatarUrlHint": "A link to a picture. Leave it empty to use your initial instead.",
+    "email": "Email",
+    "emailHint": "Email is how you sign in, so it cannot be changed here.",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "discard": "Discard changes",
+    "savedTitle": "Profile saved",
+    "savedDescription": "Your new details are live.",
+    "validationSummary": "Some fields need a change before this can be saved.",
+    "requestFailed": "The profile could not be saved.",
+    "sessionExpired": "Your session expired. Sign in again to save.",
+    "apiUnavailable": "The API is unreachable. Try again in a moment.",
+    "validation": {
+      "fullName": "Enter a full name of 1 to 150 characters.",
+      "userName": "Use 3 to 50 letters, numbers or underscores, with no spaces.",
+      "avatarUrl": "Enter a link starting with http:// or https://, up to 500 characters."
+    }
   },
   "recipeForm": {
     "back": "Back to home",
@@ -248,7 +284,8 @@
     "AUTH_TOKEN_EXPIRED": "Your sign-in session has expired.",
     "RECIPE_FORBIDDEN": "An Author or Admin account is required.",
     "RECIPE_SLUG_EXISTS": "That title is already in use. Choose a different title.",
-    "fallback": "The request could not be completed."
+    "fallback": "The request could not be completed.",
+    "USER_NAME_TAKEN": "That user name is already taken."
   },
   "status": {
     "connection": "Connection problem",

@@ -5,7 +5,7 @@
 | FR-AUTH-001 to FR-AUTH-002 | Local registration and login | Dan | Cycle 1 |
 | FR-AUTH-003 | Google OAuth | Dan | Cycle 4 |
 | FR-AUTH-004 to FR-AUTH-005 | Refresh token and sign out | Dan | Cycle 2 |
-| FR-AUTH-006 to FR-AUTH-007 | View and update profiles | Minh Anh | Cycle 2 |
+| FR-AUTH-006 to FR-AUTH-007 | View and update profiles | Minh Anh | Ready |
 | FR-CAT-001 | Category list | Agent Bootstrap | Ready |
 | FR-CAT-002 | Category detail and simple recipe cards | Minh Anh | Ready |
 | FR-CAT-003 to FR-CAT-004 | Create and update categories | Han | Cycle 1 |

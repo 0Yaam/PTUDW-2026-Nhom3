@@ -10,6 +10,7 @@ export function SiteHeader() {
     { href: "/#categories", label: t("categories") },
     { href: "/recipes/new", label: t("createRecipe") },
     { href: "/#about", label: t("story") },
+    { href: "/profile", label: t("profile") },
     { href: "/#auth", label: t("account") },
   ];
   return (
