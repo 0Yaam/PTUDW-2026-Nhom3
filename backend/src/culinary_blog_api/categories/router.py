@@ -10,6 +10,7 @@ from ..db import get_session
 from .schemas import CategoryCreate, CategoryDetail, CategoryRead, CategoryUpdate
 from .service import (
     create_category,
+    delete_category,
     get_category_by_slug,
     list_categories,
     update_category,
@@ -48,6 +49,17 @@ async def put_category(
 ) -> CategoryRead:
     """Edit category content; an omitted slug preserves the public URL."""
     return await update_category(session, category_id, data)
+
+
+@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_category(
+    category_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    _admin: Annotated[User, Depends(require_admin)],
+) -> Response:
+    """Delete an empty category; recipes must be reassigned first."""
+    await delete_category(session, category_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{slug}", response_model=CategoryDetail)

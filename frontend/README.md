@@ -25,13 +25,16 @@ supports English/Vietnamese UI text through `next-intl`. See
 [the Admin and i18n notes](../docs/ADMIN-DASHBOARD-I18N.md) for the license,
 authorization boundary, teammate integration rules, and FR-CAT trace.
 
-Issue #2 adds `/admin/categories`. Sign in with an existing Admin account,
-then create categories or select one to edit its name and description. The page
-shows validation, permission, network, loading, empty, and save states. Its
+Issues #2 and #33 add `/admin/categories`. Sign in with an existing Admin account,
+then create categories or select one to edit its name and description. An empty
+category can be deleted after a second confirmation. A category with recipes
+shows its recipe count and cannot be deleted; the API also rejects deletion if
+recipes were added after the page loaded. The page shows validation, permission,
+network, loading, empty, save, deletion, and error states. Its
 access token stays in page memory and is cleared on sign-out or an unauthorized
 save; a reload requires sign-in again. The API checks Admin permission for every
 write. Category reads use `cache: "no-store"` so an Admin
-edit appears on the next public request.
+edit or deletion appears on the next public request.
 
 To test locally with the default Compose database, register on the homepage
 first. Registration creates an Author. For **local development only**, a team

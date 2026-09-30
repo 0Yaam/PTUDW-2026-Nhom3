@@ -38,6 +38,7 @@ export default function ManageCategories() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const recipeTotal = useMemo(
     () => categories.reduce((sum, category) => sum + category.recipe_count, 0),
@@ -121,6 +122,7 @@ export default function ManageCategories() {
     setDescription(category?.description ?? "");
     setSlug(category?.slug ?? "");
     setEditSlug(false);
+    setConfirmDelete(false);
     setError("");
     setMessage("");
   }
@@ -153,7 +155,7 @@ export default function ManageCategories() {
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           signOut();
-          setError(t("sessionExpired"));
+          setError(t(response.status === 403 ? "notAdmin" : "sessionExpired"));
         } else {
           setError(problemText((await response.json()) as Problem));
         }
@@ -167,6 +169,42 @@ export default function ManageCategories() {
       setDescription(saved.description ?? "");
       setSlug(saved.slug);
       setEditSlug(false);
+      setConfirmDelete(false);
+      await loadCategories();
+    } catch {
+      setError(t("apiUnavailable"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeSelected() {
+    if (!selected) return;
+    const deletedName = selected.name;
+    setError("");
+    setMessage("");
+    setBusy(true);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/categories/${selected.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          signOut();
+          setError(t(response.status === 403 ? "notAdmin" : "sessionExpired"));
+        } else {
+          setError(problemText((await response.json()) as Problem));
+        }
+        return;
+      }
+      setSelected(null);
+      setName("");
+      setDescription("");
+      setSlug("");
+      setEditSlug(false);
+      setConfirmDelete(false);
+      setMessage(t("deleted", { name: deletedName }));
       await loadCategories();
     } catch {
       setError(t("apiUnavailable"));
@@ -285,6 +323,23 @@ export default function ManageCategories() {
                 </div>}
                 <div className={styles.formActions}><button type="submit" disabled={busy}>{busy ? t("saving") : selected ? t("save") : t("create")}</button>{selected && <button type="button" className={styles.secondaryButton} onClick={() => choose(null)}>{t("cancel")}</button>}</div>
               </form>
+              {selected && <section className={styles.dangerZone} aria-labelledby="delete-category-title">
+                <h3 id="delete-category-title">{t("deleteTitle")}</h3>
+                <p>{t("deleteDescription")}</p>
+                {selected.recipe_count > 0 ? (
+                  <p className={styles.deleteBlocked} role="status">{t("deleteBlocked", { count: selected.recipe_count })}</p>
+                ) : confirmDelete ? (
+                  <div className={styles.deleteConfirmation}>
+                    <strong>{t("deleteConfirm", { name: selected.name })}</strong>
+                    <div className={styles.dangerActions}>
+                      <button type="button" className={styles.dangerButton} onClick={removeSelected} disabled={busy}>{busy ? t("deleting") : t("deleteConfirmAction")}</button>
+                      <button type="button" className={styles.dangerCancel} onClick={() => setConfirmDelete(false)} disabled={busy}>{t("keep")}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" className={styles.dangerOutline} onClick={() => setConfirmDelete(true)}>{t("delete")}</button>
+                )}
+              </section>}
               {error && <p role="alert" className={styles.error}>{error}</p>}
               {message && <p role="status" className={styles.success}>{message}</p>}
             </section>

@@ -7,6 +7,7 @@ from culinary_blog_api.auth.security import create_access_token, hash_password
 from culinary_blog_api.categories import Category
 from culinary_blog_api.config import Settings
 from culinary_blog_api.db import SessionFactory
+from culinary_blog_api.recipes import Recipe, RecipeStatus
 from culinary_blog_api.seed import seed
 
 
@@ -29,6 +30,42 @@ async def auth_headers(role: str) -> dict[str, str]:
     token, _ = create_access_token(user_id, email, role)
     return {"Authorization": f"Bearer {token}"}
 
+
+async def add_referenced_recipes(category_id: uuid.UUID) -> None:
+    """Create draft and published recipes to prove every status blocks deletion."""
+    author_id = uuid.uuid4()
+    async with SessionFactory() as session:
+        session.add(
+            User(
+                id=author_id,
+                full_name="Recipe owner",
+                email=f"{author_id}@example.com",
+                user_name=f"author{author_id.hex[:10]}",
+                password_hash=hash_password("StrongPass1!"),
+                role="Author",
+            )
+        )
+        for title, status in (
+            ("Private draft", RecipeStatus.DRAFT),
+            ("Public recipe", RecipeStatus.PUBLISHED),
+        ):
+            session.add(
+                Recipe(
+                    title=title,
+                    slug=f"{title.lower().replace(' ', '-')}-{uuid.uuid4().hex[:6]}",
+                    description="Category deletion guard",
+                    prep_time_minutes=10,
+                    cook_time_minutes=5,
+                    servings=2,
+                    difficulty=1,
+                    status=status,
+                    category_id=category_id,
+                    author_id=author_id,
+                )
+            )
+        await session.commit()
+
+
 async def test_create_category_requires_login(client) -> None:
     response = await client.post(
         "/api/v1/categories",
@@ -38,8 +75,12 @@ async def test_create_category_requires_login(client) -> None:
     assert response.json()["status"] == 401
     assert response.headers["content-type"].startswith("application/problem+json")
 
+    delete = await client.delete(f"/api/v1/categories/{uuid.uuid4()}")
+    assert delete.status_code == 401
+    assert delete.headers["content-type"].startswith("application/problem+json")
 
-async def test_create_and_update_reject_non_admin(client) -> None:
+
+async def test_category_writes_reject_non_admin(client) -> None:
     headers = await auth_headers("Author")
     category_id = uuid.uuid4()
     create = await client.post(
@@ -50,8 +91,11 @@ async def test_create_and_update_reject_non_admin(client) -> None:
         json={"name": "Món Việt"},
         headers=headers,
     )
-    assert create.status_code == update.status_code == 403
+    delete = await client.delete(f"/api/v1/categories/{category_id}", headers=headers)
+    assert create.status_code == update.status_code == delete.status_code == 403
     assert create.json()["type"] == "FORBIDDEN"
+    assert delete.headers["content-type"].startswith("application/problem+json")
+    assert delete.json()["type"] == "FORBIDDEN"
 
 
 async def test_admin_creates_vietnamese_category_and_slug_collision(client) -> None:
@@ -147,6 +191,56 @@ async def test_admin_can_explicitly_change_slug(client) -> None:
     assert duplicate.json()["type"] == "CATEGORY_SLUG_EXISTS"
     assert invalid.status_code == 422
     assert "slug" in invalid.json()["errors"]
+
+
+async def test_admin_deletes_empty_category(client) -> None:
+    headers = await auth_headers("Admin")
+    created = await client.post(
+        "/api/v1/categories", json={"name": "Temporary category"}, headers=headers
+    )
+    category_id = uuid.UUID(created.json()["id"])
+
+    deleted = await client.delete(f"/api/v1/categories/{category_id}", headers=headers)
+
+    assert deleted.status_code == 204
+    assert deleted.content == b""
+    async with SessionFactory() as session:
+        assert await session.get(Category, category_id) is None
+
+    missing = await client.delete(f"/api/v1/categories/{category_id}", headers=headers)
+    assert missing.status_code == 404
+    assert missing.headers["content-type"].startswith("application/problem+json")
+    assert missing.json()["type"] == "CATEGORY_NOT_FOUND"
+
+
+async def test_admin_cannot_delete_category_with_any_recipes(client) -> None:
+    headers = await auth_headers("Admin")
+    created = await client.post(
+        "/api/v1/categories", json={"name": "Protected category"}, headers=headers
+    )
+    category_id = uuid.UUID(created.json()["id"])
+    await add_referenced_recipes(category_id)
+
+    updated = await client.put(
+        f"/api/v1/categories/{category_id}",
+        json={"name": "Protected category renamed"},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["recipe_count"] == 2
+
+    blocked = await client.delete(f"/api/v1/categories/{category_id}", headers=headers)
+
+    assert blocked.status_code == 409
+    assert blocked.headers["content-type"].startswith("application/problem+json")
+    assert blocked.json()["type"] == "CATEGORY_IN_USE"
+    assert "2 recipes" in blocked.json()["detail"]
+    async with SessionFactory() as session:
+        assert await session.get(Category, category_id) is not None
+
+    categories = await client.get("/api/v1/categories")
+    protected = next(item for item in categories.json() if item["id"] == str(category_id))
+    assert protected["recipe_count"] == 2
 
 
 async def test_seed_does_not_overwrite_admin_edit(client) -> None:
