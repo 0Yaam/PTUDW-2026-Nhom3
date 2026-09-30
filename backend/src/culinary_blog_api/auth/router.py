@@ -8,6 +8,7 @@ from .dependencies import get_current_user
 from .model import User
 from .schemas import (
     AuthResponse,
+    GoogleLoginRequest,
     LoginRequest,
     ProfileUpdateRequest,
     RefreshTokenRequest,
@@ -15,6 +16,7 @@ from .schemas import (
     UserRead,
 )
 from .service import (
+    google_login,
     login_user,
     logout_user,
     refresh_tokens,
@@ -42,6 +44,14 @@ async def login(
     return await login_user(session, request)
 
 
+@router.post("/google", response_model=AuthResponse)
+async def login_with_google(
+    request: GoogleLoginRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> AuthResponse:
+    return await google_login(session, request)
+
+
 @router.post("/refresh", response_model=AuthResponse)
 async def refresh(
     request: RefreshTokenRequest,
@@ -60,7 +70,8 @@ async def logout(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/profile", response_model=UserRead)
+@router.get("/me", response_model=UserRead)
+@router.get("/profile", response_model=UserRead, include_in_schema=False)
 async def read_profile(
     user: Annotated[User, Depends(get_current_user)],
 ) -> UserRead:
@@ -68,7 +79,8 @@ async def read_profile(
     return user_profile(user)
 
 
-@router.put("/profile", response_model=UserRead)
+@router.patch("/me", response_model=UserRead)
+@router.put("/profile", response_model=UserRead, include_in_schema=False)
 async def replace_profile(
     request: ProfileUpdateRequest,
     session: Annotated[AsyncSession, Depends(get_session)],

@@ -35,6 +35,17 @@ async def test_signed_in_user_reads_own_profile(client) -> None:
     assert body["roles"] == ["Author"]
 
 
+async def test_srs_me_aliases_read_and_update_profile(client) -> None:
+    headers = await sign_in(client)
+
+    read = await client.get("/api/v1/auth/me", headers=headers)
+    updated = await client.patch("/api/v1/auth/me", json=VALID_UPDATE, headers=headers)
+
+    assert read.status_code == 200
+    assert updated.status_code == 200
+    assert updated.json()["userName"] == VALID_UPDATE["userName"]
+
+
 async def test_profile_never_returns_authentication_secrets(client) -> None:
     headers = await sign_in(client)
 

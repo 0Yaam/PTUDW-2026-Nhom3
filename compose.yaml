@@ -22,6 +22,8 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     command: >-
       sh -c "alembic upgrade head && seed &&
       uvicorn culinary_blog_api.main:app --host 0.0.0.0 --port 8000"

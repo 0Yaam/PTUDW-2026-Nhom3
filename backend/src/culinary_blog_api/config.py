@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://culinary:culinary@localhost:5432/culinary_blog"
     frontend_origin: str = "http://localhost:3000"
     jwt_secret: SecretStr = SecretStr("development-only-change-me")
+    google_client_id: str = ""
+    google_client_id: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore")
 

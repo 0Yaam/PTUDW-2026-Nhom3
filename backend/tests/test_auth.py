@@ -1,6 +1,7 @@
 from sqlalchemy import select
 
 from culinary_blog_api.auth import RefreshToken, User
+from culinary_blog_api.auth import service as auth_service
 from culinary_blog_api.db import SessionFactory
 
 REGISTER_PAYLOAD = {
@@ -9,6 +10,33 @@ REGISTER_PAYLOAD = {
     "userName": "truongdan",
     "password": "StrongPass1!",
 }
+
+
+async def test_google_login_creates_author_and_reuses_verified_email(
+    client, monkeypatch
+) -> None:
+    async def fake_profile(_id_token: str) -> dict[str, str]:
+        return {
+            "email": "google@example.com",
+            "name": "Google User",
+            "picture": "https://example.com/avatar.jpg",
+        }
+
+    monkeypatch.setattr(auth_service, "fetch_google_profile", fake_profile)
+
+    first = await client.post("/api/v1/auth/google", json={"idToken": "valid-token"})
+    second = await client.post("/api/v1/auth/google", json={"idToken": "valid-token"})
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["user"]["roles"] == ["Author"]
+    assert first.json()["user"]["id"] == second.json()["user"]["id"]
+
+    async with SessionFactory() as session:
+        users = (
+            await session.scalars(select(User).where(User.email == "google@example.com"))
+        ).all()
+        assert len(users) == 1
 
 
 async def test_register_creates_author_and_tokens(client) -> None:

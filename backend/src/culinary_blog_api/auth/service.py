@@ -1,13 +1,18 @@
+import re
+import secrets
 from datetime import UTC, datetime, timedelta
 
+import httpx
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..config import get_settings
 from ..unit_of_work import UnitOfWork
 from .model import RefreshToken, User
 from .problem import AuthProblem
 from .schemas import (
     AuthResponse,
+    GoogleLoginRequest,
     LoginRequest,
     ProfileUpdateRequest,
     RefreshTokenRequest,
@@ -26,6 +31,7 @@ from .security import (
 GENERIC_LOGIN_ERROR = "Email or password is incorrect."
 LOCKOUT_ATTEMPTS = 5
 LOCKOUT_DURATION = timedelta(minutes=15)
+GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 
 
 def user_profile(user: User) -> UserRead:
@@ -125,6 +131,65 @@ async def login_user(session: AsyncSession, request: LoginRequest) -> AuthRespon
 
     user.access_failed_count = 0
     user.lockout_until = None
+    return await _issue_tokens(unit_of_work, user)
+
+
+async def fetch_google_profile(id_token: str) -> dict[str, str]:
+    client_id = get_settings().google_client_id
+    if not client_id:
+        raise AuthProblem(
+            503,
+            "GOOGLE_AUTH_NOT_CONFIGURED",
+            "Service Unavailable",
+            "Google authentication is not configured.",
+        )
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(GOOGLE_TOKEN_INFO_URL, params={"id_token": id_token})
+    except httpx.HTTPError as error:
+        raise AuthProblem(
+            502,
+            "GOOGLE_AUTH_UNAVAILABLE",
+            "Bad Gateway",
+            "Google authentication is temporarily unavailable.",
+        ) from error
+    if response.status_code != 200:
+        raise AuthProblem(401, "INVALID_GOOGLE_TOKEN", "Unauthorized", "Invalid Google token.")
+    profile = response.json()
+    if profile.get("aud") != client_id or profile.get("email_verified") not in (True, "true"):
+        raise AuthProblem(401, "INVALID_GOOGLE_TOKEN", "Unauthorized", "Invalid Google token.")
+    email = str(profile.get("email", "")).strip().lower()
+    if not email:
+        raise AuthProblem(401, "INVALID_GOOGLE_TOKEN", "Unauthorized", "Invalid Google token.")
+    return {
+        "email": email,
+        "name": str(profile.get("name") or email.split("@", 1)[0]).strip(),
+        "picture": str(profile.get("picture") or "").strip(),
+    }
+
+
+async def google_login(session: AsyncSession, request: GoogleLoginRequest) -> AuthResponse:
+    profile = await fetch_google_profile(request.id_token)
+    unit_of_work = UnitOfWork(session)
+    user = await unit_of_work.users.get_by_email(profile["email"])
+    if user is None:
+        base_name = re.sub(r"[^A-Za-z0-9_]", "", profile["email"].split("@", 1)[0])[:44]
+        base_name = base_name if len(base_name) >= 3 else f"user{secrets.token_hex(3)}"
+        user_name = base_name
+        suffix = 1
+        while await unit_of_work.users.get_by_user_name(user_name) is not None:
+            suffix += 1
+            user_name = f"{base_name[:44]}_{suffix}"
+        user = User(
+            full_name=profile["name"][:150],
+            email=profile["email"],
+            user_name=user_name,
+            password_hash=hash_password(secrets.token_urlsafe(32)),
+            role="Author",
+            avatar_url=profile["picture"][:500] or None,
+        )
+        unit_of_work.users.add(user)
+        await unit_of_work.flush()
     return await _issue_tokens(unit_of_work, user)
 
 
