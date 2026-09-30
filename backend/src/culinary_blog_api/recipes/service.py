@@ -1,14 +1,16 @@
 import re
 import unicodedata
+import uuid
+from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.model import User
 from ..categories.model import Category
-from .model import Recipe, RecipeStatus
+from .model import Recipe, RecipeIngredient, RecipeStatus, RecipeStep
 from .problem import RecipeProblem
 from .schemas import NutritionResponse, RecipeCreateRequest, RecipeCreateResponse
 
@@ -48,7 +50,7 @@ def _to_response(recipe: Recipe) -> RecipeCreateResponse:
             "cook_time_minutes": recipe.cook_time_minutes,
             "servings": recipe.servings,
             "difficulty": recipe.difficulty,
-            "status": "Draft",
+            "status": RecipeStatus(recipe.status).name.title(),
             "nutrition": nutrition,
             "created_at": recipe.created_at,
         }
@@ -134,4 +136,61 @@ async def create_recipe(
         author_id=str(recipe.author_id),
         category_id=str(recipe.category_id),
     )
+    return _to_response(recipe)
+
+
+async def set_publication_status(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    current_user: User,
+    *,
+    publish: bool,
+) -> RecipeCreateResponse:
+    recipe = await session.get(Recipe, recipe_id)
+    if recipe is None or recipe.is_deleted:
+        raise RecipeProblem(
+            status=404,
+            error_code="RECIPE_NOT_FOUND",
+            title="Not Found",
+            detail="Recipe was not found.",
+        )
+    if current_user.role != "Admin" and recipe.author_id != current_user.id:
+        raise RecipeProblem(
+            status=403,
+            error_code="RECIPE_FORBIDDEN",
+            title="Forbidden",
+            detail="Only the recipe owner or an Admin can change publication status.",
+        )
+    if recipe.status == RecipeStatus.ARCHIVED:
+        raise RecipeProblem(
+            status=422,
+            error_code="RECIPE_ARCHIVED",
+            title="Validation Error",
+            detail="Archived recipes cannot be published or unpublished.",
+        )
+
+    if publish and recipe.status != RecipeStatus.PUBLISHED:
+        ingredient_count = await session.scalar(
+            select(func.count()).select_from(RecipeIngredient).where(
+                RecipeIngredient.recipe_id == recipe.id
+            )
+        )
+        step_count = await session.scalar(
+            select(func.count()).select_from(RecipeStep).where(RecipeStep.recipe_id == recipe.id)
+        )
+        if not ingredient_count or not step_count:
+            raise RecipeProblem(
+                status=422,
+                error_code="RECIPE_NOT_READY",
+                title="Validation Error",
+                detail="A recipe needs at least one ingredient and one step before publishing.",
+            )
+        recipe.status = RecipeStatus.PUBLISHED
+        recipe.published_at = datetime.now(UTC)
+    elif not publish and recipe.status == RecipeStatus.PUBLISHED:
+        recipe.status = RecipeStatus.DRAFT
+        recipe.published_at = None
+
+    await session.commit()
+    await session.refresh(recipe)
     return _to_response(recipe)
