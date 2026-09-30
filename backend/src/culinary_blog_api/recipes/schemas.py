@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -12,6 +12,41 @@ class RecipeDifficulty(IntEnum):
     MEDIUM = 2
     HARD = 3
     EXPERT = 4
+
+
+class RecipeDifficultyFilter(StrEnum):
+    """Query-string values documented by FR-RCP-001/FR-SRCH-002."""
+
+    EASY = "Easy"
+    MEDIUM = "Medium"
+    HARD = "Hard"
+    EXPERT = "Expert"
+
+    @property
+    def value_for_database(self) -> RecipeDifficulty:
+        return RecipeDifficulty[self.name]
+
+
+RecipeListSort = Literal[
+    "-createdAt",
+    "createdAt",
+    "title",
+    "-title",
+    "cookTime",
+    "-cookTime",
+]
+
+
+class RecipeListQuery(BaseModel):
+    """Validated query parameters for the public recipe collection."""
+
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=12, ge=1, le=50)
+    category_id: uuid.UUID | None = None
+    difficulty: RecipeDifficultyFilter | None = None
+    max_cook_time: int | None = Field(default=None, ge=0)
+    min_servings: int | None = Field(default=None, ge=1)
+    sort: RecipeListSort = "-createdAt"
 
 
 class NutritionInput(BaseModel):
@@ -72,3 +107,43 @@ class RecipeCreateResponse(BaseModel):
     status: Literal["Draft"]
     nutrition: NutritionResponse | None = None
     created_at: datetime = Field(alias="createdAt")
+
+
+class RecipeCategorySummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: uuid.UUID
+    name: str
+    slug: str
+
+
+class RecipeSummaryResponse(BaseModel):
+    """The list-card shape returned by ``GET /api/v1/recipes``."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: uuid.UUID
+    title: str
+    slug: str
+    description: str
+    category: RecipeCategorySummary
+    prep_time_minutes: int = Field(alias="prepTimeMinutes")
+    cook_time_minutes: int = Field(alias="cookTimeMinutes")
+    servings: int
+    difficulty: RecipeDifficulty
+    status: Literal["Draft", "Published", "Archived"]
+    created_at: datetime = Field(alias="createdAt")
+
+
+class PagedRecipeResponse(BaseModel):
+    """Offset-pagination metadata specified by FR-RCP-001."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    items: list[RecipeSummaryResponse]
+    total_count: int = Field(alias="totalCount")
+    page: int
+    page_size: int = Field(alias="pageSize")
+    total_pages: int = Field(alias="totalPages")
+    has_next_page: bool = Field(alias="hasNextPage")
+    has_previous_page: bool = Field(alias="hasPreviousPage")

@@ -2,17 +2,31 @@ import re
 import unicodedata
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from ..auth.model import User
 from ..categories.model import Category
 from .model import Recipe, RecipeStatus
 from .problem import RecipeProblem
-from .schemas import NutritionResponse, RecipeCreateRequest, RecipeCreateResponse
+from .schemas import (
+    NutritionResponse,
+    PagedRecipeResponse,
+    RecipeCreateRequest,
+    RecipeCreateResponse,
+    RecipeListQuery,
+    RecipeSummaryResponse,
+)
 
 logger = structlog.get_logger()
+
+_STATUS_LABELS = {
+    RecipeStatus.DRAFT: "Draft",
+    RecipeStatus.PUBLISHED: "Published",
+    RecipeStatus.ARCHIVED: "Archived",
+}
 
 
 def generate_slug(title: str) -> str:
@@ -135,3 +149,91 @@ async def create_recipe(
         category_id=str(recipe.category_id),
     )
     return _to_response(recipe)
+
+
+def _recipe_visibility_filter(current_user: User | None):
+    """Return the SRS visibility rule for the caller's role."""
+    if current_user is None or current_user.role not in {"Author", "Admin"}:
+        return Recipe.status == RecipeStatus.PUBLISHED
+    if current_user.role == "Admin":
+        return None
+    return or_(
+        Recipe.status == RecipeStatus.PUBLISHED,
+        (Recipe.author_id == current_user.id)
+        & Recipe.status.in_((RecipeStatus.DRAFT, RecipeStatus.ARCHIVED)),
+    )
+
+
+def _sort_columns(sort: str):
+    sort_map = {
+        "-createdAt": (Recipe.created_at.desc(), Recipe.id.desc()),
+        "createdAt": (Recipe.created_at.asc(), Recipe.id.asc()),
+        "title": (Recipe.title.asc(), Recipe.id.asc()),
+        "-title": (Recipe.title.desc(), Recipe.id.desc()),
+        "cookTime": (Recipe.cook_time_minutes.asc(), Recipe.id.asc()),
+        "-cookTime": (Recipe.cook_time_minutes.desc(), Recipe.id.desc()),
+    }
+    return sort_map[sort]
+
+
+def _to_summary(recipe: Recipe) -> RecipeSummaryResponse:
+    # ``category`` is loaded with the list query below, so this mapping does not issue
+    # one additional query per recipe.
+    return RecipeSummaryResponse.model_validate(
+        {
+            "id": recipe.id,
+            "title": recipe.title,
+            "slug": recipe.slug,
+            "description": recipe.description,
+            "category": recipe.category,
+            "prep_time_minutes": recipe.prep_time_minutes,
+            "cook_time_minutes": recipe.cook_time_minutes,
+            "servings": recipe.servings,
+            "difficulty": recipe.difficulty,
+            "status": _STATUS_LABELS[RecipeStatus(recipe.status)],
+            "created_at": recipe.created_at,
+        }
+    )
+
+
+async def list_recipes(
+    session: AsyncSession,
+    query: RecipeListQuery,
+    current_user: User | None,
+) -> PagedRecipeResponse:
+    """Get a role-aware, filtered, sorted, offset-paginated recipe collection."""
+    filters = [Recipe.is_deleted.is_(False)]
+    visibility = _recipe_visibility_filter(current_user)
+    if visibility is not None:
+        filters.append(visibility)
+    if query.category_id is not None:
+        filters.append(Recipe.category_id == query.category_id)
+    if query.difficulty is not None:
+        filters.append(Recipe.difficulty == query.difficulty.value_for_database.value)
+    if query.max_cook_time is not None:
+        filters.append(Recipe.cook_time_minutes <= query.max_cook_time)
+    if query.min_servings is not None:
+        filters.append(Recipe.servings >= query.min_servings)
+
+    total_count = await session.scalar(select(func.count(Recipe.id)).where(*filters))
+    total_count = total_count or 0
+    total_pages = (total_count + query.page_size - 1) // query.page_size
+    recipes = list(
+        await session.scalars(
+            select(Recipe)
+            .options(joinedload(Recipe.category))
+            .where(*filters)
+            .order_by(*_sort_columns(query.sort))
+            .offset((query.page - 1) * query.page_size)
+            .limit(query.page_size)
+        )
+    )
+    return PagedRecipeResponse(
+        items=[_to_summary(recipe) for recipe in recipes],
+        total_count=total_count,
+        page=query.page,
+        page_size=query.page_size,
+        total_pages=total_pages,
+        has_next_page=query.page < total_pages,
+        has_previous_page=query.page > 1,
+    )

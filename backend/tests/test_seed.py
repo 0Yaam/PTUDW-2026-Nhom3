@@ -18,6 +18,11 @@ async def test_seed_creates_complete_lab2_dataset(client) -> None:
     async with SessionFactory() as session:
         category_count = await session.scalar(select(func.count()).select_from(Category))
         recipe_count = await session.scalar(select(func.count()).select_from(Recipe))
+        titles = (
+            await session.scalars(
+                select(Recipe.title).where(Recipe.slug.in_(("lab2-recipe-001", "lab2-recipe-100")))
+            )
+        ).all()
 
         ingredient_counts = (
             await session.execute(
@@ -36,6 +41,7 @@ async def test_seed_creates_complete_lab2_dataset(client) -> None:
 
     assert category_count is not None and category_count >= 20
     assert recipe_count is not None and recipe_count >= SEED_RECIPE_COUNT
+    assert set(titles) == {"Phở bò Hà Nội", "Xôi gấc"}
     assert len(ingredient_counts) >= SEED_RECIPE_COUNT
     assert min(count for _, count in ingredient_counts) >= INGREDIENTS_PER_RECIPE
     assert len(step_counts) >= SEED_RECIPE_COUNT
