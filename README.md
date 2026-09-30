@@ -175,3 +175,10 @@ npm run build --prefix frontend
 
 
 See [docs/TEAM.md](docs/TEAM.md) for the work split and Git workflow.
+
+## Backend data access
+
+Authentication services use `UserRepository` and `RefreshTokenRepository` for
+queries. `UnitOfWork` owns transaction boundaries through `flush`, `commit`,
+and `rollback`, while FastAPI continues to provide the request-scoped database
+session.
