@@ -455,3 +455,133 @@ async def test_admin_can_manage_another_authors_recipe_and_anonymous_cannot(clie
     assert (await client.delete(
         f"/api/v1/recipes/{recipe_id}", headers=admin_headers
     )).status_code == 204
+
+
+async def test_recipe_detail_returns_full_contract_for_published_recipe(client) -> None:
+    headers = await author_headers(client)
+    category = await create_category()
+    created = await client.post(
+        "/api/v1/recipes", json=valid_payload(category.id), headers=headers
+    )
+    recipe_id = uuid.UUID(created.json()["id"])
+    await add_publishable_content(recipe_id)
+    await client.patch(f"/api/v1/recipes/{recipe_id}/publish", headers=headers)
+
+    response = await client.get(f"/api/v1/recipes/{created.json()['slug']}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "Published"
+    assert body["category"]["id"] == str(category.id)
+    assert body["author"]["userName"] == REGISTER_PAYLOAD["userName"]
+    assert body["ingredients"][0]["name"] == "Fish sauce"
+    assert body["steps"][0]["instruction"] == "Mix well."
+
+
+async def test_recipe_detail_hides_draft_from_anonymous_and_other_authors(client) -> None:
+    headers = await author_headers(client)
+    category = await create_category()
+    created = await client.post(
+        "/api/v1/recipes", json=valid_payload(category.id), headers=headers
+    )
+    slug = created.json()["slug"]
+
+    anonymous = await client.get(f"/api/v1/recipes/{slug}")
+    assert anonymous.status_code == 403
+    assert anonymous.json()["type"] == "RECIPE_FORBIDDEN"
+
+    other = await _second_author_headers(client)
+    forbidden = await client.get(f"/api/v1/recipes/{slug}", headers=other)
+    assert forbidden.status_code == 403
+
+    owner_view = await client.get(f"/api/v1/recipes/{slug}", headers=headers)
+    assert owner_view.status_code == 200
+    assert owner_view.json()["status"] == "Draft"
+
+
+async def test_recipe_detail_missing_slug_returns_404(client) -> None:
+    response = await client.get("/api/v1/recipes/no-such-recipe")
+
+    assert response.status_code == 404
+    assert response.json()["type"] == "RECIPE_NOT_FOUND"
+
+
+async def test_recipe_ingredient_crud_keeps_order_contiguous(client) -> None:
+    headers = await author_headers(client)
+    category = await create_category()
+    created = await client.post(
+        "/api/v1/recipes", json=valid_payload(category.id), headers=headers
+    )
+    recipe_id = created.json()["id"]
+    base = f"/api/v1/recipes/{recipe_id}/ingredients"
+    items = []
+    for name in ("Rice paper", "Shrimp", "Lettuce"):
+        response = await client.post(
+            base,
+            json={"ingredientName": name, "quantity": 100, "unit": "g"},
+            headers=headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["orderIndex"] == len(items)
+        assert response.headers["location"].endswith(response.json()["id"])
+        items.append(response.json())
+
+    moved = await client.put(
+        f"{base}/{items[2]['id']}",
+        json={"ingredientName": "Lettuce", "quantity": 50, "unit": "g", "orderIndex": 0},
+        headers=headers,
+    )
+    assert moved.status_code == 200
+    assert moved.json()["orderIndex"] == 0
+    assert moved.json()["quantity"] == 50
+
+    removed = await client.delete(f"{base}/{items[0]['id']}", headers=headers)
+    assert removed.status_code == 204
+    async with SessionFactory() as session:
+        rows = list(await session.scalars(
+            select(RecipeIngredient).where(RecipeIngredient.recipe_id == uuid.UUID(recipe_id))
+            .order_by(RecipeIngredient.order_index)
+        ))
+        assert [row.order_index for row in rows] == [0, 1]
+
+
+async def test_recipe_ingredients_validate_and_enforce_resource_permissions(client) -> None:
+    headers = await author_headers(client)
+    category = await create_category()
+    created = await client.post(
+        "/api/v1/recipes", json=valid_payload(category.id), headers=headers
+    )
+    recipe_id = created.json()["id"]
+    base = f"/api/v1/recipes/{recipe_id}/ingredients"
+
+    invalid = await client.post(
+        base, json={"ingredientName": "Salt", "quantity": 0, "unit": "g"}, headers=headers
+    )
+    assert invalid.status_code == 422
+    assert invalid.json()["type"] == "VALIDATION_ERROR"
+
+    first = await client.post(
+        base, json={"ingredientName": "Salt", "quantity": 1, "unit": "tsp"}, headers=headers
+    )
+    assert first.status_code == 201
+    duplicate = await client.post(
+        base, json={"ingredientName": "Salt", "quantity": 2, "unit": "tsp"}, headers=headers
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json()["type"] == "RECIPE_INGREDIENT_EXISTS"
+
+    other = await _second_author_headers(client)
+    assert (await client.post(
+        base, json={"ingredientName": "Pepper", "quantity": 1, "unit": "tsp"}, headers=other
+    )).status_code == 403
+    assert (await client.delete(f"{base}/{first.json()['id']}", headers=other)).status_code == 403
+    assert (await client.put(
+        f"{base}/{uuid.uuid4()}",
+        json={"ingredientName": "Salt", "quantity": 1, "unit": "tsp"},
+        headers=headers,
+    )).status_code == 404
+    assert (await client.post(
+        f"/api/v1/recipes/{uuid.uuid4()}/ingredients",
+        json={"ingredientName": "Salt", "quantity": 1, "unit": "tsp"},
+        headers=headers,
+    )).status_code == 404

@@ -13,13 +13,17 @@ from sqlalchemy.orm.exc import StaleDataError
 from ..auth.model import User
 from ..categories.model import Category
 from .cache import recipe_list_cache
-from .model import Recipe, RecipeIngredient, RecipeStatus, RecipeStep
+from .model import Ingredient, Recipe, RecipeIngredient, RecipeStatus, RecipeStep
 from .problem import RecipeProblem
 from .schemas import (
     NutritionResponse,
     PagedRecipeResponse,
     RecipeCreateRequest,
     RecipeCreateResponse,
+    RecipeDetailResponse,
+    RecipeIngredientCreateRequest,
+    RecipeIngredientResponse,
+    RecipeIngredientUpdateRequest,
     RecipeListQuery,
     RecipeStepCreateRequest,
     RecipeStepResponse,
@@ -342,6 +346,245 @@ async def delete_recipe(
         raise _version_conflict() from error
     recipe_list_cache.clear()
     logger.info("recipe_deleted", recipe_id=str(recipe_id))
+
+
+def _ingredient_not_found() -> RecipeProblem:
+    return RecipeProblem(
+        status=404,
+        error_code="RECIPE_INGREDIENT_NOT_FOUND",
+        title="Not Found",
+        detail="Recipe ingredient was not found.",
+    )
+
+
+def _ingredient_exists() -> RecipeProblem:
+    return RecipeProblem(
+        status=409,
+        error_code="RECIPE_INGREDIENT_EXISTS",
+        title="Conflict",
+        detail="This ingredient is already on the recipe.",
+    )
+
+
+async def _get_or_create_ingredient(session: AsyncSession, name: str) -> Ingredient:
+    ingredient = await session.scalar(select(Ingredient).where(Ingredient.name == name))
+    if ingredient is None:
+        ingredient = Ingredient(name=name)
+        session.add(ingredient)
+        await session.flush()
+    return ingredient
+
+
+async def _recipe_ingredients(
+    session: AsyncSession, recipe_id: uuid.UUID
+) -> list[RecipeIngredient]:
+    return list(
+        await session.scalars(
+            select(RecipeIngredient)
+            .where(RecipeIngredient.recipe_id == recipe_id)
+            .options(joinedload(RecipeIngredient.ingredient))
+            .order_by(RecipeIngredient.order_index)
+        )
+    )
+
+
+async def _renumber_ingredients(
+    recipe_ingredients: list[RecipeIngredient],
+) -> None:
+    for index, row in enumerate(recipe_ingredients):
+        row.order_index = index
+
+
+def _to_ingredient_response(row: RecipeIngredient) -> RecipeIngredientResponse:
+    return RecipeIngredientResponse.model_validate(
+        {
+            "id": row.id,
+            "recipe_id": row.recipe_id,
+            "ingredient_id": row.ingredient_id,
+            "name": row.ingredient.name,
+            "quantity": row.quantity,
+            "unit": row.unit,
+            "order_index": row.order_index,
+        }
+    )
+
+
+async def create_recipe_ingredient(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    data: RecipeIngredientCreateRequest,
+    current_user: User,
+) -> RecipeIngredientResponse:
+    recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    ingredient = await _get_or_create_ingredient(session, data.ingredient_name)
+    already_used = await session.scalar(
+        select(RecipeIngredient.id).where(
+            RecipeIngredient.recipe_id == recipe_id,
+            RecipeIngredient.ingredient_id == ingredient.id,
+        )
+    )
+    if already_used is not None:
+        raise _ingredient_exists()
+
+    next_order = await session.scalar(
+        select(func.count()).select_from(RecipeIngredient).where(
+            RecipeIngredient.recipe_id == recipe_id
+        )
+    )
+    row = RecipeIngredient(
+        recipe_id=recipe_id,
+        ingredient_id=ingredient.id,
+        quantity=data.quantity,
+        unit=data.unit,
+        order_index=next_order or 0,
+    )
+    session.add(row)
+    recipe.updated_at = datetime.now(UTC)
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
+    await session.refresh(row, attribute_names=["ingredient"])
+    return _to_ingredient_response(row)
+
+
+async def update_recipe_ingredient(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    ingredient_row_id: uuid.UUID,
+    data: RecipeIngredientUpdateRequest,
+    current_user: User,
+) -> RecipeIngredientResponse:
+    recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    rows = await _recipe_ingredients(session, recipe_id)
+    row = next((item for item in rows if item.id == ingredient_row_id), None)
+    if row is None:
+        raise _ingredient_not_found()
+
+    ingredient = await _get_or_create_ingredient(session, data.ingredient_name)
+    if ingredient.id != row.ingredient_id:
+        clash = await session.scalar(
+            select(RecipeIngredient.id).where(
+                RecipeIngredient.recipe_id == recipe_id,
+                RecipeIngredient.ingredient_id == ingredient.id,
+            )
+        )
+        if clash is not None:
+            raise _ingredient_exists()
+        row.ingredient_id = ingredient.id
+
+    row.quantity = data.quantity
+    row.unit = data.unit
+    if data.order_index is not None and data.order_index != row.order_index:
+        if data.order_index >= len(rows):
+            raise RecipeProblem(
+                status=422,
+                error_code="VALIDATION_ERROR",
+                title="Validation Error",
+                detail="Order index must be within the existing sequence.",
+                errors={"orderIndex": [f"Must be between 0 and {len(rows) - 1}."]},
+            )
+        rows.remove(row)
+        rows.insert(data.order_index, row)
+        await _renumber_ingredients(rows)
+    recipe.updated_at = datetime.now(UTC)
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
+    await session.refresh(row, attribute_names=["ingredient"])
+    return _to_ingredient_response(row)
+
+
+async def delete_recipe_ingredient(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    ingredient_row_id: uuid.UUID,
+    current_user: User,
+) -> None:
+    recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    rows = await _recipe_ingredients(session, recipe_id)
+    row = next((item for item in rows if item.id == ingredient_row_id), None)
+    if row is None:
+        raise _ingredient_not_found()
+    rows.remove(row)
+    await session.delete(row)
+    await session.flush()
+    await _renumber_ingredients(rows)
+    recipe.updated_at = datetime.now(UTC)
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
+
+
+def _to_detail_response(recipe: Recipe) -> RecipeDetailResponse:
+    nutrition_values = {
+        "calories": recipe.nutrition_calories,
+        "protein": recipe.nutrition_protein,
+        "carbohydrates": recipe.nutrition_carbohydrates,
+        "fat": recipe.nutrition_fat,
+        "fiber": recipe.nutrition_fiber,
+        "sodium": recipe.nutrition_sodium,
+    }
+    nutrition = (
+        NutritionResponse.model_validate(nutrition_values)
+        if any(value is not None for value in nutrition_values.values())
+        else None
+    )
+    ingredients = sorted(recipe.ingredients, key=lambda row: row.order_index)
+    steps = sorted(recipe.steps, key=lambda step: step.step_number)
+    return RecipeDetailResponse.model_validate(
+        {
+            "id": recipe.id,
+            "title": recipe.title,
+            "slug": recipe.slug,
+            "description": recipe.description,
+            "instructions": recipe.instructions,
+            "category": recipe.category,
+            "author": recipe.author,
+            "prep_time_minutes": recipe.prep_time_minutes,
+            "cook_time_minutes": recipe.cook_time_minutes,
+            "servings": recipe.servings,
+            "difficulty": recipe.difficulty,
+            "status": _STATUS_LABELS[RecipeStatus(recipe.status)],
+            "nutrition": nutrition,
+            "ingredients": [_to_ingredient_response(row) for row in ingredients],
+            "steps": [RecipeStepResponse.model_validate(step) for step in steps],
+            "created_at": recipe.created_at,
+            "row_version": recipe.row_version.hex(),
+        }
+    )
+
+
+async def get_recipe_detail(
+    session: AsyncSession,
+    slug: str,
+    current_user: User | None,
+) -> RecipeDetailResponse:
+    """Return the full recipe contract, limiting drafts to the owner or Admin."""
+    recipe = await session.scalar(
+        select(Recipe)
+        .where(Recipe.slug == slug, Recipe.is_deleted.is_(False))
+        .options(
+            joinedload(Recipe.category),
+            joinedload(Recipe.author),
+            joinedload(Recipe.ingredients).joinedload(RecipeIngredient.ingredient),
+            joinedload(Recipe.steps),
+        )
+    )
+    if recipe is None:
+        raise _recipe_not_found()
+    if recipe.status != RecipeStatus.PUBLISHED:
+        is_owner_or_admin = current_user is not None and (
+            current_user.role == "Admin" or current_user.id == recipe.author_id
+        )
+        if not is_owner_or_admin:
+            raise _recipe_forbidden()
+    return _to_detail_response(recipe)
 
 
 def _step_not_found() -> RecipeProblem:

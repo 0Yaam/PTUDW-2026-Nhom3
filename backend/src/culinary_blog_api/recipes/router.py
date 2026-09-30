@@ -13,7 +13,11 @@ from .schemas import (
     PagedRecipeResponse,
     RecipeCreateRequest,
     RecipeCreateResponse,
+    RecipeDetailResponse,
     RecipeDifficultyFilter,
+    RecipeIngredientCreateRequest,
+    RecipeIngredientResponse,
+    RecipeIngredientUpdateRequest,
     RecipeListQuery,
     RecipeListSort,
     RecipeStepCreateRequest,
@@ -23,12 +27,16 @@ from .schemas import (
 )
 from .service import (
     create_recipe,
+    create_recipe_ingredient,
     create_recipe_step,
     delete_recipe,
+    delete_recipe_ingredient,
     delete_recipe_step,
+    get_recipe_detail,
     list_recipes,
     set_publication_status,
     update_recipe,
+    update_recipe_ingredient,
     update_recipe_step,
 )
 
@@ -119,6 +127,25 @@ async def post_recipe(
     return created
 
 
+@router.get(
+    "/{slug}",
+    response_model=RecipeDetailResponse,
+    response_model_by_alias=True,
+    responses={
+        401: {"model": ProblemDetails, "description": "Invalid access token"},
+        403: {"model": ProblemDetails, "description": "Not the owner or Admin"},
+        404: {"model": ProblemDetails, "description": "Recipe not found"},
+    },
+)
+async def get_recipe_by_slug(
+    slug: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User | None, Depends(get_optional_recipe_viewer)],
+) -> RecipeDetailResponse:
+    """Return the complete recipe contract, limiting drafts to the owner or Admin."""
+    return await get_recipe_detail(session, slug, current_user)
+
+
 @router.put(
     "/{recipe_id}",
     response_model=RecipeCreateResponse,
@@ -189,6 +216,55 @@ async def remove_recipe_step(
     current_user: Annotated[User, Depends(require_author_or_admin)],
 ) -> Response:
     await delete_recipe_step(session, recipe_id, step_id, current_user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{recipe_id}/ingredients",
+    response_model=RecipeIngredientResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def post_recipe_ingredient(
+    recipe_id: uuid.UUID,
+    data: RecipeIngredientCreateRequest,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> RecipeIngredientResponse:
+    ingredient = await create_recipe_ingredient(session, recipe_id, data, current_user)
+    response.headers["Location"] = (
+        f"/api/v1/recipes/{recipe_id}/ingredients/{ingredient.id}"
+    )
+    return ingredient
+
+
+@router.put(
+    "/{recipe_id}/ingredients/{ingredient_id}",
+    response_model=RecipeIngredientResponse,
+)
+async def put_recipe_ingredient(
+    recipe_id: uuid.UUID,
+    ingredient_id: uuid.UUID,
+    data: RecipeIngredientUpdateRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> RecipeIngredientResponse:
+    return await update_recipe_ingredient(
+        session, recipe_id, ingredient_id, data, current_user
+    )
+
+
+@router.delete(
+    "/{recipe_id}/ingredients/{ingredient_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def remove_recipe_ingredient(
+    recipe_id: uuid.UUID,
+    ingredient_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> Response:
+    await delete_recipe_ingredient(session, recipe_id, ingredient_id, current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
