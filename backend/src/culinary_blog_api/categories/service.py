@@ -62,6 +62,16 @@ def _duplicate_slug() -> CategoryProblem:
     return CategoryProblem(409, "CATEGORY_SLUG_EXISTS", "Conflict", "Category slug already exists.")
 
 
+def _category_in_use(recipe_count: int) -> CategoryProblem:
+    noun = "recipe" if recipe_count == 1 else "recipes"
+    return CategoryProblem(
+        409,
+        "CATEGORY_IN_USE",
+        "Conflict",
+        f"Category contains {recipe_count} {noun}. Reassign them before deleting it.",
+    )
+
+
 async def create_category(session: AsyncSession, data: CategoryCreate) -> CategoryRead:
     """Create one category, retrying slug collisions under concurrent requests."""
     if await _name_exists(session, data.name):
@@ -112,12 +122,52 @@ async def update_category(
             raise _duplicate_slug() from error
         raise _duplicate_name() from error
     logger.info("category_updated", category_id=str(category.id), slug=category.slug)
-    return CategoryRead.model_validate(category)
+    item = CategoryRead.model_validate(category)
+    item.recipe_count = await session.scalar(
+        select(func.count(Recipe.id)).where(Recipe.category_id == category_id)
+    ) or 0
+    return item
 
 
 async def list_categories(session: AsyncSession) -> list[CategoryRead]:
-    result = await session.scalars(select(Category).order_by(Category.order_index, Category.name))
-    return [CategoryRead.model_validate(category) for category in result.all()]
+    result = await session.execute(
+        select(Category, func.count(Recipe.id).label("recipe_count"))
+        .outerjoin(Recipe, Recipe.category_id == Category.id)
+        .group_by(Category.id)
+        .order_by(Category.order_index, Category.name)
+    )
+    categories: list[CategoryRead] = []
+    for category, recipe_count in result.all():
+        item = CategoryRead.model_validate(category)
+        item.recipe_count = recipe_count
+        categories.append(item)
+    return categories
+
+
+async def delete_category(session: AsyncSession, category_id: uuid.UUID) -> None:
+    """Delete one category only when no recipe of any status references it."""
+    category = await session.get(Category, category_id)
+    if category is None:
+        raise CategoryProblem(404, "CATEGORY_NOT_FOUND", "Not Found", "Category was not found.")
+
+    recipe_count = await session.scalar(
+        select(func.count(Recipe.id)).where(Recipe.category_id == category_id)
+    )
+    if recipe_count:
+        raise _category_in_use(recipe_count)
+
+    await session.delete(category)
+    try:
+        await session.commit()
+    except IntegrityError:
+        # A recipe may have been assigned after the count. Preserve the category
+        # and translate the database constraint into the public API contract.
+        await session.rollback()
+        current_count = await session.scalar(
+            select(func.count(Recipe.id)).where(Recipe.category_id == category_id)
+        )
+        raise _category_in_use(current_count or 1) from None
+    logger.info("category_deleted", category_id=str(category_id), slug=category.slug)
 
 
 async def get_category_by_slug(session: AsyncSession, slug: str) -> CategoryDetail:

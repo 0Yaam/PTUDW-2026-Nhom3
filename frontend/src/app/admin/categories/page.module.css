@@ -72,6 +72,19 @@
 .warning { color: #b54708; font-weight: 500; line-height: 1.5; }
 .formActions { display: flex; flex-wrap: wrap; gap: 10px; }
 .secondaryButton { border: 1px solid #d0d5dd !important; background: white !important; color: #344054 !important; box-shadow: none !important; }
+.dangerZone { display: grid; gap: 10px; margin-top: 24px; padding-top: 22px; border-top: 1px solid #fecdca; }
+.dangerZone h3 { margin: 0; color: #b42318; font-size: 14px; }
+.dangerZone p { margin: 0; color: #667085; font-size: 12px; line-height: 1.55; }
+.deleteBlocked { padding: 10px 11px; border-radius: 7px; background: #fffaeb; color: #b54708 !important; }
+.deleteConfirmation { display: grid; gap: 12px; padding: 13px; border: 1px solid #fecdca; border-radius: 9px; background: #fff5f4; color: #912018; font-size: 12px; line-height: 1.5; }
+.dangerActions { display: flex; flex-wrap: wrap; gap: 9px; }
+.dangerButton, .dangerCancel, .dangerOutline { padding: 10px 13px; border-radius: 7px; font-weight: 700; }
+.dangerButton { border: 1px solid #d92d20; background: #d92d20; color: white; }
+.dangerButton:hover { background: #b42318; }
+.dangerCancel { border: 1px solid #d0d5dd; background: white; color: #344054; }
+.dangerOutline { justify-self: start; border: 1px solid #fda29b; background: white; color: #b42318; }
+.dangerOutline:hover { border-color: #d92d20; background: #fff5f4; }
+.dangerButton:disabled, .dangerCancel:disabled { cursor: wait; opacity: .65; }
 .error, .success { margin: 18px 0 0; padding: 11px 12px; border-radius: 7px; font-size: 13px; line-height: 1.5; }
 .error { background: #fff1f3; color: #c01048; }
 .success { background: #ecfdf3; color: #027a48; }

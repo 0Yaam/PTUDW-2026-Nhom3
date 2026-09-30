@@ -8,7 +8,7 @@ Only the useful dashboard patterns were adapted: sidebar, top bar, summary cards
 
 ## Authorization boundary
 
-The browser treats the dashboard as presentation. Sign-in calls `/api/v1/auth/login`; the screen opens only when the response contains the `Admin` role. Every `POST /api/v1/categories` and `PUT /api/v1/categories/{id}` also sends the Bearer token. The FastAPI `require_admin` dependency loads the current user from the database and returns 401/403 when appropriate, so hiding the dashboard is not the security boundary. The token remains in component memory and is cleared on sign-out, 401, or 403.
+The browser treats the dashboard as presentation. Sign-in calls `/api/v1/auth/login`; the screen opens only when the response contains the `Admin` role. Every `POST /api/v1/categories`, `PUT /api/v1/categories/{id}`, and `DELETE /api/v1/categories/{id}` sends the Bearer token. The FastAPI `require_admin` dependency loads the current user from the database and returns 401/403 when appropriate, so hiding the dashboard is not the security boundary. The token remains in component memory and is cleared on sign-out, 401, or 403.
 
 The sidebar provides the full shared Admin information architecture. Categories and the public-site link are active. Overview, recipes, posts, media, users, comments, analytics, and settings are labelled as upcoming, use non-interactive elements, and have no route or click handler. Their owners can replace one placeholder with an authorized route without changing the category form or API logic.
 
@@ -16,7 +16,7 @@ The sidebar provides the full shared Admin information architecture. Categories 
 
 `next-intl` loads `frontend/messages/en.json` or `frontend/messages/vi.json`. The language switch stores `NEXT_LOCALE` in a first-party cookie and refreshes the current route, so existing `/` and `/admin/categories` links remain stable. UI copy, form labels, state messages, and known RFC 7807 category errors are translated. Category names and descriptions are user content and remain exactly as stored in PostgreSQL.
 
-## FR-CAT-003 / FR-CAT-004 trace
+## FR-CAT-003 / FR-CAT-004 / FR-CAT-005 trace
 
 | Requirement | Implementation |
 | --- | --- |
@@ -28,6 +28,9 @@ The sidebar provides the full shared Admin information architecture. Categories 
 | Explicit slug edit | Admin enables the URL control and PUT sends a validated optional `slug`; duplicate/invalid cases return 409/422. |
 | 201 + Location / 200 | Router sets status and Location; tests cover create and update. |
 | 401/403/404/409/422 | Backend route/service tests cover permission and error cases. |
-| Cache invalidation | The current FastAPI category list deliberately uses no application cache, and the frontend requests it with `no-store`, so there is no stale `categories:all` entry to invalidate. Shared caching is assigned to NFR-PERF in `docs/SRS-MAP.md`; when that owner adds a cache, create/update must invalidate the shared key in that same integration. |
+| Empty-category deletion | Admin-only DELETE returns 204 without a body; missing ID returns 404. |
+| Recipe protection | DELETE counts all recipes referencing the category, including drafts, and returns `409 CATEGORY_IN_USE` with the count; the UI disables deletion when the current count is positive. |
+| Confirmation and feedback | An empty category requires a second click to confirm. Success and RFC 7807 errors are shown in both languages. |
+| Cache invalidation | The current FastAPI category list deliberately uses no application cache, and the frontend requests it with `no-store`, so there is no stale `categories:all` entry to invalidate. Shared caching is assigned to NFR-PERF in `docs/SRS-MAP.md`; when that owner adds a cache, create/update/delete must invalidate the shared key in that same integration. |
 
 The SRS mentions MediatR, Unit of Work, and IMemoryCache, which are .NET implementation names. This repository uses FastAPI, SQLAlchemy, service functions, and Pydantic. The observable HTTP behavior and business rules are implemented without adding a parallel .NET architecture.
