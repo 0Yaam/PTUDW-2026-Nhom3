@@ -85,6 +85,113 @@ SEED_RECIPE_COUNT = 100
 INGREDIENTS_PER_RECIPE = 10
 STEPS_PER_RECIPE = 5
 
+# Stable ``lab2-recipe-###`` slugs below make the seed idempotent. These are the
+# reader-facing titles and descriptions shown in the public recipe list.
+SEED_RECIPE_TITLES = [
+    "Phở bò Hà Nội",
+    "Bún bò Huế",
+    "Cơm tấm Sài Gòn",
+    "Bánh xèo miền Tây",
+    "Cao lầu Hội An",
+    "Bánh mì trứng ốp la",
+    "Xôi gà",
+    "Cháo sườn",
+    "Mì Quảng tôm thịt",
+    "Bò né",
+    "Đậu hũ sốt cà chua",
+    "Rau củ xào ngũ sắc",
+    "Nấm kho tiêu",
+    "Canh chua chay",
+    "Bún chay rau củ",
+    "Bánh flan caramel",
+    "Bánh chuối nướng",
+    "Chè bắp nước cốt dừa",
+    "Bánh da lợn",
+    "Sữa chua nếp cẩm",
+    "Salad gà nướng",
+    "Cá hồi áp chảo",
+    "Yến mạch trái cây",
+    "Cơm gạo lứt rau củ",
+    "Súp bí đỏ",
+    "Mì xào rau củ",
+    "Trứng chiên cà chua",
+    "Cơm chiên Dương Châu",
+    "Nui xào bò",
+    "Đậu hũ chiên sả",
+    "Canh gà hạt sen",
+    "Canh rau ngót thịt bằm",
+    "Súp cua",
+    "Canh kim chi",
+    "Canh khổ qua nhồi thịt",
+    "Gỏi gà bắp cải",
+    "Nộm đu đủ",
+    "Salad cá ngừ",
+    "Gỏi tôm mực",
+    "Salad quinoa",
+    "Bún thịt nướng",
+    "Hủ tiếu Nam Vang",
+    "Mì hoành thánh",
+    "Bún riêu cua",
+    "Mì xào hải sản",
+    "Cơm gà Hội An",
+    "Cơm chiên hải sản",
+    "Cơm thịt kho trứng",
+    "Cơm cá kho tộ",
+    "Cơm sườn nướng",
+    "Tôm rang me",
+    "Cá hồi nướng",
+    "Mực xào cần tây",
+    "Ngao hấp sả",
+    "Cá chiên nước mắm",
+    "Gà kho gừng",
+    "Gà nướng mật ong",
+    "Canh gà lá giang",
+    "Gà xào sả ớt",
+    "Gà chiên nước mắm",
+    "Bò lúc lắc",
+    "Bò kho",
+    "Bò xào bông cải",
+    "Lẩu bò",
+    "Bò nướng lá lốt",
+    "Thịt ba chỉ kho tiêu",
+    "Sườn xào chua ngọt",
+    "Thịt heo quay",
+    "Chả giò thịt heo",
+    "Thịt heo xào hành tây",
+    "Cơm chay thập cẩm",
+    "Đậu hũ kho nấm",
+    "Rau củ luộc kho quẹt chay",
+    "Canh nấm đậu hũ",
+    "Bánh xèo chay",
+    "Bánh tráng trộn",
+    "Khoai tây lắc phô mai",
+    "Nem chua rán",
+    "Bắp xào bơ",
+    "Xúc xích nướng",
+    "Trà đào cam sả",
+    "Nước ép dưa hấu",
+    "Sinh tố bơ",
+    "Cà phê sữa đá",
+    "Sữa bắp",
+    "Bánh tráng nướng",
+    "Chè ba màu",
+    "Xiên que chiên",
+    "Bánh bột lọc",
+    "Phá lấu",
+    "Mâm cơm cá kho tộ",
+    "Canh chua cá lóc",
+    "Thịt rang cháy cạnh",
+    "Đậu hũ sốt thịt bằm",
+    "Sườn non hầm củ cải",
+    "Bánh chưng",
+    "Giò lụa",
+    "Thịt đông",
+    "Mứt dừa",
+    "Xôi gấc",
+]
+
+assert len(SEED_RECIPE_TITLES) == SEED_RECIPE_COUNT
+
 
 async def _seed_categories(session: AsyncSession) -> list[Category]:
     slugs = [slug for _, slug, _ in SEED_CATEGORIES]
@@ -157,15 +264,21 @@ async def _seed_recipes(
         ).all()
     }
 
-    for number, slug in enumerate(slugs, start=1):
-        if slug in recipes:
+    for number, (slug, title) in enumerate(zip(slugs, SEED_RECIPE_TITLES, strict=True), start=1):
+        description = (
+            f"{title} với hương vị gần gũi, phù hợp để chuẩn bị và chia sẻ tại nhà."
+        )
+        if recipe := recipes.get(slug):
+            recipe.title = title
+            recipe.description = description
+            recipe.instructions = "Chuẩn bị nguyên liệu, nấu chín và nêm nếm vừa ăn."
             continue
         generator = random.Random(20260922 + number)
         recipe = Recipe(
-            title=f"Lab 2 Recipe {number:03d}",
+            title=title,
             slug=slug,
-            description=f"Generated sample recipe number {number} for Lab 2.",
-            instructions="Follow the five detailed preparation steps in order.",
+            description=description,
+            instructions="Chuẩn bị nguyên liệu, nấu chín và nêm nếm vừa ăn.",
             prep_time_minutes=generator.randint(5, 30),
             cook_time_minutes=generator.randint(10, 60),
             servings=generator.randint(2, 6),

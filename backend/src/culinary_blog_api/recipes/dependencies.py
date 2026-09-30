@@ -82,3 +82,25 @@ async def require_author_or_admin(
             detail="Only Authors and Admins can create recipes.",
         )
     return user
+
+
+async def get_optional_recipe_viewer(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    authorization: Annotated[str | None, Header()] = None,
+) -> User | None:
+    """Return the current user when a valid token is supplied, otherwise a guest.
+
+    The collection is public, so an absent Authorization header is valid. A malformed,
+    expired, or unknown-user token remains a 401 instead of silently downgrading it to a
+    guest request.
+    """
+    if not authorization:
+        return None
+    scheme, separator, token = authorization.partition(" ")
+    if not separator or scheme.lower() != "bearer" or not token.strip():
+        raise _invalid_token()
+
+    user = await session.get(User, _user_id_from_token(token.strip()))
+    if user is None:
+        raise _invalid_token()
+    return user
