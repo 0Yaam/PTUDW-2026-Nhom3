@@ -2,7 +2,20 @@
 
 This folder contains the FastAPI backend. Use the root [README](../README.md) for setup and test commands.
 
-The API includes categories plus local registration and login under `/api/v1/auth`.
+The API includes categories, authentication, profiles, and recipe publication under `/api/v1`.
+
+## Lab 04 authentication and publication (Issue #38)
+
+| Action | Authorization | Success |
+| --- | --- | --- |
+| `POST /api/v1/auth/google` | Google ID token in the request body | `200`, local access and refresh tokens |
+| `GET /api/v1/auth/me` | Bearer token | `200`, current profile |
+| `PATCH /api/v1/auth/me` | Bearer token | `200`, updated profile |
+| `PATCH /api/v1/recipes/{id}/publish` | Recipe owner or Admin | `200`, published recipe |
+| `PATCH /api/v1/recipes/{id}/unpublish` | Recipe owner or Admin | `200`, draft recipe |
+
+Publishing requires at least one ingredient and one cooking step. Set
+`GOOGLE_CLIENT_ID` before using Google login. API errors use RFC 7807 problem details.
 
 ## Category management (Issues #2 and #33; FR-CAT-003/004/005)
 
