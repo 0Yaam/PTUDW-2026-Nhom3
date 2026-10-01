@@ -17,7 +17,7 @@ from .schemas import (
     RecipeListQuery,
     RecipeListSort,
 )
-from .service import create_recipe, list_recipes
+from .service import create_recipe, list_recipes, set_publication_status
 
 router = APIRouter(prefix="/api/v1/recipes", tags=["recipes"])
 
@@ -103,3 +103,21 @@ async def post_recipe(
     created = await create_recipe(session, request, current_user)
     response.headers["Location"] = f"/api/v1/recipes/{created.slug}"
     return created
+
+
+@router.patch("/{recipe_id}/publish", response_model=RecipeCreateResponse)
+async def publish_recipe(
+    recipe_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> RecipeCreateResponse:
+    return await set_publication_status(session, recipe_id, current_user, publish=True)
+
+
+@router.patch("/{recipe_id}/unpublish", response_model=RecipeCreateResponse)
+async def unpublish_recipe(
+    recipe_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> RecipeCreateResponse:
+    return await set_publication_status(session, recipe_id, current_user, publish=False)

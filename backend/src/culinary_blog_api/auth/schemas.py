@@ -80,6 +80,12 @@ class LoginRequest(BaseModel):
         return value
 
 
+class GoogleLoginRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id_token: str = Field(alias="idToken", min_length=1, max_length=4096)
+
+
 class RefreshTokenRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

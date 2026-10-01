@@ -104,7 +104,7 @@ class RecipeCreateResponse(BaseModel):
     cook_time_minutes: int = Field(alias="cookTimeMinutes")
     servings: int
     difficulty: RecipeDifficulty
-    status: Literal["Draft"]
+    status: Literal["Draft", "Published", "Archived"]
     nutrition: NutritionResponse | None = None
     created_at: datetime = Field(alias="createdAt")
 

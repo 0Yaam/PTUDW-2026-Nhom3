@@ -5,7 +5,13 @@ from sqlalchemy import select
 from culinary_blog_api.auth import User
 from culinary_blog_api.categories import Category
 from culinary_blog_api.db import SessionFactory
-from culinary_blog_api.recipes import Recipe, RecipeStatus
+from culinary_blog_api.recipes import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    RecipeStatus,
+    RecipeStep,
+)
 
 REGISTER_PAYLOAD = {
     "fullName": "Tran Xuan Hieu",
@@ -156,3 +162,72 @@ async def test_create_recipe_rejects_duplicate_slug(client) -> None:
     assert first.status_code == 201
     assert second.status_code == 409
     assert second.json()["type"] == "RECIPE_SLUG_EXISTS"
+
+
+async def add_publishable_content(recipe_id: uuid.UUID) -> None:
+    async with SessionFactory() as session:
+        ingredient = Ingredient(name="Fish sauce")
+        session.add(ingredient)
+        await session.flush()
+        session.add_all(
+            [
+                RecipeIngredient(
+                    recipe_id=recipe_id,
+                    ingredient_id=ingredient.id,
+                    quantity=1,
+                    unit="tbsp",
+                    order_index=0,
+                ),
+                RecipeStep(recipe_id=recipe_id, step_number=1, instruction="Mix well."),
+            ]
+        )
+        await session.commit()
+
+
+async def test_owner_publishes_and_unpublishes_ready_recipe(client) -> None:
+    category = await create_category()
+    headers = await author_headers(client)
+    created = await client.post(
+        "/api/v1/recipes", json=valid_payload(category.id), headers=headers
+    )
+    recipe_id = uuid.UUID(created.json()["id"])
+
+    not_ready = await client.patch(f"/api/v1/recipes/{recipe_id}/publish", headers=headers)
+    assert not_ready.status_code == 422
+    assert not_ready.json()["type"] == "RECIPE_NOT_READY"
+
+    await add_publishable_content(recipe_id)
+    published = await client.patch(f"/api/v1/recipes/{recipe_id}/publish", headers=headers)
+    unpublished = await client.patch(
+        f"/api/v1/recipes/{recipe_id}/unpublish", headers=headers
+    )
+
+    assert published.status_code == 200
+    assert published.json()["status"] == "Published"
+    assert unpublished.status_code == 200
+    assert unpublished.json()["status"] == "Draft"
+
+
+async def test_non_owner_cannot_publish_recipe(client) -> None:
+    category = await create_category()
+    owner_headers = await author_headers(client)
+    created = await client.post(
+        "/api/v1/recipes", json=valid_payload(category.id), headers=owner_headers
+    )
+    recipe_id = created.json()["id"]
+    other = await client.post(
+        "/api/v1/auth/register",
+        json={
+            **REGISTER_PAYLOAD,
+            "email": "other@example.com",
+            "userName": "other_author",
+        },
+    )
+    other_headers = {"Authorization": f"Bearer {other.json()['accessToken']}"}
+
+    response = await client.patch(
+        f"/api/v1/recipes/{recipe_id}/publish", headers=other_headers
+    )
+
+    assert response.status_code == 403
+    assert response.json()["type"] == "RECIPE_FORBIDDEN"
