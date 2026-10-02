@@ -61,7 +61,7 @@ export default async function CategoryDetailPage({
             {category.recipes.map((recipe: RecipeCard) => (
               <li className="recipe-card" key={recipe.id}>
                 <p className="recipe-card-meta">{t(difficultyKey(recipe.difficulty))}</p>
-                <h3>{recipe.title}</h3>
+                <h3><Link href={`/recipes/${recipe.slug}`}>{recipe.title}</Link></h3>
                 <p className="recipe-card-description">{recipe.description}</p>
                 <dl className="recipe-card-facts">
                   <div>
