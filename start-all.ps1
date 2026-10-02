@@ -51,7 +51,7 @@ function Get-UvExecutable {
 switch ($Mode) {
     "docker" {
         Show-Title "Run Docker Compose"
-        Show-Info "Dang build va khoi chay Postgres, Backend (API), Frontend (Web)..."
+        Show-Info "Dang build va khoi chay Postgres, MinIO, Mailpit, email worker, Backend va Frontend..."
         
         docker compose -f "$RootPath\compose.yaml" up --build -d
         Confirm-Command "Docker Compose startup"
@@ -61,6 +61,8 @@ switch ($Mode) {
         Write-Host "  - Frontend Web        : http://localhost:3000" -ForegroundColor Cyan
         Write-Host "  - Backend API Swagger : http://localhost:8000/docs" -ForegroundColor Cyan
         Write-Host "  - Backend Healthcheck : http://localhost:8000/health" -ForegroundColor Cyan
+        Write-Host "  - MinIO Console        : http://localhost:9001" -ForegroundColor Cyan
+        Write-Host "  - Mailpit Inbox        : http://localhost:8025" -ForegroundColor Cyan
         Write-Host "  - Frontend Hot Reload : http://localhost:3001 (optional)" -ForegroundColor DarkCyan
         Show-Info "Theo doi Frontend realtime: npm run dev --prefix frontend"
         Show-Info "Xem trang thai: docker compose ps"
