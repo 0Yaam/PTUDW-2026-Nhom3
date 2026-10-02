@@ -19,9 +19,9 @@
 | FR-RCP-010 | Cooking steps | Han | Lab 04 #39 - Ready |
 | FR-SRCH-001 | Full-text search | Hieu | Lab 04 #43 - Ready |
 | FR-SRCH-002 to FR-SRCH-004 | Filters, sorting, and pagination | Hieu | Done - #32 |
-| FR-FILE-001 | MinIO upload and storage adapter | Han | Cycle 3 #45 - Ready |
+| FR-FILE-001 | MinIO upload and storage adapter | Han | Cycle 3 #45 - In Progress |
 | FR-FILE-002 | Safe physical file deletion | Han / Hieu | Cycle 4 |
-| FR-JOB-001 | Welcome email job | Han | Cycle 3 #45 - Ready |
+| FR-JOB-001 | Welcome email job | Han | Cycle 3 #45 - In Progress |
 | FR-JOB-002 | Image resize job | Hieu | Cycle 3 #47 - Ready |
 | FR-JOB-003 | Sitemap job | Minh Anh | Cycle 3 #46 - Ready |
 | FR-OBS-001 to FR-OBS-003 | Health checks, logging, traces, and metrics | Dan | Cycle 3 #44 - Ready |
@@ -34,7 +34,7 @@
 | NFR-REL-003 | Deployment, backup, and data durability | Han | Cycle 4 |
 | NFR-MAINT-001 to NFR-MAINT-002 | Code quality, tests, and integration | Dan / Team | Cycle 3 #44 and all cycles |
 | NFR-MAINT-003 to NFR-MAINT-004 | User documentation and clear modules | Minh Anh | Cycle 3 #46, final QA in Cycle 4 |
-| NFR-SCALE-001 | Stateless API and shared storage | Han | Cycle 3 #45 - Ready |
+| NFR-SCALE-001 | Stateless API and shared storage | Han | Cycle 3 #45 - In Progress |
 | NFR-SCALE-002 | Database scaling path | Hieu | Cycle 3 #47 - Ready |
 | NFR-SCALE-003 | Container and proxy setup | Han | Cycle 4 |
 | NFR-SEO-001 to NFR-SEO-004 | Recipe SEO, sitemap, and URLs | Minh Anh | Cycle 3 #46 - Ready |

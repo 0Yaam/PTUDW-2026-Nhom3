@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import get_settings
+from ..jobs.model import WelcomeEmailJob
 from ..unit_of_work import UnitOfWork
 from .model import RefreshToken, User
 from .problem import AuthProblem
@@ -93,6 +94,9 @@ async def register_user(session: AsyncSession, request: RegisterRequest) -> Auth
             "Conflict",
             "Email or user name is already registered.",
         ) from error
+    # Queue the welcome email in the same transaction as the account and tokens.
+    # The separate worker sends it after commit, so SMTP never delays registration.
+    session.add(WelcomeEmailJob(user_id=user.id, recipient=user.email, full_name=user.full_name))
     return await _issue_tokens(unit_of_work, user)
 
 
