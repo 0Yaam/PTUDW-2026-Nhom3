@@ -76,6 +76,12 @@ class Recipe(Base):
     )
     is_deleted: Mapped[bool] = mapped_column(Boolean(), default=False, index=True)
     row_version: Mapped[bytes] = mapped_column(LargeBinary(), default=b"\x00")
+    __mapper_args__ = {
+        "version_id_col": row_version,
+        "version_id_generator": lambda current: (
+            int.from_bytes(current or b"\x00", "big") + 1
+        ).to_bytes(8, "big"),
+    }
 
     category: Mapped["Category"] = relationship()
     author: Mapped["User"] = relationship()
@@ -129,6 +135,9 @@ class RecipeStep(Base):
     __table_args__ = (
         UniqueConstraint("recipe_id", "step_number", name="uq_recipe_step_number"),
         CheckConstraint("step_number > 0", name="ck_recipe_steps_number_positive"),
+        CheckConstraint(
+            "duration_minutes > 0", name="ck_recipe_steps_duration_positive"
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -137,5 +146,7 @@ class RecipeStep(Base):
     )
     step_number: Mapped[int] = mapped_column(Integer())
     instruction: Mapped[str] = mapped_column(Text())
+    duration_minutes: Mapped[int | None] = mapped_column(Integer())
+    image_url: Mapped[str | None] = mapped_column(String(2048))
 
     recipe: Mapped["Recipe"] = relationship(back_populates="steps")
