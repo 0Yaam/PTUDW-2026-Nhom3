@@ -25,13 +25,13 @@ function previewForCategory(name: string, index: number): string {
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   const t = useTranslations("category");
   if (categories.length === 0) {
-    return <div className="empty-state"><span aria-hidden="true">✳</span><h3>{t("emptyTitle")}</h3><p>{t("emptyDescription")}</p></div>;
+    return <div className="empty-state"><h3>{t("emptyTitle")}</h3><p>{t("emptyDescription")}</p></div>;
   }
 
   return <div className="category-grid">{categories.map((category, index) => (
     <article className="category-card" key={category.id}>
       <div className="category-card-art"><span className="category-number">{String(index + 1).padStart(2, "0")}</span><div className={`category-dish${category.image_url ? " custom-image" : ""}`}><Image src={category.image_url || previewForCategory(category.name, index)} alt="" fill sizes="(max-width: 560px) 85vw, (max-width: 1100px) 42vw, 22vw" /></div></div>
-      <div className="category-card-body"><p className="category-card-meta">{t("label")}</p><h3><Link href={`/categories/${category.slug}`}>{category.name}</Link></h3><p>{category.description ?? t("fallback")}</p><span className="recipe-count">{t("recipeCount", { count: category.recipe_count })}<span aria-hidden="true">↗</span></span></div>
+      <div className="category-card-body"><p className="category-card-meta">{t("label")}</p><h3><Link href={`/categories/${category.slug}`}>{category.name}</Link></h3><p>{category.description ?? t("fallback")}</p><span className="recipe-count">{t("recipeCount", { count: category.recipe_count })}<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 19 19 5M8 5h11v11" /></svg></span></div>
     </article>
   ))}</div>;
 }
