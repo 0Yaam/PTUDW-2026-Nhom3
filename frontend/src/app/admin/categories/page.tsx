@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { Category } from "@/components/category-grid";
@@ -11,6 +11,29 @@ type Problem = { type?: string; detail?: string; errors?: Record<string, string[
 type LoginResponse = { accessToken: string; user: { fullName: string; roles: string[] } };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+type IconName = "spark" | "grid" | "book" | "post" | "image" | "users" | "chat" | "chart" | "settings" | "external" | "search" | "plus" | "list" | "link";
+
+const iconPaths: Record<IconName, string> = {
+  spark: "M12 2 14.2 9.8 22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2L12 2Z",
+  grid: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
+  book: "M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 1V4Zm0 13a3 3 0 0 1 3-1h12",
+  post: "M6 3h12l3 3v15H6V3Zm4 6h7m-7 4h7m-7 4h5",
+  image: "M4 4h16v16H4zM8 9h.01M4 17l5-5 3 3 2-2 6 6",
+  users: "M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2h14ZM9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm13 10v-2a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74",
+  chat: "M4 4h16v12H8l-4 4V4Zm4 4h8m-8 4h6",
+  chart: "M4 20V4m0 16h16M8 16l4-5 3 2 5-7",
+  settings: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-6v3m0 14v3M4.9 4.9 7 7m10 10 2.1 2.1M2 12h3m14 0h3M4.9 19.1 7 17M17 7l2.1-2.1",
+  external: "M13 4h7v7m0-7-9 9M20 14v6H4V4h6",
+  search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 5 5",
+  plus: "M12 4v16M4 12h16",
+  list: "M4 5h16M4 12h16M4 19h16",
+  link: "M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2m3 6a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2",
+};
+
+function AdminIcon({ name }: { name: IconName }) {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={iconPaths[name]} /></svg>;
+}
 
 function normalizeSlug(value: string): string {
   return value
@@ -39,6 +62,10 @@ export default function ManageCategories() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
 
   const recipeTotal = useMemo(
     () => categories.reduce((sum, category) => sum + category.recipe_count, 0),
@@ -87,6 +114,7 @@ export default function ManageCategories() {
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setFieldErrors({});
     setMessage("");
     setBusy(true);
     const form = event.currentTarget;
@@ -125,6 +153,7 @@ export default function ManageCategories() {
     setConfirmDelete(false);
     setError("");
     setMessage("");
+    setFieldErrors({});
   }
 
   function signOut() {
@@ -137,6 +166,7 @@ export default function ManageCategories() {
     event.preventDefault();
     setError("");
     setMessage("");
+    setFieldErrors({});
     setBusy(true);
     try {
       const payload: { name: string; description: string | null; slug?: string } = {
@@ -157,7 +187,9 @@ export default function ManageCategories() {
           signOut();
           setError(t(response.status === 403 ? "notAdmin" : "sessionExpired"));
         } else {
-          setError(problemText((await response.json()) as Problem));
+          const problem = (await response.json()) as Problem;
+          setFieldErrors(problem.errors ?? {});
+          setError(problemText(problem));
         }
         return;
       }
@@ -217,7 +249,7 @@ export default function ManageCategories() {
     return (
       <main id="main-content" className={styles.loginShell}>
         <section className={styles.loginBrand}>
-          <Link className={styles.brand} href="/"><span aria-hidden="true">✳</span>{t("brand")}</Link>
+          <Link className={styles.brand} href="/"><span><AdminIcon name="spark" /></span>{t("brand")}</Link>
           <blockquote>{t("loginQuote")}</blockquote>
         </section>
         <section className={styles.loginCard} aria-labelledby="admin-login">
@@ -240,28 +272,28 @@ export default function ManageCategories() {
   return (
     <main id="main-content" className={styles.dashboard}>
       <aside className={styles.sidebar}>
-        <Link className={styles.brand} href="/"><span aria-hidden="true">✳</span>{t("brand")}</Link>
+        <Link className={styles.brand} href="/"><span><AdminIcon name="spark" /></span>{t("brand")}</Link>
         <p className={styles.navLabel}>{t("workspace")}</p>
         <nav aria-label={t("workspace")}>
-          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">⌂</span>{t("navOverview")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="grid" />{t("navOverview")}<small>{t("comingSoon")}</small></div>
         </nav>
         <p className={styles.navLabel}>{t("content")}</p>
         <nav aria-label={t("content")}>
-          <a className={styles.navItemActive} href="#category-list"><span aria-hidden="true">▦</span>{t("categories")}</a>
-          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">⌑</span>{t("navRecipes")}<small>{t("comingSoon")}</small></div>
-          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">▤</span>{t("navPosts")}<small>{t("comingSoon")}</small></div>
-          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">▧</span>{t("navMedia")}<small>{t("comingSoon")}</small></div>
+          <a className={styles.navItemActive} href="#category-list"><AdminIcon name="list" />{t("categories")}</a>
+          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="book" />{t("navRecipes")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="post" />{t("navPosts")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="image" />{t("navMedia")}<small>{t("comingSoon")}</small></div>
         </nav>
         <p className={styles.navLabel}>{t("management")}</p>
         <nav aria-label={t("management")}>
-          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">♙</span>{t("navUsers")}<small>{t("comingSoon")}</small></div>
-          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">◫</span>{t("navComments")}<small>{t("comingSoon")}</small></div>
-          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">⌁</span>{t("navAnalytics")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="users" />{t("navUsers")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="chat" />{t("navComments")}<small>{t("comingSoon")}</small></div>
+          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="chart" />{t("navAnalytics")}<small>{t("comingSoon")}</small></div>
         </nav>
         <p className={styles.navLabel}>{t("system")}</p>
         <nav aria-label={t("system")}>
-          <div className={styles.navItemDisabled} aria-disabled="true"><span aria-hidden="true">⚙</span>{t("navSettings")}<small>{t("comingSoon")}</small></div>
-          <Link className={styles.navItem} href="/"><span aria-hidden="true">↗</span>{t("visitSite")}</Link>
+          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="settings" />{t("navSettings")}<small>{t("comingSoon")}</small></div>
+          <Link className={styles.navItem} href="/"><AdminIcon name="external" />{t("visitSite")}</Link>
         </nav>
         <div className={styles.sidebarAccount}>
           <span className={styles.avatar} aria-hidden="true">{adminName.slice(0, 1).toUpperCase()}</span>
@@ -272,28 +304,29 @@ export default function ManageCategories() {
 
       <div className={styles.content}>
         <header className={styles.topbar}>
-          <span className={styles.mobileBrand} aria-hidden="true">✳</span>
+          <span className={styles.mobileBrand}><AdminIcon name="spark" /></span>
           <span>{t("breadcrumb")}</span>
           <div className={styles.activeModule}><i aria-hidden="true" />{t("activeModule")}</div>
           <LocaleSwitcher compact />
+          <button className={styles.mobileSignOut} type="button" onClick={signOut}>{t("signOut")}</button>
         </header>
         <div className={styles.page}>
           <div className={styles.pageHead}>
             <div><p className={styles.kicker}>{t("breadcrumb")}</p><h1>{t("title")}</h1><p>{t("subtitle")}</p></div>
-            <button className={styles.primaryButton} type="button" onClick={() => choose(null)}>+ {t("new")}</button>
+            <button className={styles.primaryButton} type="button" onClick={() => choose(null)}><AdminIcon name="plus" />{t("new")}</button>
           </div>
 
           <section className={styles.stats} aria-label={t("title")}>
-            <article><span className={styles.statIcon} aria-hidden="true">▦</span><div><p>{t("totalCategories")}</p><strong>{categories.length}</strong></div></article>
-            <article><span className={styles.statIcon} aria-hidden="true">☷</span><div><p>{t("totalRecipes")}</p><strong>{recipeTotal}</strong></div></article>
-            <article><span className={styles.statIcon} aria-hidden="true">↗</span><div><p>{t("stableSlugs")}</p><strong>{categories.length}</strong></div></article>
+            <article><span className={styles.statIcon}><AdminIcon name="list" /></span><div><p>{t("totalCategories")}</p><strong>{categories.length}</strong></div></article>
+            <article><span className={styles.statIcon}><AdminIcon name="book" /></span><div><p>{t("totalRecipes")}</p><strong>{recipeTotal}</strong></div></article>
+            <article><span className={styles.statIcon}><AdminIcon name="link" /></span><div><p>{t("stableSlugs")}</p><strong>{categories.length}</strong></div></article>
           </section>
 
           <div className={styles.workspace}>
             <section id="category-list" className={styles.tablePanel} aria-labelledby="list-title">
               <div className={styles.panelHead}>
                 <div><h2 id="list-title">{t("listTitle")}</h2><p>{t("listHint")}</p></div>
-                <label className={styles.searchBox}><span aria-hidden="true">⌕</span><span className={styles.srOnly}>{t("search")}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("searchPlaceholder")} /></label>
+                <label className={styles.searchBox}><AdminIcon name="search" /><span className={styles.srOnly}>{t("search")}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("searchPlaceholder")} /></label>
               </div>
               {loading ? <p className={styles.state}>{t("loading")}</p> : categories.length === 0 ? <p className={styles.state}>{t("empty")}</p> : (
                 filteredCategories.length === 0 ? <p className={styles.state}>{t("noResults")}</p> : <div className={styles.tableScroll}><table>
@@ -301,7 +334,7 @@ export default function ManageCategories() {
                   <tbody>{filteredCategories.map((category) => (
                     <tr key={category.id} className={selected?.id === category.id ? styles.selectedRow : ""}>
                       <td><strong>{category.name}</strong><small>{category.description ?? "—"}</small></td>
-                      <td><code>/{category.slug}</code></td><td>{category.recipe_count}</td>
+                      <td><code>/{category.slug}</code></td><td><span className={styles.mobileRecipeCount}>{t("tableRecipes")}: </span>{category.recipe_count}</td>
                       <td><button type="button" className={styles.editButton} onClick={() => choose(category)}>{t("edit")}</button></td>
                     </tr>
                   ))}</tbody>
@@ -314,12 +347,16 @@ export default function ManageCategories() {
               <h2 id="editor-title">{selected ? t("editTitle") : t("createTitle")}</h2>
               <p className={styles.muted}>{t("formHint")}</p>
               <form onSubmit={save} className={styles.form}>
-                <label>{t("name")}<input value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={50} required /></label>
-                <label>{t("description")}<textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t("descriptionPlaceholder")} rows={5} /></label>
+                {error && <p ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>{error}</p>}
+                {message && <p role="status" className={styles.success}>{message}</p>}
+                <label htmlFor="category-name">{t("name")}</label><input id="category-name" value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={50} required aria-invalid={Boolean(fieldErrors.name)} aria-describedby={fieldErrors.name ? "category-name-error" : undefined} />
+                {fieldErrors.name && <small id="category-name-error" className={styles.fieldError}>{t("nameInvalid")}</small>}
+                <label htmlFor="category-description">{t("description")}</label><textarea id="category-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t("descriptionPlaceholder")} rows={5} aria-invalid={Boolean(fieldErrors.description)} aria-describedby={fieldErrors.description ? "category-description-error" : undefined} />
+                {fieldErrors.description && <small id="category-description-error" className={styles.fieldError}>{t("descriptionInvalid")}</small>}
                 {selected && <div className={styles.slugControl}>
                   <div className={styles.slugSummary}><span>{t("currentUrl")}</span><code>/{selected.slug}</code></div>
                   <label className={styles.slugToggle}><input type="checkbox" checked={editSlug} onChange={(event) => { setEditSlug(event.target.checked); setSlug(selected.slug); }} /><span><strong>{t("editSlugLabel")}</strong><small>{t("editSlugHelp")}</small></span></label>
-                  {editSlug && <label>{t("slug")}<div className={styles.slugInput}><span>/</span><input value={slug} onChange={(event) => setSlug(normalizeSlug(event.target.value))} minLength={2} maxLength={100} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /></div><small className={styles.warning}>{t("slugWarning")}</small></label>}
+                  {editSlug && <label>{t("slug")}<div className={styles.slugInput}><span>/</span><input value={slug} onChange={(event) => setSlug(normalizeSlug(event.target.value))} minLength={2} maxLength={100} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required aria-invalid={Boolean(fieldErrors.slug)} aria-describedby={fieldErrors.slug ? "category-slug-error" : undefined} /></div><small className={styles.warning}>{t("slugWarning")}</small>{fieldErrors.slug && <small id="category-slug-error" className={styles.fieldError}>{t("slugInvalid")}</small>}</label>}
                 </div>}
                 <div className={styles.formActions}><button type="submit" disabled={busy}>{busy ? t("saving") : selected ? t("save") : t("create")}</button>{selected && <button type="button" className={styles.secondaryButton} onClick={() => choose(null)}>{t("cancel")}</button>}</div>
               </form>
@@ -340,8 +377,6 @@ export default function ManageCategories() {
                   <button type="button" className={styles.dangerOutline} onClick={() => setConfirmDelete(true)}>{t("delete")}</button>
                 )}
               </section>}
-              {error && <p role="alert" className={styles.error}>{error}</p>}
-              {message && <p role="status" className={styles.success}>{message}</p>}
             </section>
           </div>
         </div>

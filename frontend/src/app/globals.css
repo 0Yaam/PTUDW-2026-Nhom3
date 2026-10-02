@@ -307,3 +307,17 @@ h1, h2, h3 { font-weight: 500; }
 .category-card { position: relative; }
 .category-card h3 a::after { content: ""; position: absolute; inset: 0; }
 .category-card h3 a:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; }
+
+/* Category cards share the public editorial palette with clearer touch targets. */
+.category-card { border-radius: 16px; box-shadow: 0 6px 24px rgb(48 33 23 / 6%); }
+.category-card-art { height: 255px; }
+.category-card-body { min-height: 225px; padding: 24px; }
+.category-card-body > p { font-size: 14px; }
+.category-card h3 { font-size: clamp(25px, 2vw, 30px); }
+.recipe-count { min-height: 44px; align-items: center; }
+.recipe-count svg { width: 17px; height: 17px; }
+.category-card h3 a:focus-visible { outline: 3px solid #7b3d28; outline-offset: 5px; }
+@media (prefers-reduced-motion: reduce) {
+  .category-card { transition-duration: .01ms; }
+  .category-card:hover { transform: none; }
+}
