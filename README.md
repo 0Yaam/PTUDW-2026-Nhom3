@@ -54,7 +54,7 @@ stable slugs, explicit slug editing, and English/Vietnamese interface text.
 | ----------| ---------------------------------------------------------------------------|
 | Frontend | Next.js 16, React 19, TypeScript, next-intl, CSS Modules                  |
 | Backend  | Python 3.12+, FastAPI, Pydantic, SQLAlchemy 2, Alembic, Uvicorn           |
-| Data     | PostgreSQL 16; Redis and MinIO are available as optional Compose services |
+| Data     | PostgreSQL 16, MinIO object storage; Redis is an optional Compose service |
 | Quality  | pytest, pytest-cov, Ruff, ESLint, Next.js production build                |
 | Tooling  | uv, npm, Docker Compose, Git, GitHub                                      |
 
@@ -81,9 +81,10 @@ cd PTUDW-2026-Nhom3
 .\start-all.ps1
 ```
 
-The default command builds and starts PostgreSQL, the FastAPI backend, and the
-production-style frontend container. The API container automatically runs
-database migrations and the safe seed command.
+The default command builds and starts PostgreSQL, MinIO, Mailpit, the email
+worker, the FastAPI backend, and the production-style frontend container. The
+API container automatically runs database migrations and the safe seed command.
+For local passwords, copy `.env.example` to `.env` before starting.
 
 ### Terminal 2 — optional frontend with hot reload
 
@@ -116,6 +117,8 @@ rebuilding the Docker frontend at `http://localhost:3000`.
 | Frontend Hot Reload | [http://localhost:3001](http://localhost:3001)                                   |
 | Backend API Swagger | [http://localhost:8000/docs](http://localhost:8000/docs)                         |
 | Backend Healthcheck | [http://localhost:8000/health](http://localhost:8000/health)                     |
+| MinIO Console       | [http://localhost:9001](http://localhost:9001)                                   |
+| Mailpit Inbox       | [http://localhost:8025](http://localhost:8025)                                   |
 
 
 Useful commands:

@@ -4,13 +4,15 @@ import uuid
 from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.exc import StaleDataError
 
 from ..auth.model import User
 from ..categories.model import Category
+from .cache import recipe_list_cache
 from .model import Recipe, RecipeIngredient, RecipeStatus, RecipeStep
 from .problem import RecipeProblem
 from .schemas import (
@@ -19,7 +21,11 @@ from .schemas import (
     RecipeCreateRequest,
     RecipeCreateResponse,
     RecipeListQuery,
+    RecipeStepCreateRequest,
+    RecipeStepResponse,
+    RecipeStepUpdateRequest,
     RecipeSummaryResponse,
+    RecipeUpdateRequest,
 )
 
 logger = structlog.get_logger()
@@ -67,6 +73,7 @@ def _to_response(recipe: Recipe) -> RecipeCreateResponse:
             "status": _STATUS_LABELS[RecipeStatus(recipe.status)],
             "nutrition": nutrition,
             "created_at": recipe.created_at,
+            "row_version": recipe.row_version.hex(),
         }
     )
 
@@ -144,6 +151,7 @@ async def create_recipe(
             ) from error
         raise
     await session.refresh(recipe)
+    recipe_list_cache.clear()
     logger.info(
         "recipe_draft_created",
         recipe_id=str(recipe.id),
@@ -205,9 +213,270 @@ async def set_publication_status(
         recipe.status = RecipeStatus.DRAFT
         recipe.published_at = None
 
-    await session.commit()
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
     await session.refresh(recipe)
+    recipe_list_cache.clear()
     return _to_response(recipe)
+
+
+def _recipe_not_found() -> RecipeProblem:
+    return RecipeProblem(
+        status=404,
+        error_code="RECIPE_NOT_FOUND",
+        title="Not Found",
+        detail="Recipe was not found.",
+    )
+
+
+def _recipe_forbidden() -> RecipeProblem:
+    return RecipeProblem(
+        status=403,
+        error_code="RECIPE_FORBIDDEN",
+        title="Forbidden",
+        detail="Only the recipe owner or an Admin can change this recipe.",
+    )
+
+
+def _version_conflict() -> RecipeProblem:
+    return RecipeProblem(
+        status=409,
+        error_code="RECIPE_VERSION_CONFLICT",
+        title="Conflict",
+        detail="Recipe changed since it was loaded. Reload it and try again.",
+    )
+
+
+async def _owned_recipe(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    current_user: User,
+    *,
+    lock: bool = False,
+) -> Recipe:
+    query = select(Recipe).where(Recipe.id == recipe_id, Recipe.is_deleted.is_(False))
+    if lock:
+        query = query.with_for_update()
+    recipe = await session.scalar(query)
+    if recipe is None:
+        raise _recipe_not_found()
+    if current_user.role != "Admin" and recipe.author_id != current_user.id:
+        raise _recipe_forbidden()
+    return recipe
+
+
+async def update_recipe(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    data: RecipeUpdateRequest,
+    current_user: User,
+    if_match: str | None,
+) -> RecipeCreateResponse:
+    """Replace editable recipe fields with an optimistic concurrency check."""
+    recipe = await _owned_recipe(session, recipe_id, current_user)
+    supplied_version = if_match if if_match is not None else data.row_version
+    if supplied_version is None:
+        raise RecipeProblem(
+            status=428,
+            error_code="RECIPE_VERSION_REQUIRED",
+            title="Precondition Required",
+            detail="Send the current rowVersion in If-Match or the request body.",
+        )
+    if supplied_version.strip('"') != recipe.row_version.hex():
+        raise _version_conflict()
+    if await session.get(Category, data.category_id) is None:
+        raise RecipeProblem(
+            status=422,
+            error_code="VALIDATION_ERROR",
+            title="Validation Error",
+            detail="One or more fields are invalid.",
+            errors={"categoryId": ["Category does not exist."]},
+        )
+
+    nutrition = data.nutrition
+    recipe.title = data.title
+    recipe.description = data.description
+    recipe.instructions = data.instructions
+    recipe.category_id = data.category_id
+    recipe.prep_time_minutes = data.prep_time_minutes
+    recipe.cook_time_minutes = data.cook_time_minutes
+    recipe.servings = data.servings
+    recipe.difficulty = data.difficulty.value
+    for field in ("calories", "protein", "carbohydrates", "fat", "fiber", "sodium"):
+        setattr(recipe, f"nutrition_{field}", getattr(nutrition, field) if nutrition else None)
+    recipe.updated_at = datetime.now(UTC)
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
+    except IntegrityError as error:
+        await session.rollback()
+        raise RecipeProblem(
+            status=409,
+            error_code="RECIPE_CONFLICT",
+            title="Conflict",
+            detail="Recipe could not be updated because related data changed.",
+        ) from error
+    await session.refresh(recipe)
+    recipe_list_cache.clear()
+    logger.info("recipe_updated", recipe_id=str(recipe.id), author_id=str(recipe.author_id))
+    return _to_response(recipe)
+
+
+async def delete_recipe(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    current_user: User,
+) -> None:
+    """Hard-delete a recipe and its dependent rows through ORM cascades."""
+    recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    await session.delete(recipe)
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
+    recipe_list_cache.clear()
+    logger.info("recipe_deleted", recipe_id=str(recipe_id))
+
+
+def _step_not_found() -> RecipeProblem:
+    return RecipeProblem(
+        status=404,
+        error_code="RECIPE_STEP_NOT_FOUND",
+        title="Not Found",
+        detail="Recipe step was not found.",
+    )
+
+
+async def _recipe_steps(session: AsyncSession, recipe_id: uuid.UUID) -> list[RecipeStep]:
+    return list(
+        await session.scalars(
+            select(RecipeStep)
+            .where(RecipeStep.recipe_id == recipe_id)
+            .order_by(RecipeStep.step_number)
+        )
+    )
+
+
+async def _renumber_steps(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    ordered_steps: list[RecipeStep],
+) -> None:
+    """Move numbers above the current range before assigning 1..N.
+
+    The temporary range avoids violating the (recipe_id, step_number) unique
+    constraint while PostgreSQL checks each update statement.
+    """
+    if not ordered_steps:
+        return
+    highest = max(step.step_number for step in ordered_steps)
+    await session.execute(
+        update(RecipeStep)
+        .where(RecipeStep.recipe_id == recipe_id)
+        .values(step_number=RecipeStep.step_number + highest + len(ordered_steps))
+        .execution_options(synchronize_session="fetch")
+    )
+    await session.flush()
+    for number, step in enumerate(ordered_steps, 1):
+        step.step_number = number
+    await session.flush()
+
+
+async def create_recipe_step(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    data: RecipeStepCreateRequest,
+    current_user: User,
+) -> RecipeStepResponse:
+    recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    next_number = (await session.scalar(
+        select(func.max(RecipeStep.step_number)).where(RecipeStep.recipe_id == recipe_id)
+    ) or 0) + 1
+    step = RecipeStep(
+        recipe_id=recipe_id,
+        step_number=next_number,
+        instruction=data.instruction,
+        duration_minutes=data.duration_minutes,
+        image_url=data.image_url,
+    )
+    session.add(step)
+    recipe.updated_at = datetime.now(UTC)
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
+    await session.refresh(step)
+    recipe_list_cache.clear()
+    return RecipeStepResponse.model_validate(step)
+
+
+async def update_recipe_step(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    step_id: uuid.UUID,
+    data: RecipeStepUpdateRequest,
+    current_user: User,
+) -> RecipeStepResponse:
+    recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    steps = await _recipe_steps(session, recipe_id)
+    step = next((item for item in steps if item.id == step_id), None)
+    if step is None:
+        raise _step_not_found()
+    if data.step_number is not None and data.step_number > len(steps):
+        raise RecipeProblem(
+            status=422,
+            error_code="VALIDATION_ERROR",
+            title="Validation Error",
+            detail="Step number must be within the existing sequence.",
+            errors={"stepNumber": [f"Must be between 1 and {len(steps)}."]},
+        )
+    step.instruction = data.instruction
+    step.duration_minutes = data.duration_minutes
+    step.image_url = data.image_url
+    if data.step_number is not None and data.step_number != step.step_number:
+        steps.remove(step)
+        steps.insert(data.step_number - 1, step)
+        await _renumber_steps(session, recipe_id, steps)
+    recipe.updated_at = datetime.now(UTC)
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
+    await session.refresh(step)
+    recipe_list_cache.clear()
+    return RecipeStepResponse.model_validate(step)
+
+
+async def delete_recipe_step(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    step_id: uuid.UUID,
+    current_user: User,
+) -> None:
+    recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    steps = await _recipe_steps(session, recipe_id)
+    step = next((item for item in steps if item.id == step_id), None)
+    if step is None:
+        raise _step_not_found()
+    steps.remove(step)
+    await session.delete(step)
+    await session.flush()
+    await _renumber_steps(session, recipe_id, steps)
+    recipe.updated_at = datetime.now(UTC)
+    try:
+        await session.commit()
+    except StaleDataError as error:
+        await session.rollback()
+        raise _version_conflict() from error
+    recipe_list_cache.clear()
 
 
 def _recipe_visibility_filter(current_user: User | None):

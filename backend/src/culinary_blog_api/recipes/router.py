@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.model import User
@@ -16,8 +16,21 @@ from .schemas import (
     RecipeDifficultyFilter,
     RecipeListQuery,
     RecipeListSort,
+    RecipeStepCreateRequest,
+    RecipeStepResponse,
+    RecipeStepUpdateRequest,
+    RecipeUpdateRequest,
 )
-from .service import create_recipe, list_recipes, set_publication_status
+from .service import (
+    create_recipe,
+    create_recipe_step,
+    delete_recipe,
+    delete_recipe_step,
+    list_recipes,
+    set_publication_status,
+    update_recipe,
+    update_recipe_step,
+)
 
 router = APIRouter(prefix="/api/v1/recipes", tags=["recipes"])
 
@@ -102,22 +115,102 @@ async def post_recipe(
 ) -> RecipeCreateResponse:
     created = await create_recipe(session, request, current_user)
     response.headers["Location"] = f"/api/v1/recipes/{created.slug}"
+    response.headers["ETag"] = f'"{created.row_version}"'
     return created
+
+
+@router.put(
+    "/{recipe_id}",
+    response_model=RecipeCreateResponse,
+    responses={
+        403: {"model": ProblemDetails, "description": "Not the owner or Admin"},
+        404: {"model": ProblemDetails, "description": "Recipe not found"},
+        409: {"model": ProblemDetails, "description": "Version conflict"},
+        422: {"model": ProblemDetails, "description": "Invalid recipe data"},
+        428: {"model": ProblemDetails, "description": "Missing row version"},
+    },
+)
+async def put_recipe(
+    recipe_id: uuid.UUID,
+    data: RecipeUpdateRequest,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+    if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+) -> RecipeCreateResponse:
+    updated = await update_recipe(session, recipe_id, data, current_user, if_match)
+    response.headers["ETag"] = f'"{updated.row_version}"'
+    return updated
+
+
+@router.delete("/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_recipe(
+    recipe_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> Response:
+    await delete_recipe(session, recipe_id, current_user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{recipe_id}/steps",
+    response_model=RecipeStepResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def post_recipe_step(
+    recipe_id: uuid.UUID,
+    data: RecipeStepCreateRequest,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> RecipeStepResponse:
+    step = await create_recipe_step(session, recipe_id, data, current_user)
+    response.headers["Location"] = f"/api/v1/recipes/{recipe_id}/steps/{step.id}"
+    return step
+
+
+@router.put("/{recipe_id}/steps/{step_id}", response_model=RecipeStepResponse)
+async def put_recipe_step(
+    recipe_id: uuid.UUID,
+    step_id: uuid.UUID,
+    data: RecipeStepUpdateRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> RecipeStepResponse:
+    return await update_recipe_step(session, recipe_id, step_id, data, current_user)
+
+
+@router.delete("/{recipe_id}/steps/{step_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_recipe_step(
+    recipe_id: uuid.UUID,
+    step_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+) -> Response:
+    await delete_recipe_step(session, recipe_id, step_id, current_user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch("/{recipe_id}/publish", response_model=RecipeCreateResponse)
 async def publish_recipe(
     recipe_id: uuid.UUID,
+    response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(require_author_or_admin)],
 ) -> RecipeCreateResponse:
-    return await set_publication_status(session, recipe_id, current_user, publish=True)
+    updated = await set_publication_status(session, recipe_id, current_user, publish=True)
+    response.headers["ETag"] = f'"{updated.row_version}"'
+    return updated
 
 
 @router.patch("/{recipe_id}/unpublish", response_model=RecipeCreateResponse)
 async def unpublish_recipe(
     recipe_id: uuid.UUID,
+    response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(require_author_or_admin)],
 ) -> RecipeCreateResponse:
-    return await set_publication_status(session, recipe_id, current_user, publish=False)
+    updated = await set_publication_status(session, recipe_id, current_user, publish=False)
+    response.headers["ETag"] = f'"{updated.row_version}"'
+    return updated
