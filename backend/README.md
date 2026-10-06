@@ -51,6 +51,10 @@ there is no production development login or role override.
 Set `JWT_SECRET` to a long random value outside development. Passwords use
 PBKDF2-HMACSHA512 with 210,000 iterations; refresh tokens are stored only as SHA-256 hashes.
 
+Health checks, rate limits, security headers, request logging, and production
+secret rules are documented in
+[`docs/SECURITY-OBSERVABILITY.md`](../docs/SECURITY-OBSERVABILITY.md).
+
 ## Shared storage and welcome email (Issue #45)
 
 The S3-compatible `S3FileStorage` adapter offers validated image upload,

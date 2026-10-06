@@ -16,12 +16,14 @@ from culinary_blog_api.recipes.cache import recipe_list_cache
 @pytest_asyncio.fixture(autouse=True)
 async def database() -> AsyncIterator[None]:
     recipe_list_cache.clear()
+    app.state.rate_limit_buckets.clear()
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.drop_all)
     recipe_list_cache.clear()
+    app.state.rate_limit_buckets.clear()
 
 
 @pytest_asyncio.fixture

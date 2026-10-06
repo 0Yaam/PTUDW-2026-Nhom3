@@ -310,6 +310,10 @@ async def test_docker_and_hot_reload_frontends_are_allowed_by_cors(client) -> No
 
 
 def test_hot_reload_origin_is_development_only() -> None:
-    settings = Settings(environment="production", frontend_origin="https://food.example.com")
+    settings = Settings(
+        environment="production",
+        frontend_origin="https://food.example.com",
+        jwt_secret="test-production-secret",
+    )
 
     assert settings.frontend_origins == ["https://food.example.com"]
