@@ -1,7 +1,10 @@
 import uuid
 from types import SimpleNamespace
 
+import pytest
+
 from culinary_blog_api.api import health
+from culinary_blog_api.config import Settings
 
 
 async def test_readiness_lists_optional_dependencies(client) -> None:
@@ -72,3 +75,18 @@ async def test_google_login_rate_limit_returns_problem_details(client) -> None:
     assert response.headers["Content-Type"].startswith("application/problem+json")
     assert int(response.headers["Retry-After"]) >= 1
     assert response.json()["type"] == "RATE_LIMIT_EXCEEDED"
+
+
+def test_production_rejects_default_jwt_secret() -> None:
+    with pytest.raises(ValueError, match="JWT_SECRET must be changed"):
+        Settings(environment="production", _env_file=None)
+
+
+def test_production_accepts_custom_jwt_secret() -> None:
+    settings = Settings(
+        environment="production",
+        jwt_secret="a-production-secret",
+        _env_file=None,
+    )
+
+    assert settings.environment == "production"

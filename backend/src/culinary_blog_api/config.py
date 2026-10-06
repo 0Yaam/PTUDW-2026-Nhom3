@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import SecretStr
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,6 +27,15 @@ class Settings(BaseSettings):
     app_public_url: str = "http://localhost:3000"
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore")
+
+    @model_validator(mode="after")
+    def reject_default_production_secret(self) -> "Settings":
+        if (
+            self.environment.lower() not in {"development", "test"}
+            and self.jwt_secret.get_secret_value() == "development-only-change-me"
+        ):
+            raise ValueError("JWT_SECRET must be changed outside development and test")
+        return self
 
     @property
     def frontend_origins(self) -> list[str]:
