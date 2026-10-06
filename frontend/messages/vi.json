@@ -71,7 +71,9 @@
     "difficulty3": "Khó",
     "difficulty4": "Chuyên gia",
     "totalTimeLabel": "Tổng thời gian",
-    "servingsLabel": "Khẩu phần"
+    "servingsLabel": "Khẩu phần",
+    "viewRecipe": "Xem công thức",
+    "viewRecipeLabel": "Xem chi tiết công thức {title}"
   },
   "auth": {
     "signOut": "Đăng xuất",

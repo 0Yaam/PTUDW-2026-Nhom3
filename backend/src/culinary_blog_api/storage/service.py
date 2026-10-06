@@ -32,7 +32,8 @@ MIME_EXTENSIONS = {
 }
 FOLDER_PATTERN = re.compile(r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\Z")
 OBJECT_KEY_PATTERN = re.compile(
-    r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*/[0-9a-f]{32}\.(?:jpg|png|webp|avif)\Z"
+    r"(?:[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*/[0-9a-f]{32}\.(?:jpg|png|webp|avif)"
+    r"|recipes/[0-9a-f-]{36}/[0-9a-f-]{36}/(?:medium|thumbnail)\.webp)\Z"
 )
 
 
@@ -68,6 +69,14 @@ class FileStorage(Protocol):
     async def read(self, file_url: str) -> StoredFile: ...
 
     async def delete(self, file_url: str) -> None: ...
+
+    async def upload_variant(
+        self, data: bytes, recipe_id: uuid.UUID, image_id: uuid.UUID, size: str
+    ) -> str: ...
+
+    async def delete_variant(
+        self, recipe_id: uuid.UUID, image_id: uuid.UUID, size: str
+    ) -> None: ...
 
 
 def validate_image(data: bytes, content_type: str) -> str:
@@ -132,6 +141,17 @@ class S3FileStorage:
             raise InvalidImage("File URL contains an invalid object key.")
         return key
 
+    def _variant_key(self, recipe_id: uuid.UUID, image_id: uuid.UUID, size: str) -> str:
+        if size not in {"medium", "thumbnail"}:
+            raise InvalidImage("Unknown recipe image variant.")
+        return f"recipes/{recipe_id}/{image_id}/{size}.webp"
+
+    def _public_url(self, key: str) -> str:
+        return (
+            f"{self.settings.minio_public_url.rstrip('/')}/"
+            f"{self.settings.minio_bucket}/{quote(key, safe='/')}"
+        )
+
     async def _run(self, action: Callable[[], T], operation: str, key: str) -> T:
         """Retry transient S3 failures twice, then surface a stable error."""
         for attempt in range(len(RETRY_DELAYS) + 1):
@@ -175,9 +195,32 @@ class S3FileStorage:
             "upload",
             key,
         )
-        return (
-            f"{self.settings.minio_public_url.rstrip('/')}/"
-            f"{self.settings.minio_bucket}/{quote(key, safe='/')}"
+        return self._public_url(key)
+
+    async def upload_variant(
+        self, data: bytes, recipe_id: uuid.UUID, image_id: uuid.UUID, size: str
+    ) -> str:
+        """Overwrite a deterministic key so a retried resize cannot make duplicates."""
+        validate_image(data, "image/webp")
+        key = self._variant_key(recipe_id, image_id, size)
+        await self._run(
+            lambda: self.client.put_object(
+                Bucket=self.settings.minio_bucket,
+                Key=key,
+                Body=data,
+                ContentType="image/webp",
+            ),
+            "upload",
+            key,
+        )
+        return self._public_url(key)
+
+    async def delete_variant(self, recipe_id: uuid.UUID, image_id: uuid.UUID, size: str) -> None:
+        key = self._variant_key(recipe_id, image_id, size)
+        await self._run(
+            lambda: self.client.delete_object(Bucket=self.settings.minio_bucket, Key=key),
+            "delete",
+            key,
         )
 
     async def upload_file(self, file: UploadFile, folder: str) -> str:

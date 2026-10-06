@@ -71,7 +71,9 @@
     "difficulty3": "Hard",
     "difficulty4": "Expert",
     "totalTimeLabel": "Total time",
-    "servingsLabel": "Servings"
+    "servingsLabel": "Servings",
+    "viewRecipe": "View recipe",
+    "viewRecipeLabel": "View details for {title}"
   },
   "auth": {
     "eyebrow": "Your kitchen account",

@@ -7,7 +7,6 @@ from culinary_blog_api.auth import User
 from culinary_blog_api.categories import Category
 from culinary_blog_api.db import SessionFactory
 from culinary_blog_api.recipes import Recipe, RecipeStatus
-from culinary_blog_api.recipes.cache import recipe_list_cache
 
 
 async def create_user(client, *, email: str, role: str = "Author") -> tuple[User, dict[str, str]]:
@@ -203,17 +202,14 @@ async def test_recipe_list_rejects_invalid_query_values(client) -> None:
     assert response.json()["type"] == "VALIDATION_ERROR"
 
 
-async def test_anonymous_recipe_list_uses_a_15_minute_query_cache(client) -> None:
+async def test_recipe_list_reads_new_rows_when_redis_is_not_configured(client) -> None:
     category = await create_category()
     author, _ = await create_user(client, email="cache@example.com")
     await add_recipe(category, author, title="Lần đầu")
 
     first = await client.get("/api/v1/recipes?sort=title")
     await add_recipe(category, author, title="Sau cache")
-    cached = await client.get("/api/v1/recipes?sort=title")
-    recipe_list_cache.clear()
     fresh = await client.get("/api/v1/recipes?sort=title")
 
     assert first.json()["totalCount"] == 1
-    assert cached.json()["totalCount"] == 1
     assert fresh.json()["totalCount"] == 2

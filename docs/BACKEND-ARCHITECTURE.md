@@ -25,6 +25,9 @@ migrations, and development data. New HTTP routes remain under `/api/v1`.
 Migration `20260922_0004` adds the ingredient and preparation-step tables. The seed command is
 idempotent and creates at least 20 categories and 100 recipes. Every generated recipe has at
 least 10 ingredients and 5 preparation steps.
+The 100 sample titles are grouped into 20 sets of five matching the category order in
+`seed.py`. Re-running `seed` repairs earlier random category assignments for those sample
+recipes only; recipes owned by other users retain their categories.
 
 ## Verify
 

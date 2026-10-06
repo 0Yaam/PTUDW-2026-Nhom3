@@ -71,6 +71,10 @@ An unknown slug returns `404 CATEGORY_NOT_FOUND` as an RFC 7807 problem:
 | Not found | A translated not-found panel with a link back to the categories |
 | Error | The shared boundary in `app/error.tsx` |
 
+Each published recipe card links to the existing `/recipes/{slug}` detail page. The
+link is keyboard-focusable, and its click target covers the card. Its styling is
+scoped to the category detail page; shared/global CSS is unchanged.
+
 The not-found state is rendered by the page itself rather than by a
 `not-found.tsx` boundary. Next renders that boundary outside the next-intl
 request scope, so its translated text never reached the server-rendered HTML.

@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import structlog
 from fastapi import UploadFile
-from sqlalchemy import func, literal, select
+from sqlalchemy import delete, func, literal, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -15,8 +15,8 @@ from sqlalchemy.orm.exc import StaleDataError
 
 from ..auth.model import User
 from ..storage import FileStorage, InvalidImage, StorageUnavailable
-from .cache import clear_recipe_caches
-from .model import Recipe, RecipeImage, RecipeStatus
+from .cache import invalidate_recipe_caches
+from .model import Recipe, RecipeImage, RecipeImageResizeJob, RecipeStatus
 from .problem import RecipeProblem
 from .schemas import (
     PagedRecipeSearchResponse,
@@ -132,7 +132,7 @@ async def archive_recipe(
                 detail="Recipe changed since it was loaded. Reload it and try again.",
             ) from error
         await session.refresh(recipe)
-        clear_recipe_caches()
+        await invalidate_recipe_caches()
     return _to_response(recipe)
 
 
@@ -159,12 +159,14 @@ async def upload_recipe_image(
         or 0
     )
     image = RecipeImage(
+        id=uuid.uuid4(),
         recipe_id=recipe_id,
         original_url=url,
         order_index=count,
         is_primary=count == 0,
     )
     session.add(image)
+    session.add(RecipeImageResizeJob(image_id=image.id))
     recipe.updated_at = datetime.now(UTC)
     try:
         await session.commit()
@@ -176,7 +178,7 @@ async def upload_recipe_image(
             logger.error("recipe_image_upload_cleanup_failed", recipe_id=str(recipe_id))
         raise _version_conflict() from error
     await session.refresh(image)
-    clear_recipe_caches()
+    await invalidate_recipe_caches()
     return _image_response(image)
 
 
@@ -215,7 +217,7 @@ async def set_primary_recipe_image(
             await session.rollback()
             raise _version_conflict() from error
         await session.refresh(target)
-        clear_recipe_caches()
+        await invalidate_recipe_caches()
     return _image_response(target)
 
 
@@ -243,9 +245,14 @@ async def delete_recipe_image(
             detail="Recipe image was not found.",
         )
     try:
+        await storage.delete_variant(recipe_id, target.id, "medium")
+        await storage.delete_variant(recipe_id, target.id, "thumbnail")
         await storage.delete(target.original_url)
     except (InvalidImage, StorageUnavailable) as error:
         raise _image_problem(error) from error
+    await session.execute(
+        delete(RecipeImageResizeJob).where(RecipeImageResizeJob.image_id == image_id)
+    )
     await session.delete(target)
     await session.flush()
     for index, image in enumerate(item for item in images if item.id != image_id):
@@ -260,4 +267,4 @@ async def delete_recipe_image(
     except (IntegrityError, StaleDataError) as error:
         await session.rollback()
         raise _version_conflict() from error
-    clear_recipe_caches()
+    await invalidate_recipe_caches()

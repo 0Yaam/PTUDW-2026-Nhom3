@@ -1,72 +1,88 @@
-"""Small in-process cache for anonymous recipe-list responses.
+"""Redis cache-aside for anonymous public recipe responses."""
 
-FR-RCP-001 requires a 15 minute collection cache keyed by path and query string. The
-authenticated collection is intentionally never cached here: its visibility changes by
-user and role, so sharing a cache entry could expose a draft or archived recipe.
-"""
+import hashlib
+from functools import lru_cache
 
-from __future__ import annotations
+import structlog
+from pydantic import BaseModel
+from redis.asyncio import Redis
+from redis.exceptions import RedisError
 
-import time
+from ..config import get_settings
 
-from .schemas import PagedRecipeResponse, RecipeDetailResponse
+logger = structlog.get_logger()
+VERSION_KEY = "recipes:cache:version"
+TTLS = {"list": 15 * 60, "detail": 5 * 60, "search": 60}
+_pending_invalidations = 0
 
-RECIPE_LIST_CACHE_TTL_SECONDS = 15 * 60
+
+@lru_cache
+def get_cache_client() -> Redis | None:
+    url = get_settings().redis_url
+    if not url:
+        return None
+    try:
+        return Redis.from_url(url, socket_connect_timeout=0.2, socket_timeout=0.2)
+    except (RedisError, ValueError) as error:
+        logger.warning("recipe_cache_configuration_invalid", error_type=type(error).__name__)
+        return None
 
 
-class RecipeListCache:
-    def __init__(self) -> None:
-        self._entries: dict[str, tuple[float, PagedRecipeResponse]] = {}
+def _key(version: str, kind: str, request_key: str) -> str:
+    digest = hashlib.sha256(request_key.encode("utf-8")).hexdigest()
+    return f"recipes:cache:{version}:{kind}:{digest}"
 
-    def get(self, key: str) -> PagedRecipeResponse | None:
-        entry = self._entries.get(key)
-        if entry is None:
-            return None
-        expires_at, response = entry
-        if expires_at <= time.monotonic():
-            self._entries.pop(key, None)
-            return None
-        return response.model_copy(deep=True)
 
-    def set(self, key: str, response: PagedRecipeResponse) -> None:
-        self._entries[key] = (
-            time.monotonic() + RECIPE_LIST_CACHE_TTL_SECONDS,
-            response.model_copy(deep=True),
+async def _flush_pending(client: Redis) -> None:
+    global _pending_invalidations
+    count = _pending_invalidations
+    for _ in range(count):
+        await client.incr(VERSION_KEY)
+    _pending_invalidations = max(0, _pending_invalidations - count)
+
+
+async def get_cached[T: BaseModel](
+    kind: str, request_key: str, model: type[T]
+) -> tuple[str | None, T | None]:
+    client = get_cache_client()
+    if client is None:
+        return None, None
+    try:
+        await _flush_pending(client)
+        version_bytes = await client.get(VERSION_KEY)
+        version = version_bytes.decode() if version_bytes else "0"
+        payload = await client.get(_key(version, kind, request_key))
+        if payload is None:
+            return version, None
+        return version, model.model_validate_json(payload)
+    except (RedisError, ValueError) as error:
+        logger.warning("recipe_cache_read_failed", kind=kind, error_type=type(error).__name__)
+        return None, None
+
+
+async def set_cached(kind: str, request_key: str, response: BaseModel, version: str | None) -> None:
+    client = get_cache_client()
+    if client is None or version is None:
+        return
+    try:
+        current = await client.get(VERSION_KEY)
+        if (current.decode() if current else "0") != version:
+            return
+        await client.set(
+            _key(version, kind, request_key), response.model_dump_json(), ex=TTLS[kind]
         )
-
-    def clear(self) -> None:
-        self._entries.clear()
-
-
-recipe_list_cache = RecipeListCache()
+    except RedisError as error:
+        logger.warning("recipe_cache_write_failed", kind=kind, error_type=type(error).__name__)
 
 
-class RecipeDetailCache:
-    """Cache only published, anonymous detail responses for one hour."""
-
-    def __init__(self) -> None:
-        self._entries: dict[str, tuple[float, RecipeDetailResponse]] = {}
-
-    def get(self, slug: str) -> RecipeDetailResponse | None:
-        entry = self._entries.get(slug)
-        if entry is None:
-            return None
-        expires_at, response = entry
-        if expires_at <= time.monotonic():
-            self._entries.pop(slug, None)
-            return None
-        return response.model_copy(deep=True)
-
-    def set(self, slug: str, response: RecipeDetailResponse) -> None:
-        self._entries[slug] = (time.monotonic() + 60 * 60, response.model_copy(deep=True))
-
-    def clear(self) -> None:
-        self._entries.clear()
-
-
-recipe_detail_cache = RecipeDetailCache()
-
-
-def clear_recipe_caches() -> None:
-    recipe_list_cache.clear()
-    recipe_detail_cache.clear()
+async def invalidate_recipe_caches() -> None:
+    """Advance the shared namespace; old entries expire at their normal TTL."""
+    client = get_cache_client()
+    if client is None:
+        return
+    global _pending_invalidations
+    _pending_invalidations += 1
+    try:
+        await _flush_pending(client)
+    except RedisError as error:
+        logger.warning("recipe_cache_invalidation_failed", error_type=type(error).__name__)

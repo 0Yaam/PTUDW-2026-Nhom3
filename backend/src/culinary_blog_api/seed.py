@@ -13,6 +13,7 @@ from .auth.security import hash_password
 from .categories import Category
 from .db import SessionFactory
 from .recipes import Ingredient, Recipe, RecipeIngredient, RecipeStatus, RecipeStep
+from .recipes.cache import invalidate_recipe_caches
 from .recipes.service import generate_slug
 
 SEED_CATEGORIES = [
@@ -83,6 +84,7 @@ SEED_INGREDIENTS = [
 
 SEED_AUTHOR_EMAIL = "lab2-author@example.local"
 SEED_RECIPE_COUNT = 100
+SEED_RECIPES_PER_CATEGORY = 5
 INGREDIENTS_PER_RECIPE = 10
 STEPS_PER_RECIPE = 5
 
@@ -192,6 +194,7 @@ SEED_RECIPE_TITLES = [
 ]
 
 assert len(SEED_RECIPE_TITLES) == SEED_RECIPE_COUNT
+assert len(SEED_RECIPE_TITLES) == len(SEED_CATEGORIES) * SEED_RECIPES_PER_CATEGORY
 
 
 async def _seed_categories(session: AsyncSession) -> list[Category]:
@@ -269,6 +272,9 @@ async def _seed_recipes(
     for number, (legacy_slug, title) in enumerate(
         zip(legacy_slugs, SEED_RECIPE_TITLES, strict=True), start=1
     ):
+        # The seed titles are grouped in the same order as SEED_CATEGORIES.
+        # Repair old randomly assigned rows as well as assigning new rows.
+        category_id = categories[(number - 1) // SEED_RECIPES_PER_CATEGORY].id
         base_slug = generate_slug(title)
         recipe = by_slug.get(legacy_slug) or by_slug.get(base_slug) or by_title.get(title)
         slug = base_slug
@@ -285,6 +291,7 @@ async def _seed_recipes(
             recipe.title = title
             recipe.description = description
             recipe.instructions = "Chuẩn bị nguyên liệu, nấu chín và nêm nếm vừa ăn."
+            recipe.category_id = category_id
             occupied_slugs.add(slug)
             recipes.append(recipe)
             continue
@@ -299,7 +306,7 @@ async def _seed_recipes(
             servings=generator.randint(2, 6),
             difficulty=generator.randint(1, 4),
             status=RecipeStatus.PUBLISHED,
-            category_id=generator.choice(categories).id,
+            category_id=category_id,
             author_id=author.id,
             nutrition_calories=Decimal(generator.randint(150, 700)),
             nutrition_protein=Decimal(generator.randint(5, 45)),
@@ -376,6 +383,7 @@ async def seed() -> None:
         ingredients = await _seed_ingredients(session)
         await _seed_recipes(session, categories, author, ingredients)
         await session.commit()
+        await invalidate_recipe_caches()
 
 
 def main() -> None:

@@ -2,6 +2,7 @@ import os
 
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["FRONTEND_ORIGIN"] = "http://localhost:3000"
+os.environ["REDIS_URL"] = ""
 
 from collections.abc import AsyncIterator
 
@@ -10,19 +11,16 @@ from httpx import ASGITransport, AsyncClient
 
 from culinary_blog_api.db import Base, engine
 from culinary_blog_api.main import app
-from culinary_blog_api.recipes.cache import clear_recipe_caches
 
 
 @pytest_asyncio.fixture(autouse=True)
 async def database() -> AsyncIterator[None]:
-    clear_recipe_caches()
     app.state.rate_limit_buckets.clear()
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.drop_all)
-    clear_recipe_caches()
     app.state.rate_limit_buckets.clear()
 
 

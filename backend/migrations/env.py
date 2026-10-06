@@ -12,6 +12,7 @@ from culinary_blog_api.recipes import (  # noqa: F401
     Ingredient,
     Recipe,
     RecipeImage,
+    RecipeImageResizeJob,
     RecipeIngredient,
     RecipeStep,
 )

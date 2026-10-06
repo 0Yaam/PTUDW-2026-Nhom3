@@ -129,6 +129,30 @@ class RecipeImage(Base):
     recipe: Mapped["Recipe"] = relationship(back_populates="images")
 
 
+class RecipeImageResizeJob(Base):
+    """Durable resize request committed with the uploaded image metadata."""
+
+    __tablename__ = "recipe_image_resize_jobs"
+    __table_args__ = (
+        Index("ix_recipe_image_resize_jobs_due", "status", "next_attempt_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    image_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("recipe_images.id", ondelete="CASCADE"), unique=True
+    )
+    status: Mapped[str] = mapped_column(String(16), default="Pending", server_default="Pending")
+    attempts: Mapped[int] = mapped_column(Integer(), default=0, server_default="0")
+    next_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_error: Mapped[str | None] = mapped_column(String(120))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 class Ingredient(Base):
     __tablename__ = "ingredients"
 

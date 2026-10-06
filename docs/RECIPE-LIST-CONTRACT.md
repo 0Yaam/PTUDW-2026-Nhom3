@@ -47,10 +47,10 @@ minutes, servings, numeric difficulty, status, and creation time. Invalid query 
 
 ## Cache
 
-Anonymous requests are cached in the API process for 15 minutes under the exact
+Anonymous requests are cached in Redis for 15 minutes under the exact
 `{path}?{queryString}` key required by the SRS. Authenticated requests intentionally bypass that
-shared cache because their result can contain user- or role-specific private recipes. A future
-publish/archive/delete flow clears this cache when it changes public recipe visibility.
+shared cache because their result can contain user- or role-specific private recipes. A shared
+namespace version invalidates list, search, and detail after committed recipe changes.
 
 ## Issue #43: search, archive, and images
 

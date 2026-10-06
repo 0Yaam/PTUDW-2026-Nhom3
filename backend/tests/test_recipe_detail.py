@@ -6,7 +6,6 @@ from test_recipe_list import add_recipe, create_category, create_user
 
 from culinary_blog_api.db import SessionFactory
 from culinary_blog_api.recipes import Ingredient, RecipeIngredient, RecipeStep
-from culinary_blog_api.recipes.cache import recipe_detail_cache
 from culinary_blog_api.recipes.model import RecipeImage, RecipeStatus
 
 
@@ -55,7 +54,6 @@ async def test_guest_reads_complete_published_recipe_in_order(client) -> None:
     assert body["ingredients"][0]["quantity"] == 2
     assert [step["stepNumber"] for step in body["steps"]] == [1, 2]
     assert body["images"][0]["isPrimary"] is True
-    assert recipe_detail_cache.get(recipe.slug) is not None
 
 
 async def test_private_recipe_requires_owner_or_admin(client) -> None:
@@ -75,7 +73,6 @@ async def test_private_recipe_requires_owner_or_admin(client) -> None:
         assert (await client.get(url, headers=other_headers)).status_code == 403
         assert (await client.get(url, headers=owner_headers)).status_code == 200
         assert (await client.get(url, headers=admin_headers)).status_code == 200
-        assert recipe_detail_cache.get(recipe.slug) is None
     assert (
         await client.get(f"/api/v1/recipes/{deleted.slug}", headers=owner_headers)
     ).status_code == 404
@@ -92,11 +89,9 @@ async def test_detail_missing_invalid_token_and_archive_invalidation(client) -> 
     assert invalid.status_code == 401
     assert invalid.headers["content-type"].startswith("application/problem+json")
     assert (await client.get(url)).status_code == 200
-    assert recipe_detail_cache.get(recipe.slug) is not None
     assert (
         await client.patch(f"/api/v1/recipes/{recipe.id}/archive", headers=headers)
     ).status_code == 200
-    assert recipe_detail_cache.get(recipe.slug) is None
     private = await client.get(url)
     assert private.status_code == 403
     assert private.headers["content-type"].startswith("application/problem+json")

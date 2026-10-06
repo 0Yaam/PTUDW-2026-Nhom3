@@ -34,6 +34,9 @@ class FakeStorage:
             raise StorageUnavailable("offline")
         self.files.pop(url, None)
 
+    async def delete_variant(self, recipe_id, image_id, size: str) -> None:
+        self.files.pop(f"http://storage.test/recipes/{recipe_id}/{image_id}/{size}.webp", None)
+
 
 async def test_search_is_public_and_combines_filters_sort_and_pagination(client) -> None:
     category = await create_category()

@@ -12,7 +12,7 @@ from sqlalchemy.orm.exc import StaleDataError
 
 from ..auth.model import User
 from ..categories.model import Category
-from .cache import clear_recipe_caches
+from .cache import invalidate_recipe_caches
 from .model import Recipe, RecipeIngredient, RecipeStatus, RecipeStep
 from .problem import RecipeProblem
 from .schemas import (
@@ -151,7 +151,7 @@ async def create_recipe(
             ) from error
         raise
     await session.refresh(recipe)
-    clear_recipe_caches()
+    await invalidate_recipe_caches()
     logger.info(
         "recipe_draft_created",
         recipe_id=str(recipe.id),
@@ -219,7 +219,7 @@ async def set_publication_status(
         await session.rollback()
         raise _version_conflict() from error
     await session.refresh(recipe)
-    clear_recipe_caches()
+    await invalidate_recipe_caches()
     return _to_response(recipe)
 
 
@@ -322,7 +322,7 @@ async def update_recipe(
             detail="Recipe could not be updated because related data changed.",
         ) from error
     await session.refresh(recipe)
-    clear_recipe_caches()
+    await invalidate_recipe_caches()
     logger.info("recipe_updated", recipe_id=str(recipe.id), author_id=str(recipe.author_id))
     return _to_response(recipe)
 
@@ -340,7 +340,7 @@ async def delete_recipe(
     except StaleDataError as error:
         await session.rollback()
         raise _version_conflict() from error
-    clear_recipe_caches()
+    await invalidate_recipe_caches()
     logger.info("recipe_deleted", recipe_id=str(recipe_id))
 
 
@@ -413,7 +413,7 @@ async def create_recipe_step(
         await session.rollback()
         raise _version_conflict() from error
     await session.refresh(step)
-    clear_recipe_caches()
+    await invalidate_recipe_caches()
     return RecipeStepResponse.model_validate(step)
 
 
@@ -451,7 +451,7 @@ async def update_recipe_step(
         await session.rollback()
         raise _version_conflict() from error
     await session.refresh(step)
-    clear_recipe_caches()
+    await invalidate_recipe_caches()
     return RecipeStepResponse.model_validate(step)
 
 
@@ -476,7 +476,7 @@ async def delete_recipe_step(
     except StaleDataError as error:
         await session.rollback()
         raise _version_conflict() from error
-    clear_recipe_caches()
+    await invalidate_recipe_caches()
 
 
 def _recipe_visibility_filter(current_user: User | None):

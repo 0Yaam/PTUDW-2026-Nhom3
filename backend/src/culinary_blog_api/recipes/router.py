@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth.model import User
 from ..db import get_session
 from ..storage import FileStorage, S3FileStorage, StorageNotConfigured
-from .cache import recipe_detail_cache, recipe_list_cache
+from .cache import get_cached, set_cached
 from .dependencies import get_optional_recipe_viewer, require_author_or_admin
 from .detail import get_recipe_detail
 from .features import (
@@ -92,20 +92,24 @@ async def recipe_list_query(
 )
 async def get_recipes(
     request: Request,
+    response: Response,
     query: Annotated[RecipeListQuery, Depends(recipe_list_query)],
     session: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User | None, Depends(get_optional_recipe_viewer)],
 ) -> PagedRecipeResponse:
     """List published recipes publicly, with private rows only for their owner/Admin."""
     cache_key = f"{request.url.path}?{request.url.query}"
+    version = None
     if current_user is None:
-        cached = recipe_list_cache.get(cache_key)
+        version, cached = await get_cached("list", cache_key, PagedRecipeResponse)
         if cached is not None:
+            response.headers["X-Recipe-Cache"] = "HIT"
             return cached
+    response.headers["X-Recipe-Cache"] = "MISS" if version is not None else "BYPASS"
 
     result = await list_recipes(session, query, current_user)
     if current_user is None:
-        recipe_list_cache.set(cache_key, result)
+        await set_cached("list", cache_key, result, version)
     return result
 
 
@@ -115,9 +119,11 @@ async def get_recipes(
     responses={422: {"model": ProblemDetails, "description": "Invalid search parameters"}},
 )
 async def get_recipe_search(
+    request: Request,
+    response: Response,
     q: Annotated[str, Query(min_length=2, max_length=100)],
     session: Annotated[AsyncSession, Depends(get_session)],
-    _viewer: Annotated[User | None, Depends(get_optional_recipe_viewer)],
+    current_user: Annotated[User | None, Depends(get_optional_recipe_viewer)],
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(alias="pageSize", ge=1, le=50)] = 12,
     category_id: Annotated[uuid.UUID | None, Query(alias="categoryId")] = None,
@@ -146,7 +152,18 @@ async def get_recipe_search(
             "sort": sort,
         }
     )
-    return await search_recipes(session, query)
+    cache_key = f"{request.url.path}?{request.url.query}"
+    version = None
+    if current_user is None:
+        version, cached = await get_cached("search", cache_key, PagedRecipeSearchResponse)
+        if cached is not None:
+            response.headers["X-Recipe-Cache"] = "HIT"
+            return cached
+    response.headers["X-Recipe-Cache"] = "MISS" if version is not None else "BYPASS"
+    result = await search_recipes(session, query)
+    if current_user is None:
+        await set_cached("search", cache_key, result, version)
+    return result
 
 
 @router.get(
@@ -159,16 +176,20 @@ async def get_recipe_search(
 )
 async def get_recipe_by_slug(
     slug: str,
+    response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User | None, Depends(get_optional_recipe_viewer)],
 ) -> RecipeDetailResponse:
+    version = None
     if current_user is None:
-        cached = recipe_detail_cache.get(slug)
+        version, cached = await get_cached("detail", slug, RecipeDetailResponse)
         if cached is not None:
+            response.headers["X-Recipe-Cache"] = "HIT"
             return cached
+    response.headers["X-Recipe-Cache"] = "MISS" if version is not None else "BYPASS"
     detail = await get_recipe_detail(session, slug, current_user)
     if current_user is None and detail.status == "Published":
-        recipe_detail_cache.set(slug, detail)
+        await set_cached("detail", slug, detail, version)
     return detail
 
 

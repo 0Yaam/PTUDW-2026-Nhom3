@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 
 import { getCategory, type RecipeCard } from "@/lib/api/categories";
 
+import styles from "./page.module.css";
+
 
 const difficultyKeys = ["difficulty1", "difficulty2", "difficulty3", "difficulty4"] as const;
 
@@ -59,7 +61,7 @@ export default async function CategoryDetailPage({
         ) : (
           <ul className="recipe-cards">
             {category.recipes.map((recipe: RecipeCard) => (
-              <li className="recipe-card" key={recipe.id}>
+              <li className={`recipe-card ${styles.clickableCard}`} key={recipe.id}>
                 <p className="recipe-card-meta">{t(difficultyKey(recipe.difficulty))}</p>
                 <h3>{recipe.title}</h3>
                 <p className="recipe-card-description">{recipe.description}</p>
@@ -77,6 +79,13 @@ export default async function CategoryDetailPage({
                     <dd>{t("servings", { count: recipe.servings })}</dd>
                   </div>
                 </dl>
+                <Link
+                  className={styles.viewRecipe}
+                  href={`/recipes/${encodeURIComponent(recipe.slug)}`}
+                  aria-label={t("viewRecipeLabel", { title: recipe.title })}
+                >
+                  {t("viewRecipe")} <span aria-hidden="true">↗</span>
+                </Link>
               </li>
             ))}
           </ul>

@@ -26,6 +26,6 @@ empty arrays so a Draft can still be opened before its steps or ingredients
 are added.
 
 The backend eager-loads related data to avoid per-row queries. Anonymous
-Published detail responses are cached in the API process for 60 minutes;
+Published detail responses are cached in Redis for 5 minutes;
 authenticated detail responses are not shared. Recipe, step, archive, and
-image mutations clear the detail cache along with the recipe-list cache.
+image mutations advance the shared recipe-cache version.
