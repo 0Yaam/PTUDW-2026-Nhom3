@@ -50,3 +50,14 @@ there is no production development login or role override.
 
 Set `JWT_SECRET` to a long random value outside development. Passwords use
 PBKDF2-HMACSHA512 with 210,000 iterations; refresh tokens are stored only as SHA-256 hashes.
+
+## Shared storage and welcome email (Issue #45)
+
+The S3-compatible `S3FileStorage` adapter offers validated image upload,
+read, and idempotent delete operations for Issue #43's image endpoints. It
+accepts JPEG, PNG, WebP, and AVIF up to 5 MB and validates file signatures.
+The welcome-email outbox is created during local registration and processed
+by the separate `email-worker` service with three scheduled retries. Set the
+MinIO and SMTP variables in `.env.example`; see
+[`docs/FILE-STORAGE-JOBS.md`](../docs/FILE-STORAGE-JOBS.md) for the contract
+and local verification steps.
