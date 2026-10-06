@@ -8,7 +8,13 @@ from culinary_blog_api.categories import Category  # noqa: F401
 from culinary_blog_api.config import get_settings
 from culinary_blog_api.db import Base
 from culinary_blog_api.jobs.model import WelcomeEmailJob  # noqa: F401
-from culinary_blog_api.recipes import Ingredient, Recipe, RecipeIngredient, RecipeStep  # noqa: F401
+from culinary_blog_api.recipes import (  # noqa: F401
+    Ingredient,
+    Recipe,
+    RecipeImage,
+    RecipeIngredient,
+    RecipeStep,
+)
 
 config = context.config
 config.set_main_option(

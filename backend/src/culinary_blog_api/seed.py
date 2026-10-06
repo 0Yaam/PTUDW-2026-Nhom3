@@ -13,6 +13,7 @@ from .auth.security import hash_password
 from .categories import Category
 from .db import SessionFactory
 from .recipes import Ingredient, Recipe, RecipeIngredient, RecipeStatus, RecipeStep
+from .recipes.service import generate_slug
 
 SEED_CATEGORIES = [
     ("Vietnamese Food", "vietnamese-food", "Home recipes from across Vietnam."),
@@ -85,8 +86,8 @@ SEED_RECIPE_COUNT = 100
 INGREDIENTS_PER_RECIPE = 10
 STEPS_PER_RECIPE = 5
 
-# Stable ``lab2-recipe-###`` slugs below make the seed idempotent. These are the
-# reader-facing titles and descriptions shown in the public recipe list.
+# Stable titles identify the seeded recipes. Their public slugs are derived
+# from these dish names, while older ``lab2-recipe-###`` rows are updated in place.
 SEED_RECIPE_TITLES = [
     "Phở bò Hà Nội",
     "Bún bò Huế",
@@ -256,22 +257,36 @@ async def _seed_recipes(
     author: User,
     ingredients: list[Ingredient],
 ) -> None:
-    slugs = [f"lab2-recipe-{number:03d}" for number in range(1, SEED_RECIPE_COUNT + 1)]
-    recipes = {
-        recipe.slug: recipe
-        for recipe in (
-            await session.scalars(select(Recipe).where(Recipe.slug.in_(slugs)))
-        ).all()
-    }
+    legacy_slugs = [f"lab2-recipe-{number:03d}" for number in range(1, SEED_RECIPE_COUNT + 1)]
+    seeded = (
+        await session.scalars(select(Recipe).where(Recipe.author_id == author.id))
+    ).all()
+    by_slug = {recipe.slug: recipe for recipe in seeded}
+    by_title = {recipe.title: recipe for recipe in seeded}
+    occupied_slugs = set((await session.scalars(select(Recipe.slug))).all())
+    recipes: list[Recipe] = []
 
-    for number, (slug, title) in enumerate(zip(slugs, SEED_RECIPE_TITLES, strict=True), start=1):
+    for number, (legacy_slug, title) in enumerate(
+        zip(legacy_slugs, SEED_RECIPE_TITLES, strict=True), start=1
+    ):
+        base_slug = generate_slug(title)
+        recipe = by_slug.get(legacy_slug) or by_slug.get(base_slug) or by_title.get(title)
+        slug = base_slug
+        suffix = 2
+        while slug in occupied_slugs and (recipe is None or slug != recipe.slug):
+            slug = f"{base_slug}-{suffix}"
+            suffix += 1
         description = (
             f"{title} với hương vị gần gũi, phù hợp để chuẩn bị và chia sẻ tại nhà."
         )
-        if recipe := recipes.get(slug):
+        if recipe is not None:
+            occupied_slugs.discard(recipe.slug)
+            recipe.slug = slug
             recipe.title = title
             recipe.description = description
             recipe.instructions = "Chuẩn bị nguyên liệu, nấu chín và nêm nếm vừa ăn."
+            occupied_slugs.add(slug)
+            recipes.append(recipe)
             continue
         generator = random.Random(20260922 + number)
         recipe = Recipe(
@@ -294,12 +309,12 @@ async def _seed_recipes(
             nutrition_sodium=Decimal(generator.randint(50, 900)),
             published_at=datetime.now(UTC),
         )
-        recipes[slug] = recipe
+        occupied_slugs.add(slug)
+        recipes.append(recipe)
         session.add(recipe)
 
     await session.flush()
-    recipe_list = [recipes[slug] for slug in slugs]
-    recipe_ids = [recipe.id for recipe in recipe_list]
+    recipe_ids = [recipe.id for recipe in recipes]
 
     ingredient_rows = (
         await session.scalars(
@@ -318,7 +333,7 @@ async def _seed_recipes(
         step_numbers_by_recipe[row.recipe_id].add(row.step_number)
 
     units = ["g", "ml", "tbsp", "tsp", "piece"]
-    for number, recipe in enumerate(recipe_list, start=1):
+    for number, recipe in enumerate(recipes, start=1):
         generator = random.Random(20260922 + number)
         selected = generator.sample(ingredients, INGREDIENTS_PER_RECIPE)
         existing_ingredient_ids = ingredient_ids_by_recipe[recipe.id]

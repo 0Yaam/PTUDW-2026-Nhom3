@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import time
 
-from .schemas import PagedRecipeResponse
+from .schemas import PagedRecipeResponse, RecipeDetailResponse
 
 RECIPE_LIST_CACHE_TTL_SECONDS = 15 * 60
 
@@ -39,3 +39,34 @@ class RecipeListCache:
 
 
 recipe_list_cache = RecipeListCache()
+
+
+class RecipeDetailCache:
+    """Cache only published, anonymous detail responses for one hour."""
+
+    def __init__(self) -> None:
+        self._entries: dict[str, tuple[float, RecipeDetailResponse]] = {}
+
+    def get(self, slug: str) -> RecipeDetailResponse | None:
+        entry = self._entries.get(slug)
+        if entry is None:
+            return None
+        expires_at, response = entry
+        if expires_at <= time.monotonic():
+            self._entries.pop(slug, None)
+            return None
+        return response.model_copy(deep=True)
+
+    def set(self, slug: str, response: RecipeDetailResponse) -> None:
+        self._entries[slug] = (time.monotonic() + 60 * 60, response.model_copy(deep=True))
+
+    def clear(self) -> None:
+        self._entries.clear()
+
+
+recipe_detail_cache = RecipeDetailCache()
+
+
+def clear_recipe_caches() -> None:
+    recipe_list_cache.clear()
+    recipe_detail_cache.clear()
