@@ -81,6 +81,12 @@ class RecipeCreateRequest(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
+class RecipeUpdateRequest(RecipeCreateRequest):
+    """Full recipe replacement; rowVersion is an alternative to If-Match."""
+
+    row_version: str | None = Field(default=None, alias="rowVersion")
+
+
 class NutritionResponse(BaseModel):
     calories: float | None = None
     protein: float | None = None
@@ -107,6 +113,35 @@ class RecipeCreateResponse(BaseModel):
     status: Literal["Draft", "Published", "Archived"]
     nutrition: NutritionResponse | None = None
     created_at: datetime = Field(alias="createdAt")
+    row_version: str = Field(alias="rowVersion")
+
+
+class RecipeStepCreateRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    instruction: str = Field(min_length=1, max_length=2000)
+    duration_minutes: int | None = Field(default=None, alias="durationMinutes", gt=0)
+    image_url: str | None = Field(default=None, alias="imageUrl", max_length=2048)
+
+    @field_validator("instruction", "image_url", mode="before")
+    @classmethod
+    def trim_step_text(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+
+class RecipeStepUpdateRequest(RecipeStepCreateRequest):
+    step_number: int | None = Field(default=None, alias="stepNumber", gt=0)
+
+
+class RecipeStepResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: uuid.UUID
+    recipe_id: uuid.UUID = Field(alias="recipeId")
+    step_number: int = Field(alias="stepNumber")
+    instruction: str
+    duration_minutes: int | None = Field(alias="durationMinutes")
+    image_url: str | None = Field(alias="imageUrl")
 
 
 class RecipeCategorySummary(BaseModel):
