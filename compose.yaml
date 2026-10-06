@@ -23,6 +23,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      REDIS_URL: ${REDIS_URL:-}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-culinary}

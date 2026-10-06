@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     frontend_origin: str = "http://localhost:3000"
     jwt_secret: SecretStr = SecretStr("development-only-change-me")
     google_client_id: str = ""
+    redis_url: str = ""
     minio_endpoint: str = ""
     minio_public_url: str = ""
     minio_access_key: str = ""
