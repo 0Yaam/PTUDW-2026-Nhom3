@@ -1,3 +1,4 @@
+import uuid
 from types import SimpleNamespace
 
 from culinary_blog_api.api import health
@@ -33,3 +34,41 @@ async def test_readiness_fails_when_configured_redis_is_unhealthy(
     assert response.status_code == 503
     assert response.json()["status"] == "Unhealthy"
     assert response.json()["entries"]["redis"] == "Unhealthy"
+
+
+async def test_security_headers_and_correlation_ids(client) -> None:
+    valid_id = "request-123_test"
+    valid_response = await client.get(
+        "/health", headers={"X-Correlation-ID": valid_id}
+    )
+    invalid_response = await client.get(
+        "/health", headers={"X-Correlation-ID": "invalid correlation id"}
+    )
+
+    assert valid_response.headers["X-Correlation-ID"] == valid_id
+    uuid.UUID(invalid_response.headers["X-Correlation-ID"])
+    assert valid_response.headers["X-Content-Type-Options"] == "nosniff"
+    assert valid_response.headers["X-Frame-Options"] == "DENY"
+    assert valid_response.headers["Referrer-Policy"] == "no-referrer"
+    assert valid_response.headers["Permissions-Policy"] == (
+        "camera=(), microphone=(), geolocation=()"
+    )
+
+
+async def test_auth_responses_are_not_cached(client) -> None:
+    response = await client.post("/api/v1/auth/login", json={})
+
+    assert response.headers["Cache-Control"] == "no-store"
+
+
+async def test_google_login_rate_limit_returns_problem_details(client) -> None:
+    responses = [
+        await client.post("/api/v1/auth/google", json={"idToken": "invalid"})
+        for _ in range(6)
+    ]
+
+    response = responses[-1]
+    assert response.status_code == 429
+    assert response.headers["Content-Type"].startswith("application/problem+json")
+    assert int(response.headers["Retry-After"]) >= 1
+    assert response.json()["type"] == "RATE_LIMIT_EXCEEDED"
