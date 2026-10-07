@@ -49,14 +49,25 @@ class RecipeListQuery(BaseModel):
     sort: RecipeListSort = "-createdAt"
 
 
+class RecipeSearchQuery(RecipeListQuery):
+    q: str = Field(min_length=2, max_length=100)
+    sort: RecipeListSort | Literal["relevance"] = "relevance"
+
+    @field_validator("q")
+    @classmethod
+    def trim_query(cls, value: str) -> str:
+        value = value.strip()
+        if len(value) < 2:
+            raise ValueError("Search query must have at least 2 characters.")
+        return value
+
+
 class NutritionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     calories: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=2)
     protein: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=2)
-    carbohydrates: Decimal | None = Field(
-        default=None, ge=0, max_digits=8, decimal_places=2
-    )
+    carbohydrates: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=2)
     fat: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=2)
     fiber: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=2)
     sodium: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=2)
@@ -190,30 +201,6 @@ class RecipeIngredientResponse(BaseModel):
     order_index: int = Field(alias="orderIndex")
 
 
-class RecipeDetailResponse(BaseModel):
-    """The full contract returned by ``GET /api/v1/recipes/{slug}``."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    id: uuid.UUID
-    title: str
-    slug: str
-    description: str
-    instructions: str
-    category: RecipeCategorySummary
-    author: RecipeAuthorSummary
-    prep_time_minutes: int = Field(alias="prepTimeMinutes")
-    cook_time_minutes: int = Field(alias="cookTimeMinutes")
-    servings: int
-    difficulty: RecipeDifficulty
-    status: Literal["Draft", "Published", "Archived"]
-    nutrition: NutritionResponse | None = None
-    ingredients: list[RecipeIngredientResponse]
-    steps: list[RecipeStepResponse]
-    created_at: datetime = Field(alias="createdAt")
-    row_version: str = Field(alias="rowVersion")
-
-
 class RecipeSummaryResponse(BaseModel):
     """The list-card shape returned by ``GET /api/v1/recipes``."""
 
@@ -244,3 +231,50 @@ class PagedRecipeResponse(BaseModel):
     total_pages: int = Field(alias="totalPages")
     has_next_page: bool = Field(alias="hasNextPage")
     has_previous_page: bool = Field(alias="hasPreviousPage")
+
+
+class RecipeSearchSummaryResponse(RecipeSummaryResponse):
+    relevance_score: float = Field(alias="relevanceScore")
+
+
+class PagedRecipeSearchResponse(PagedRecipeResponse):
+    items: list[RecipeSearchSummaryResponse]
+
+
+class RecipeImageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: uuid.UUID
+    recipe_id: uuid.UUID = Field(alias="recipeId")
+    original_url: str = Field(alias="originalUrl")
+    medium_url: str | None = Field(alias="mediumUrl")
+    thumbnail_url: str | None = Field(alias="thumbnailUrl")
+    alt_text: str | None = Field(alias="altText")
+    is_primary: bool = Field(alias="isPrimary")
+    order_index: int = Field(alias="orderIndex")
+
+
+class RecipeImageUpdateRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    is_primary: Literal[True] = Field(alias="isPrimary")
+
+
+class RecipeIngredientDetail(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: uuid.UUID
+    ingredient_id: uuid.UUID = Field(alias="ingredientId")
+    name: str
+    quantity: float
+    unit: str
+    order_index: int = Field(alias="orderIndex")
+
+
+class RecipeDetailResponse(RecipeCreateResponse):
+    category: RecipeCategorySummary
+    author: RecipeAuthorSummary
+    ingredients: list[RecipeIngredientDetail]
+    steps: list[RecipeStepResponse]
+    images: list[RecipeImageResponse]
+    published_at: datetime | None = Field(alias="publishedAt")

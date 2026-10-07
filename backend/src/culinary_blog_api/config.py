@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import SecretStr, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     app_name: str = "Culinary Blog API"
     environment: str = "development"
     database_url: str = "postgresql+asyncpg://culinary:culinary@localhost:5432/culinary_blog"
+    database_pool_size: int = Field(default=20, ge=1, le=100)
+    database_max_overflow: int = Field(default=80, ge=0, le=99)
     frontend_origin: str = "http://localhost:3000"
     jwt_secret: SecretStr = SecretStr("development-only-change-me")
     google_client_id: str = ""
@@ -30,6 +32,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def reject_default_production_secret(self) -> "Settings":
+        if self.database_pool_size + self.database_max_overflow > 100:
+            raise ValueError("Database pool limit must not exceed 100 connections per instance")
         if (
             self.environment.lower() not in {"development", "test"}
             and self.jwt_secret.get_secret_value() == "development-only-change-me"

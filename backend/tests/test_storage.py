@@ -1,5 +1,6 @@
 """The shared image adapter validates content and confines URLs to its bucket."""
 
+import uuid
 from io import BytesIO
 
 import pytest
@@ -145,3 +146,22 @@ async def test_missing_bucket_during_upload_is_service_error() -> None:
     storage = S3FileStorage(settings=storage_settings(), client=MissingBucketS3())
     with pytest.raises(StorageUnavailable):
         await storage.upload_image(b"\xff\xd8\xff", "recipes/1", "image/jpeg")
+
+
+async def test_variant_keys_are_stable_and_confined_to_recipe_bucket() -> None:
+    s3 = FakeS3()
+    storage = S3FileStorage(settings=storage_settings(), client=s3)
+    recipe_id, image_id = uuid.uuid4(), uuid.uuid4()
+    data = b"RIFF1234WEBPdemo"
+
+    first = await storage.upload_variant(data, recipe_id, image_id, "medium")
+    second = await storage.upload_variant(data, recipe_id, image_id, "medium")
+
+    assert first == second
+    assert (await storage.read(first)).data == data
+    assert len(s3.objects) == 1
+    with pytest.raises(InvalidImage):
+        await storage.upload_variant(data, recipe_id, image_id, "../../secret")
+    await storage.delete_variant(recipe_id, image_id, "medium")
+    await storage.delete_variant(recipe_id, image_id, "medium")
+    assert s3.objects == {}

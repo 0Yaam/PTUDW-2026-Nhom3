@@ -25,6 +25,39 @@ export type RecipeDraft = RecipeDraftInput & {
   createdAt: string;
 };
 
+export type RecipeDetail = Omit<RecipeDraftInput, "nutrition"> & {
+  id: string;
+  slug: string;
+  authorId: string;
+  status: "Draft" | "Published" | "Archived";
+  createdAt: string;
+  publishedAt: string | null;
+  rowVersion: string;
+  nutrition: {
+    calories: number | null;
+    protein: number | null;
+    carbohydrates: number | null;
+    fat: number | null;
+    fiber: number | null;
+    sodium: number | null;
+  } | null;
+  category: { id: string; name: string; slug: string };
+  author: { id: string; fullName: string; userName: string };
+  ingredients: {
+    id: string; ingredientId: string; name: string; quantity: number;
+    unit: string; orderIndex: number;
+  }[];
+  steps: {
+    id: string; recipeId: string; stepNumber: number; instruction: string;
+    durationMinutes: number | null; imageUrl: string | null;
+  }[];
+  images: {
+    id: string; recipeId: string; originalUrl: string; mediumUrl: string | null;
+    thumbnailUrl: string | null; altText: string | null;
+    isPrimary: boolean; orderIndex: number;
+  }[];
+};
+
 export type ProblemDetails = {
   type?: string;
   title?: string;
@@ -47,51 +80,6 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const serverApiUrl =
   process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export type RecipeIngredient = {
-  id: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  orderIndex: number;
-};
-
-export type RecipeStep = {
-  id: string;
-  stepNumber: number;
-  instruction: string;
-  durationMinutes: number | null;
-};
-
-export type RecipeDetail = {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  instructions: string;
-  category: { id: string; name: string; slug: string };
-  author: { id: string; fullName: string; userName: string };
-  prepTimeMinutes: number;
-  cookTimeMinutes: number;
-  servings: number;
-  difficulty: number;
-  status: "Draft" | "Published" | "Archived";
-  nutrition: {
-    calories?: number;
-    protein?: number;
-    carbohydrates?: number;
-    fat?: number;
-    fiber?: number;
-    sodium?: number;
-  } | null;
-  ingredients: RecipeIngredient[];
-  steps: RecipeStep[];
-  createdAt: string;
-};
-
-/**
- * Returns null for a missing or private recipe (404/403): the public detail page only
- * ever renders the published view, so both cases share the same not-found state.
- */
 export async function getRecipe(slug: string): Promise<RecipeDetail | null> {
   const response = await fetch(`${serverApiUrl}/api/v1/recipes/${encodeURIComponent(slug)}`, {
     cache: "no-store",
@@ -156,4 +144,19 @@ export async function createRecipeDraft(
   }
 
   return response.json() as Promise<RecipeDraft>;
+}
+
+export async function getRecipeDetail(
+  slug: string,
+  accessToken?: string,
+): Promise<RecipeDetail> {
+  const response = await fetch(`${apiUrl}/api/v1/recipes/${encodeURIComponent(slug)}`, {
+    cache: "no-store",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+  });
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => ({}))) as ProblemDetails;
+    throw new RecipeApiError(response.status, problem);
+  }
+  return response.json() as Promise<RecipeDetail>;
 }

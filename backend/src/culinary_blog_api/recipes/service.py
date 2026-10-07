@@ -12,7 +12,7 @@ from sqlalchemy.orm.exc import StaleDataError
 
 from ..auth.model import User
 from ..categories.model import Category
-from .cache import recipe_list_cache
+from .cache import invalidate_recipe_caches
 from .model import Ingredient, Recipe, RecipeIngredient, RecipeStatus, RecipeStep
 from .problem import RecipeProblem
 from .schemas import (
@@ -20,7 +20,6 @@ from .schemas import (
     PagedRecipeResponse,
     RecipeCreateRequest,
     RecipeCreateResponse,
-    RecipeDetailResponse,
     RecipeIngredientCreateRequest,
     RecipeIngredientResponse,
     RecipeIngredientUpdateRequest,
@@ -155,7 +154,7 @@ async def create_recipe(
             ) from error
         raise
     await session.refresh(recipe)
-    recipe_list_cache.clear()
+    await invalidate_recipe_caches()
     logger.info(
         "recipe_draft_created",
         recipe_id=str(recipe.id),
@@ -223,7 +222,7 @@ async def set_publication_status(
         await session.rollback()
         raise _version_conflict() from error
     await session.refresh(recipe)
-    recipe_list_cache.clear()
+    await invalidate_recipe_caches()
     return _to_response(recipe)
 
 
@@ -326,7 +325,7 @@ async def update_recipe(
             detail="Recipe could not be updated because related data changed.",
         ) from error
     await session.refresh(recipe)
-    recipe_list_cache.clear()
+    await invalidate_recipe_caches()
     logger.info("recipe_updated", recipe_id=str(recipe.id), author_id=str(recipe.author_id))
     return _to_response(recipe)
 
@@ -344,7 +343,7 @@ async def delete_recipe(
     except StaleDataError as error:
         await session.rollback()
         raise _version_conflict() from error
-    recipe_list_cache.clear()
+    await invalidate_recipe_caches()
     logger.info("recipe_deleted", recipe_id=str(recipe_id))
 
 
@@ -521,72 +520,6 @@ async def delete_recipe_ingredient(
         raise _version_conflict() from error
 
 
-def _to_detail_response(recipe: Recipe) -> RecipeDetailResponse:
-    nutrition_values = {
-        "calories": recipe.nutrition_calories,
-        "protein": recipe.nutrition_protein,
-        "carbohydrates": recipe.nutrition_carbohydrates,
-        "fat": recipe.nutrition_fat,
-        "fiber": recipe.nutrition_fiber,
-        "sodium": recipe.nutrition_sodium,
-    }
-    nutrition = (
-        NutritionResponse.model_validate(nutrition_values)
-        if any(value is not None for value in nutrition_values.values())
-        else None
-    )
-    ingredients = sorted(recipe.ingredients, key=lambda row: row.order_index)
-    steps = sorted(recipe.steps, key=lambda step: step.step_number)
-    return RecipeDetailResponse.model_validate(
-        {
-            "id": recipe.id,
-            "title": recipe.title,
-            "slug": recipe.slug,
-            "description": recipe.description,
-            "instructions": recipe.instructions,
-            "category": recipe.category,
-            "author": recipe.author,
-            "prep_time_minutes": recipe.prep_time_minutes,
-            "cook_time_minutes": recipe.cook_time_minutes,
-            "servings": recipe.servings,
-            "difficulty": recipe.difficulty,
-            "status": _STATUS_LABELS[RecipeStatus(recipe.status)],
-            "nutrition": nutrition,
-            "ingredients": [_to_ingredient_response(row) for row in ingredients],
-            "steps": [RecipeStepResponse.model_validate(step) for step in steps],
-            "created_at": recipe.created_at,
-            "row_version": recipe.row_version.hex(),
-        }
-    )
-
-
-async def get_recipe_detail(
-    session: AsyncSession,
-    slug: str,
-    current_user: User | None,
-) -> RecipeDetailResponse:
-    """Return the full recipe contract, limiting drafts to the owner or Admin."""
-    recipe = await session.scalar(
-        select(Recipe)
-        .where(Recipe.slug == slug, Recipe.is_deleted.is_(False))
-        .options(
-            joinedload(Recipe.category),
-            joinedload(Recipe.author),
-            joinedload(Recipe.ingredients).joinedload(RecipeIngredient.ingredient),
-            joinedload(Recipe.steps),
-        )
-    )
-    if recipe is None:
-        raise _recipe_not_found()
-    if recipe.status != RecipeStatus.PUBLISHED:
-        is_owner_or_admin = current_user is not None and (
-            current_user.role == "Admin" or current_user.id == recipe.author_id
-        )
-        if not is_owner_or_admin:
-            raise _recipe_forbidden()
-    return _to_detail_response(recipe)
-
-
 def _step_not_found() -> RecipeProblem:
     return RecipeProblem(
         status=404,
@@ -656,7 +589,7 @@ async def create_recipe_step(
         await session.rollback()
         raise _version_conflict() from error
     await session.refresh(step)
-    recipe_list_cache.clear()
+    await invalidate_recipe_caches()
     return RecipeStepResponse.model_validate(step)
 
 
@@ -694,7 +627,7 @@ async def update_recipe_step(
         await session.rollback()
         raise _version_conflict() from error
     await session.refresh(step)
-    recipe_list_cache.clear()
+    await invalidate_recipe_caches()
     return RecipeStepResponse.model_validate(step)
 
 
@@ -719,7 +652,7 @@ async def delete_recipe_step(
     except StaleDataError as error:
         await session.rollback()
         raise _version_conflict() from error
-    recipe_list_cache.clear()
+    await invalidate_recipe_caches()
 
 
 def _recipe_visibility_filter(current_user: User | None):
@@ -733,6 +666,22 @@ def _recipe_visibility_filter(current_user: User | None):
         (Recipe.author_id == current_user.id)
         & Recipe.status.in_((RecipeStatus.DRAFT, RecipeStatus.ARCHIVED)),
     )
+
+
+def _list_filters(query: RecipeListQuery, current_user: User | None):
+    filters = [Recipe.is_deleted.is_(False)]
+    visibility = _recipe_visibility_filter(current_user)
+    if visibility is not None:
+        filters.append(visibility)
+    if query.category_id is not None:
+        filters.append(Recipe.category_id == query.category_id)
+    if query.difficulty is not None:
+        filters.append(Recipe.difficulty == query.difficulty.value_for_database.value)
+    if query.max_cook_time is not None:
+        filters.append(Recipe.cook_time_minutes <= query.max_cook_time)
+    if query.min_servings is not None:
+        filters.append(Recipe.servings >= query.min_servings)
+    return filters
 
 
 def _sort_columns(sort: str):
@@ -773,18 +722,7 @@ async def list_recipes(
     current_user: User | None,
 ) -> PagedRecipeResponse:
     """Get a role-aware, filtered, sorted, offset-paginated recipe collection."""
-    filters = [Recipe.is_deleted.is_(False)]
-    visibility = _recipe_visibility_filter(current_user)
-    if visibility is not None:
-        filters.append(visibility)
-    if query.category_id is not None:
-        filters.append(Recipe.category_id == query.category_id)
-    if query.difficulty is not None:
-        filters.append(Recipe.difficulty == query.difficulty.value_for_database.value)
-    if query.max_cook_time is not None:
-        filters.append(Recipe.cook_time_minutes <= query.max_cook_time)
-    if query.min_servings is not None:
-        filters.append(Recipe.servings >= query.min_servings)
+    filters = _list_filters(query, current_user)
 
     total_count = await session.scalar(select(func.count(Recipe.id)).where(*filters))
     total_count = total_count or 0

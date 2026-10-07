@@ -23,7 +23,9 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      REDIS_URL: ${REDIS_URL:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-20}
+      DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-80}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-culinary}
@@ -56,6 +58,23 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+
+  image-worker:
+    build: ./backend
+    command: python -m culinary_blog_api.recipes.image_worker
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-culinary}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-change-this-local-password}
+      MINIO_BUCKET: ${MINIO_BUCKET:-culinary-blog}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
   email-worker:
     build: ./backend
@@ -90,11 +109,15 @@ services:
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    profiles: ["full"]
 
   minio:
     build: ./infra/minio

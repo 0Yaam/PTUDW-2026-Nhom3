@@ -1,0 +1,67 @@
+/* Hallmark · macrostructure: Recipe collection · component: recipe collection · genre: editorial
+ * pre-emit critique: P4 H5 E4 S4 R4 V3 · anchor hue: existing clay · theme: Small Kitchen tokens
+ * states: default · hover · focus · active · disabled · loading · error · success
+ * contrast: pass (46–50)
+ */
+.page { min-height: 72vh; background: var(--paper); }
+.intro, .content { width: min(100% - 64px, 1280px); margin: 0 auto; }
+.intro { display: flex; align-items: end; justify-content: space-between; gap: 32px; padding: 72px 0 48px; border-bottom: 1px solid var(--line); }
+.back { display: inline-block; margin-bottom: 26px; color: var(--clay); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.intro h1 { max-width: 650px; margin: 0; font-size: clamp(48px, 6vw, 82px); font-style: normal; font-weight: 500; letter-spacing: -.06em; line-height: .96; overflow-wrap: anywhere; }
+.intro p { max-width: 580px; margin: 20px 0 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
+.create, .apply, .pagination button, .error button { min-height: 44px; border: 1px solid var(--clay); border-radius: 3px; background: var(--clay); color: var(--cream); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; transition: transform 160ms ease-out; }
+.create { display: inline-flex; align-items: center; gap: 18px; padding: 14px 18px; white-space: nowrap; }
+.create:hover, .apply:hover, .pagination button:hover:not(:disabled), .error button:hover { transform: translateY(-2px); }
+.create:active, .apply:active, .pagination button:active:not(:disabled), .error button:active { transform: translateY(1px); }
+.create:focus-visible, .apply:focus-visible, .reset:focus-visible, .pagination button:focus-visible, .error button:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; }
+.content { padding: 36px 0 100px; }
+.filters { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) auto; gap: 14px; align-items: end; padding: 20px; border: 1px solid var(--line); border-radius: 5px; background: var(--cream); }
+.searchField { grid-column: 1 / -1; }
+.filters label { display: grid; min-width: 0; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.filters select, .filters input { width: 100%; min-height: 43px; min-width: 0; padding: 10px 11px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper); color: var(--ink); font-size: 14px; letter-spacing: normal; text-transform: none; }
+.filters select:focus, .filters input:focus { border-color: var(--clay); outline: 3px solid var(--clay); outline-offset: 1px; }
+.actions { display: flex; gap: 8px; }
+.apply, .reset, .pagination button, .error button { padding: 0 16px; white-space: nowrap; }
+.reset { min-height: 44px; border: 1px solid var(--line); border-radius: 3px; background: transparent; color: var(--ink); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; transition: background-color 160ms ease-out, transform 160ms ease-out; }
+.reset:hover { background: var(--paper); transform: translateY(-1px); }
+.apply:disabled, .reset:disabled, .pagination button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
+.count { margin: 35px 0 18px; color: var(--clay); font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; transition: opacity 160ms ease-out; }
+.grid[aria-busy="true"] { opacity: .55; }
+.card { position: relative; display: flex; min-width: 0; flex-direction: column; min-height: 280px; padding: 24px; border: 1px solid var(--line); border-radius: 5px; background: var(--cream); transition: transform 160ms ease-out; }
+.card:hover { transform: translateY(-4px); }
+.card:focus-within { outline: 3px solid var(--clay); outline-offset: 3px; }
+.cardOverlay { position: absolute; z-index: 1; inset: 0; }
+.cardOverlay:focus-visible { outline: none; }
+.cardTop { display: flex; justify-content: space-between; gap: 14px; color: var(--clay); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.cardTop a { position: relative; z-index: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cardTop a:hover { text-decoration: underline; }
+.status { color: var(--moss); white-space: nowrap; }
+.card h2 { margin: 20px 0 10px; font-size: 29px; font-style: normal; font-weight: 500; line-height: 1.05; overflow-wrap: anywhere; }
+.card > p { display: -webkit-box; margin: 0; overflow: hidden; color: var(--muted); font-size: 13px; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.card dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: auto 0 0; padding-top: 20px; border-top: 1px solid var(--line); }
+.card dt { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.card dd { margin: 5px 0 0; font-size: 12px; font-weight: 800; }
+.viewDetail { display: flex; justify-content: space-between; margin-top: 18px; color: var(--clay); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 42px; }
+.pagination span { min-width: 130px; color: var(--muted); font-size: 12px; font-weight: 800; text-align: center; }
+.state { margin-top: 34px; padding: 70px 24px; border: 1px dashed var(--line); border-radius: 5px; background: var(--cream); text-align: center; }
+.state h2 { margin: 0; font-size: 32px; font-style: normal; font-weight: 500; }
+.state p { margin: 12px auto 0; color: var(--muted); line-height: 1.6; }
+.loading p { color: var(--clay); font-weight: 800; }
+.error { border-color: var(--clay); }
+.error button { margin-top: 20px; }
+.skeletonSection { margin-top: 35px; }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.skeletonCard { min-height: 280px; padding: 24px; border: 1px solid var(--line); border-radius: 5px; background: var(--cream); }
+.skeletonTag, .skeletonTitle, .skeletonLine, .skeletonLineShort { border-radius: 3px; background: linear-gradient(90deg, var(--paper) 20%, var(--line) 50%, var(--paper) 80%); background-size: 200% 100%; animation: recipeListShimmer 1.5s linear infinite; }
+.skeletonTag { width: 32%; height: 12px; }
+.skeletonTitle { width: 70%; height: 32px; margin-top: 28px; }
+.skeletonLine { width: 100%; height: 12px; margin-top: 20px; }
+.skeletonLineShort { width: 65%; height: 12px; margin-top: 10px; }
+@keyframes recipeListShimmer { to { background-position-x: -200%; } }
+
+@media (max-width: 1080px) { .filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .intro, .content { width: calc(100% - 44px); } .intro { align-items: start; flex-direction: column; padding: 54px 0 36px; } .create { width: 100%; justify-content: space-between; } .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .actions { grid-column: 1 / -1; } .actions button { flex: 1; } }
+@media (max-width: 440px) { .intro, .content { width: calc(100% - 36px); } .intro h1 { font-size: clamp(42px, 14vw, 58px); } .filters, .grid { grid-template-columns: minmax(0, 1fr); } .card dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pagination { gap: 8px; } .pagination button { padding: 0 10px; } .pagination span { min-width: 86px; } }
+@media (prefers-reduced-motion: reduce) { .create, .apply, .reset, .pagination button, .error button, .grid, .card { transition-duration: 0ms; } .skeletonTag, .skeletonTitle, .skeletonLine, .skeletonLineShort { animation: none; } }
