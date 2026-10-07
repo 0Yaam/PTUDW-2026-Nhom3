@@ -1,7 +1,8 @@
 # Recipe API Contract
 
-This contract covers FR-RCP-003, FR-RCP-004, FR-RCP-007, and FR-RCP-010.
-An authenticated Author or Admin creates a recipe draft with real database ownership.
+This contract covers FR-RCP-002, FR-RCP-003, FR-RCP-004, FR-RCP-007, FR-RCP-009, and
+FR-RCP-010. An authenticated Author or Admin creates a recipe draft with real database
+ownership.
 
 ## Endpoint
 
@@ -69,16 +70,45 @@ the numbering gap. A step change also advances the parent recipe's `rowVersion`.
 Unknown recipes/steps return `404`; another Author receives `403`; invalid input
 returns `422`. Errors are RFC 7807 JSON.
 
+## Recipe detail
+
+`GET /api/v1/recipes/{slug}` returns the full recipe contract: category and author
+summaries, nutrition, the ordered `ingredients` list, and the ordered `steps` list,
+alongside the fields already returned by create/update. A published recipe is public.
+A Draft or Archived recipe is limited to its owner or an Admin; anyone else (including
+anonymous callers) receives `403 RECIPE_FORBIDDEN`. An unknown slug returns
+`404 RECIPE_NOT_FOUND`.
+
+## Ingredients
+
+The owner or an Admin can use these routes:
+
+| Method | Path | Result |
+|---|---|---|
+| `POST` | `/api/v1/recipes/{id}/ingredients` | `201`, ingredient body and `Location` |
+| `PUT` | `/api/v1/recipes/{id}/ingredients/{ingredientId}` | `200`, updated ingredient |
+| `DELETE` | `/api/v1/recipes/{id}/ingredients/{ingredientId}` | `204` |
+
+Create accepts `ingredientName` (trimmed, 1-120 characters), a positive `quantity`
+(up to 2 decimal places), and `unit` (trimmed, 1-30 characters). An ingredient name
+is looked up or created in the shared `ingredients` table, then linked to the recipe
+with the next `orderIndex`. Adding the same ingredient twice returns
+`409 RECIPE_INGREDIENT_EXISTS`. Update accepts the same fields and an optional
+`orderIndex` (0 through the current ingredient count minus one) to move it; delete
+closes the ordering gap. Unknown recipes/ingredient rows return `404`; another
+Author receives `403`; invalid input returns `422`.
+
 ## Errors
 
 Errors use `application/problem+json` without stack traces:
 
 - `401 AUTH_TOKEN_INVALID` or `AUTH_TOKEN_EXPIRED`
 - `403 RECIPE_FORBIDDEN`
-- `409 RECIPE_SLUG_EXISTS`
+- `404 RECIPE_NOT_FOUND`, `RECIPE_STEP_NOT_FOUND`, or `RECIPE_INGREDIENT_NOT_FOUND`
+- `409 RECIPE_SLUG_EXISTS` or `RECIPE_INGREDIENT_EXISTS`
 - `422 VALIDATION_ERROR`, with field messages in `errors`
 
 ## Deferred scope
 
-Ingredients remain in FR-RCP-009. Recipe image metadata, stored objects, search
-vectors, and Redis cache invalidation belong to their assigned integration issues.
+Recipe image metadata, stored objects, search vectors, and Redis cache invalidation
+belong to their assigned integration issues.

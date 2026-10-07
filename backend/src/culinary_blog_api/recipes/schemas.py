@@ -163,6 +163,44 @@ class RecipeCategorySummary(BaseModel):
     slug: str
 
 
+class RecipeAuthorSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: uuid.UUID
+    full_name: str = Field(alias="fullName")
+    user_name: str = Field(alias="userName")
+    avatar_url: str | None = Field(alias="avatarUrl")
+
+
+class RecipeIngredientCreateRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    ingredient_name: str = Field(alias="ingredientName", min_length=1, max_length=120)
+    quantity: Decimal = Field(gt=0, max_digits=8, decimal_places=2)
+    unit: str = Field(min_length=1, max_length=30)
+
+    @field_validator("ingredient_name", "unit", mode="before")
+    @classmethod
+    def trim_text(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+
+class RecipeIngredientUpdateRequest(RecipeIngredientCreateRequest):
+    order_index: int | None = Field(default=None, alias="orderIndex", ge=0)
+
+
+class RecipeIngredientResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: uuid.UUID
+    recipe_id: uuid.UUID = Field(alias="recipeId")
+    ingredient_id: uuid.UUID = Field(alias="ingredientId")
+    name: str
+    quantity: float
+    unit: str
+    order_index: int = Field(alias="orderIndex")
+
+
 class RecipeSummaryResponse(BaseModel):
     """The list-card shape returned by ``GET /api/v1/recipes``."""
 
@@ -220,14 +258,6 @@ class RecipeImageUpdateRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     is_primary: Literal[True] = Field(alias="isPrimary")
-
-
-class RecipeAuthorSummary(BaseModel):
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
-
-    id: uuid.UUID
-    full_name: str = Field(alias="fullName")
-    user_name: str = Field(alias="userName")
 
 
 class RecipeIngredientDetail(BaseModel):

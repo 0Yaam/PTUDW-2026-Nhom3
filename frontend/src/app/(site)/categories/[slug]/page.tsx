@@ -1,15 +1,34 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 import { getCategory, type RecipeCard } from "@/lib/api/categories";
-
 import styles from "./page.module.css";
-
+import { siteUrl } from "@/lib/site-url";
 
 const difficultyKeys = ["difficulty1", "difficulty2", "difficulty3", "difficulty4"] as const;
 
 function difficultyKey(value: number) {
   return difficultyKeys[value - 1] ?? difficultyKeys[0];
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const category = await getCategory(slug);
+
+  if (!category) {
+    return { title: "Category not found", robots: { index: false, follow: false } };
+  }
+
+  return {
+    title: category.name,
+    description: category.description ?? undefined,
+    alternates: { canonical: siteUrl(`/categories/${category.slug}`) },
+  };
 }
 
 export default async function CategoryDetailPage({
@@ -36,8 +55,28 @@ export default async function CategoryDetailPage({
     );
   }
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: category.name,
+    description: category.description ?? undefined,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: category.recipes.map((recipe, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: siteUrl(`/recipes/${recipe.slug}`),
+        name: recipe.title,
+      })),
+    },
+  };
+
   return (
     <main id="main-content" className="detail-shell">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <Link className="back-link" href="/#categories">
         <span aria-hidden="true">←</span> {t("back")}
       </Link>
@@ -63,7 +102,7 @@ export default async function CategoryDetailPage({
             {category.recipes.map((recipe: RecipeCard) => (
               <li className={`recipe-card ${styles.clickableCard}`} key={recipe.id}>
                 <p className="recipe-card-meta">{t(difficultyKey(recipe.difficulty))}</p>
-                <h3>{recipe.title}</h3>
+                <h3><Link href={`/recipes/${recipe.slug}`}>{recipe.title}</Link></h3>
                 <p className="recipe-card-description">{recipe.description}</p>
                 <dl className="recipe-card-facts">
                   <div>

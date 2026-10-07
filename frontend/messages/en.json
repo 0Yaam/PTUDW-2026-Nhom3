@@ -406,5 +406,18 @@
     "description": "Check FastAPI and PostgreSQL, then try again.",
     "retry": "Try again",
     "loading": "Loading data"
+  },
+  "recipeDetail": {
+    "eyebrow": "Recipe",
+    "back": "All categories",
+    "byAuthor": "By {name}",
+    "ingredientsTitle": "Ingredients",
+    "stepsTitle": "Steps",
+    "nutritionTitle": "Nutrition",
+    "stepDuration": "{minutes} min",
+    "notFoundEyebrow": "Not found",
+    "notFoundTitle": "Recipe not found.",
+    "notFoundDescription": "This recipe is private or no longer exists.",
+    "notFoundAction": "Browse categories"
   }
 }
