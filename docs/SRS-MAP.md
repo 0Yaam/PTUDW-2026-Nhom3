@@ -8,14 +8,14 @@
 | FR-AUTH-006 to FR-AUTH-007 | View and update profile | Minh Anh / Dan | Done - #31 and #38 |
 | FR-CAT-001 to FR-CAT-005 | Category list, detail, management, and deletion | Team | Done - #2, #3, #33 |
 | FR-RCP-001 | Public recipe list | Hieu | Done - #32 |
-| FR-RCP-002 | Recipe detail | Minh Anh | Lab 04 #40 - Ready |
+| FR-RCP-002 | Recipe detail | Minh Anh | Done - #40 |
 | FR-RCP-003 | Draft recipe and base model | Hieu | Done - #4 |
 | FR-RCP-004 | Update recipes with ownership rules | Han | Lab 04 #39 - Ready |
 | FR-RCP-005 | Publish and unpublish recipes | Dan | Done - Lab 04 #38 |
 | FR-RCP-006 | Archive recipes | Hieu | Lab 04 #43 - Ready |
 | FR-RCP-007 | Delete recipe data and image references | Han / Hieu | Lab 04 #39 and #43 - Ready |
 | FR-RCP-008 | Recipe images | Hieu | Lab 04 #43 - Ready |
-| FR-RCP-009 | Recipe ingredients | Minh Anh | Lab 04 #40 - Ready |
+| FR-RCP-009 | Recipe ingredients | Minh Anh | Done - #40 |
 | FR-RCP-010 | Cooking steps | Han | Lab 04 #39 - Ready |
 | FR-SRCH-001 | Full-text search | Hieu | Lab 04 #43 - Ready |
 | FR-SRCH-002 to FR-SRCH-004 | Filters, sorting, and pagination | Hieu | Done - #32 |
