@@ -306,5 +306,18 @@
     "description": "Hãy kiểm tra FastAPI và PostgreSQL rồi thử lại.",
     "retry": "Thử lại",
     "loading": "Đang tải dữ liệu"
+  },
+  "recipeDetail": {
+    "eyebrow": "Công thức",
+    "back": "Tất cả danh mục",
+    "byAuthor": "Bởi {name}",
+    "ingredientsTitle": "Nguyên liệu",
+    "stepsTitle": "Các bước",
+    "nutritionTitle": "Dinh dưỡng",
+    "stepDuration": "{minutes} phút",
+    "notFoundEyebrow": "Không tìm thấy",
+    "notFoundTitle": "Không tìm thấy công thức.",
+    "notFoundDescription": "Công thức này riêng tư hoặc không còn tồn tại.",
+    "notFoundAction": "Xem các danh mục"
   }
 }
