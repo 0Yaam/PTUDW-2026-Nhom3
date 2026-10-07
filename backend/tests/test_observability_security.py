@@ -2,6 +2,7 @@ import uuid
 from types import SimpleNamespace
 
 import pytest
+from structlog.testing import capture_logs
 
 from culinary_blog_api.api import health
 from culinary_blog_api.config import Settings
@@ -88,6 +89,38 @@ async def test_recipe_image_upload_has_stricter_rate_limit(client) -> None:
 
     assert responses[-1].status_code == 429
     assert responses[-1].json()["type"] == "RATE_LIMIT_EXCEEDED"
+
+
+async def test_authenticated_writes_emit_audit_event(client) -> None:
+    registered = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "fullName": "Nguyen Ngoc Truong Dan",
+            "email": "audit@example.com",
+            "userName": "audit_dan",
+            "password": "StrongPass1!",
+        },
+    )
+    body = registered.json()
+
+    with capture_logs() as logs:
+        response = await client.patch(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {body['accessToken']}"},
+            json={
+                "fullName": "Nguyễn Ngọc Trường Dân",
+                "userName": "audit_dan",
+                "avatarUrl": None,
+            },
+        )
+
+    audit = next(item for item in logs if item["event"] == "audit_http_request")
+    assert response.status_code == 200
+    assert audit["correlation_id"] == response.headers["X-Correlation-ID"]
+    assert audit["user_id"] == body["user"]["id"]
+    assert audit["method"] == "PATCH"
+    assert audit["path"] == "/api/v1/auth/me"
+    assert audit["status"] == 200
 
 
 def test_production_rejects_default_jwt_secret() -> None:

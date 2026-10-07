@@ -174,6 +174,15 @@ async def request_context(request: Request, call_next):
         elapsed_ms=elapsed_ms,
         user_id=user_id,
     )
+    if user_id and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        logger.info(
+            "audit_http_request",
+            correlation_id=correlation_id,
+            user_id=user_id,
+            method=request.method,
+            path=request.url.path,
+            status=response.status_code,
+        )
     return response
 
 
