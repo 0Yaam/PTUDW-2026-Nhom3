@@ -56,6 +56,9 @@ async def test_security_headers_and_correlation_ids(client) -> None:
     assert valid_response.headers["Permissions-Policy"] == (
         "camera=(), microphone=(), geolocation=()"
     )
+    assert valid_response.headers["Content-Security-Policy"] == (
+        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    )
 
 
 async def test_auth_responses_are_not_cached(client) -> None:
@@ -75,6 +78,16 @@ async def test_google_login_rate_limit_returns_problem_details(client) -> None:
     assert response.headers["Content-Type"].startswith("application/problem+json")
     assert int(response.headers["Retry-After"]) >= 1
     assert response.json()["type"] == "RATE_LIMIT_EXCEEDED"
+
+
+async def test_recipe_image_upload_has_stricter_rate_limit(client) -> None:
+    recipe_id = uuid.uuid4()
+    responses = [
+        await client.post(f"/api/v1/recipes/{recipe_id}/images") for _ in range(6)
+    ]
+
+    assert responses[-1].status_code == 429
+    assert responses[-1].json()["type"] == "RATE_LIMIT_EXCEEDED"
 
 
 def test_production_rejects_default_jwt_secret() -> None:
