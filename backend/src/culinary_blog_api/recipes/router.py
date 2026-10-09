@@ -443,7 +443,6 @@ async def remove_recipe_image(
     image_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User, Depends(require_author_or_admin)],
-    storage: Annotated[FileStorage, Depends(get_recipe_storage)],
 ) -> Response:
-    await delete_recipe_image(session, recipe_id, image_id, current_user, storage)
+    await delete_recipe_image(session, recipe_id, image_id, current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

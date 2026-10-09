@@ -19,6 +19,7 @@ from .categories import router as categories_router
 from .config import get_settings
 from .recipes import RecipeProblem
 from .recipes import router as recipes_router
+from .storage import model as storage_model  # noqa: F401 - register cleanup table
 
 settings = get_settings()
 logger = structlog.get_logger()

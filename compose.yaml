@@ -17,9 +17,27 @@ services:
       timeout: 3s
       retries: 10
 
+  db-backup:
+    image: postgres:16-alpine
+    entrypoint: ["sh", "/scripts/backup.sh"]
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-culinary}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-culinary}
+      PGDATABASE: ${POSTGRES_DB:-culinary_blog}
+    volumes:
+      - ./infra/backup/backup.sh:/scripts/backup.sh:ro
+      - postgres_backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   api:
     build: ./backend
     environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      JWT_SECRET: ${JWT_SECRET:-development-only-change-me}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -37,6 +55,7 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      SMTP_SSL: ${SMTP_SSL:-false}
       SMTP_FROM: ${SMTP_FROM:-no-reply@culinary.local}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
     command: >-
@@ -76,6 +95,22 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  file-worker:
+    build: ./backend
+    command: python -m culinary_blog_api.storage.worker
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-culinary}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-change-this-local-password}
+      MINIO_BUCKET: ${MINIO_BUCKET:-culinary-blog}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
   email-worker:
     build: ./backend
     command: python -m culinary_blog_api.jobs.worker
@@ -86,6 +121,7 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      SMTP_SSL: ${SMTP_SSL:-false}
       SMTP_FROM: ${SMTP_FROM:-no-reply@culinary.local}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
     depends_on:
@@ -152,5 +188,6 @@ services:
 
 volumes:
   postgres_data:
+  postgres_backups:
   redis_data:
   minio_data:
