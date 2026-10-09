@@ -15,6 +15,8 @@ from sqlalchemy.orm.exc import StaleDataError
 
 from ..auth.model import User
 from ..storage import FileStorage, InvalidImage, StorageUnavailable
+from ..storage.cleanup import queue_image_cleanup
+from ..storage.model import FileDeletionJob
 from .cache import invalidate_recipe_caches
 from .model import Recipe, RecipeImage, RecipeImageResizeJob, RecipeStatus
 from .problem import RecipeProblem
@@ -175,7 +177,18 @@ async def upload_recipe_image(
         try:
             await storage.delete(url)
         except (InvalidImage, StorageUnavailable):
-            logger.error("recipe_image_upload_cleanup_failed", recipe_id=str(recipe_id))
+            # A conflict rolled back the image row; persist a cleanup request
+            # if MinIO is also unavailable so this upload cannot remain orphaned.
+            try:
+                session.add(FileDeletionJob(
+                    original_url=url, recipe_id=recipe_id, image_id=image.id
+                ))
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                logger.exception(
+                    "recipe_image_upload_cleanup_queue_failed", recipe_id=str(recipe_id)
+                )
         raise _version_conflict() from error
     await session.refresh(image)
     await invalidate_recipe_caches()
@@ -226,7 +239,6 @@ async def delete_recipe_image(
     recipe_id: uuid.UUID,
     image_id: uuid.UUID,
     current_user: User,
-    storage: FileStorage,
 ) -> None:
     recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
     images = list(
@@ -244,12 +256,8 @@ async def delete_recipe_image(
             title="Not Found",
             detail="Recipe image was not found.",
         )
-    try:
-        await storage.delete_variant(recipe_id, target.id, "medium")
-        await storage.delete_variant(recipe_id, target.id, "thumbnail")
-        await storage.delete(target.original_url)
-    except (InvalidImage, StorageUnavailable) as error:
-        raise _image_problem(error) from error
+    # Commit metadata removal and durable object cleanup requests together.
+    queue_image_cleanup(session, target)
     await session.execute(
         delete(RecipeImageResizeJob).where(RecipeImageResizeJob.image_id == image_id)
     )

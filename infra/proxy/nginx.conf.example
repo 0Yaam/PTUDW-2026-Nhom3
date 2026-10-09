@@ -1,0 +1,48 @@
+# Replace domain and certificate paths with your deployment's values.
+# Add more API servers to the upstream when scaling horizontally.
+upstream culinary_api {
+    server api:8000;
+    keepalive 32;
+}
+
+upstream culinary_frontend {
+    server frontend:3000;
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    server_name culinary.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name culinary.example.com;
+    ssl_certificate /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+    client_max_body_size 6m;
+
+    location /api/ {
+        proxy_pass http://culinary_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Correlation-ID $request_id;
+    }
+
+    location /health {
+        proxy_pass http://culinary_api;
+    }
+
+    location /_next/static/ {
+        proxy_pass http://culinary_frontend;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location / {
+        proxy_pass http://culinary_frontend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

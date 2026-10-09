@@ -81,8 +81,9 @@ cd PTUDW-2026-Nhom3
 .\start-all.ps1
 ```
 
-The default command builds and starts PostgreSQL, MinIO, Mailpit, the email
-worker, the FastAPI backend, and the production-style frontend container. The
+The default command builds and starts PostgreSQL, MinIO, Redis, Mailpit, the
+email, image, and file cleanup workers, a daily database backup service, the
+FastAPI backend, and the production-style frontend container. The
 API container automatically runs database migrations and the safe seed command.
 For local passwords, copy `.env.example` to `.env` before starting.
 
