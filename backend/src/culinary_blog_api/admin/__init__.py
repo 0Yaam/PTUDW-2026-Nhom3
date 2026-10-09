@@ -1,0 +1,1 @@
+"""Administrative read-only overview."""

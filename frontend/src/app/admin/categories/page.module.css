@@ -141,6 +141,52 @@
   font-size: 15px;
   line-height: 1.5;
 }
+
+/* Read-only overview keeps operational signals beside category management. */
+.overview { display: grid; gap: 20px; margin-bottom: 52px; scroll-margin-top: 100px; }
+.overviewHeading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.overviewHeading h1 { margin: 6px 0; font-family: var(--font-display); font-size: clamp(32px, 4vw, 48px); line-height: 1.1; }
+.overviewHeading p:last-child { margin: 0; color: #625e58; }
+.overviewHeading button { min-height: 42px; padding: 9px 15px; border: 1px solid #cfc7b9; border-radius: 9px; background: #fffefa; color: #211e1a; font-weight: 700; }
+.overviewStats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.overviewStats article, .overviewPanel { border: 1px solid #e4ded4; border-radius: 14px; background: #fffefa; box-shadow: 0 8px 28px rgb(42 32 20 / 4%); }
+.overviewStats article { display: grid; gap: 5px; padding: 21px; }
+.overviewStats span { color: #625e58; font-size: 12px; font-weight: 700; }
+.overviewStats strong { font-size: 32px; letter-spacing: -.04em; }
+.overviewStats small { color: #766d63; font-size: 11px; }
+.overviewGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.overviewPanel { padding: 23px; }
+.overviewPanel h2 { margin: 0 0 4px; font-size: 18px; }
+.overviewPanel > p { margin: 0 0 22px; color: #625e58; font-size: 12px; }
+.statusRow { margin-top: 16px; }
+.statusRow div { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; font-size: 13px; }
+.statusRow progress { width: 100%; height: 9px; overflow: hidden; border: 0; border-radius: 9px; accent-color: #8b5927; }
+.statusRow progress::-webkit-progress-bar { border-radius: 9px; background: #eee8df; }
+.statusRow progress::-webkit-progress-value { border-radius: 9px; background: #8b5927; }
+.jobRow { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 13px 0; border-top: 1px solid #eee8df; font-size: 12px; }
+.jobRow > span:first-child { font-weight: 750; }
+.jobFailed { color: #b42318; }
+.recentList { display: grid; }
+.recentList > div { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto auto; gap: 14px; align-items: center; padding: 13px 0; border-top: 1px solid #eee8df; font-size: 12px; }
+.recentList strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recentList span, .recentList time { color: #625e58; }
+.recentList small { padding: 4px 8px; border-radius: 20px; background: #f3e9d9; color: #69441f; }
+.categoryRanking { display: grid; gap: 10px; }
+.categoryRanking > div { display: grid; grid-template-columns: 26px minmax(120px, 1fr) minmax(80px, 2fr) 28px; gap: 13px; align-items: center; font-size: 12px; }
+.categoryRanking span, .categoryRanking small { color: #766d63; }
+.categoryRanking strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.categoryRanking progress { width: 100%; height: 8px; accent-color: #8b5927; }
+@media (max-width: 1100px) { .overviewStats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .overviewHeading { align-items: start; flex-direction: column; }
+  .overviewStats, .overviewGrid { grid-template-columns: 1fr; }
+  .jobRow { grid-template-columns: 1fr auto; }
+  .jobRow > span:last-child { grid-column: 2; }
+  .recentList > div { grid-template-columns: 1fr auto; }
+  .recentList > div span { grid-column: 1; }
+  .categoryRanking > div { grid-template-columns: 24px minmax(0, 1fr) 28px; }
+  .categoryRanking progress { grid-column: 2 / 3; grid-row: 2; }
+}
 .dashboard { background: #f7f5f0; }
 .dashboard svg, .loginShell svg { width: 19px; height: 19px; flex: none; }
 .dashboard button, .loginShell button { cursor: pointer; }
