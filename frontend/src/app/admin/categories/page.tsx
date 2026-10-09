@@ -2,13 +2,19 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { Category } from "@/components/category-grid";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import styles from "./page.module.css";
 
 type Problem = { type?: string; detail?: string; errors?: Record<string, string[]> };
 type LoginResponse = { accessToken: string; user: { fullName: string; roles: string[] } };
+type Overview = {
+  users: number; categories: number; images: number;
+  recipes: { total: number; draft: number; published: number; archived: number };
+  jobs: Record<"email" | "resize" | "cleanup", { pending: number; failed: number }>;
+  recentRecipes: { id: string; title: string; status: string; author: string; createdAt: string }[];
+};
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -48,6 +54,7 @@ function normalizeSlug(value: string): string {
 export default function ManageCategories() {
   const t = useTranslations("admin");
   const errors = useTranslations("errors");
+  const locale = useLocale();
   const [categories, setCategories] = useState<Category[]>([]);
   const [token, setToken] = useState("");
   const [adminName, setAdminName] = useState("");
@@ -63,9 +70,28 @@ export default function ManageCategories() {
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const [overviewError, setOverviewError] = useState(false);
   const errorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
+
+  const loadOverview = useCallback(async (accessToken: string) => {
+    setOverviewLoading(true);
+    setOverviewError(false);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/admin/overview`, {
+        headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store",
+      });
+      if (!response.ok) throw new Error("overview");
+      setOverview((await response.json()) as Overview);
+    } catch {
+      setOverviewError(true);
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, []);
 
   const recipeTotal = useMemo(
     () => categories.reduce((sum, category) => sum + category.recipe_count, 0),
@@ -79,6 +105,10 @@ export default function ManageCategories() {
         .some((value) => value.toLocaleLowerCase().includes(query)),
     );
   }, [categories, search]);
+  const topCategories = useMemo(
+    () => [...categories].sort((a, b) => b.recipe_count - a.recipe_count).slice(0, 5),
+    [categories],
+  );
 
   function problemText(problem: Problem): string {
     const fieldError = Object.values(problem.errors ?? {}).flat()[0];
@@ -136,6 +166,7 @@ export default function ManageCategories() {
       }
       setToken(result.accessToken);
       setAdminName(result.user.fullName);
+      void loadOverview(result.accessToken);
       form.reset();
     } catch {
       setError(t("apiUnavailable"));
@@ -159,6 +190,7 @@ export default function ManageCategories() {
   function signOut() {
     setToken("");
     setAdminName("");
+    setOverview(null);
     choose(null);
   }
 
@@ -203,6 +235,7 @@ export default function ManageCategories() {
       setEditSlug(false);
       setConfirmDelete(false);
       await loadCategories();
+      void loadOverview(token);
     } catch {
       setError(t("apiUnavailable"));
     } finally {
@@ -238,6 +271,7 @@ export default function ManageCategories() {
       setConfirmDelete(false);
       setMessage(t("deleted", { name: deletedName }));
       await loadCategories();
+      void loadOverview(token);
     } catch {
       setError(t("apiUnavailable"));
     } finally {
@@ -275,7 +309,7 @@ export default function ManageCategories() {
         <Link className={styles.brand} href="/"><span><AdminIcon name="spark" /></span>{t("brand")}</Link>
         <p className={styles.navLabel}>{t("workspace")}</p>
         <nav aria-label={t("workspace")}>
-          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="grid" />{t("navOverview")}<small>{t("comingSoon")}</small></div>
+          <a className={styles.navItem} href="#overview"><AdminIcon name="grid" />{t("navOverview")}</a>
         </nav>
         <p className={styles.navLabel}>{t("content")}</p>
         <nav aria-label={t("content")}>
@@ -311,6 +345,54 @@ export default function ManageCategories() {
           <button className={styles.mobileSignOut} type="button" onClick={signOut}>{t("signOut")}</button>
         </header>
         <div className={styles.page}>
+          <section id="overview" className={styles.overview} aria-labelledby="overview-title">
+            <div className={styles.overviewHeading}>
+              <div><p className={styles.kicker}>{t("overviewEyebrow")}</p><h1 id="overview-title">{t("overviewTitle")}</h1><p>{t("overviewSubtitle")}</p></div>
+              <button type="button" onClick={() => void loadOverview(token)} disabled={overviewLoading}>{t("refreshOverview")}</button>
+            </div>
+            {overviewError && <p role="alert" className={styles.error}>{t("overviewError")}</p>}
+            {overviewLoading && !overview && <p role="status" className={styles.state}>{t("overviewLoading")}</p>}
+            {overview && <>
+              <div className={styles.overviewStats}>
+                <article><span>{t("overviewUsers")}</span><strong>{overview.users}</strong><small>{t("overviewUsersHint")}</small></article>
+                <article><span>{t("overviewRecipes")}</span><strong>{overview.recipes.total}</strong><small>{t("overviewRecipesHint")}</small></article>
+                <article><span>{t("overviewCategories")}</span><strong>{overview.categories}</strong><small>{t("overviewCategoriesHint")}</small></article>
+                <article><span>{t("overviewImages")}</span><strong>{overview.images}</strong><small>{t("overviewImagesHint")}</small></article>
+              </div>
+              <div className={styles.overviewGrid}>
+                <article className={styles.overviewPanel}>
+                  <h2>{t("recipeStatusTitle")}</h2><p>{t("recipeStatusHint")}</p>
+                  {(["published", "draft", "archived"] as const).map((status) => <div className={styles.statusRow} key={status}>
+                    <div><span>{t(`recipeStatus${status}`)}</span><strong>{overview.recipes[status]}</strong></div>
+                    <progress max={Math.max(overview.recipes.total, 1)} value={overview.recipes[status]} aria-label={t(`recipeStatus${status}`)} />
+                  </div>)}
+                </article>
+                <article className={styles.overviewPanel}>
+                  <h2>{t("jobsTitle")}</h2><p>{t("jobsHint")}</p>
+                  {(["email", "resize", "cleanup"] as const).map((kind) => <div className={styles.jobRow} key={kind}>
+                    <span>{t(`job${kind}`)}</span><span>{t("jobPending")}: <strong>{overview.jobs[kind].pending}</strong></span><span className={overview.jobs[kind].failed ? styles.jobFailed : ""}>{t("jobFailed")}: <strong>{overview.jobs[kind].failed}</strong></span>
+                  </div>)}
+                </article>
+              </div>
+              <article className={styles.overviewPanel}>
+                <h2>{t("recentTitle")}</h2><p>{t("recentHint")}</p>
+                {overview.recentRecipes.length === 0 ? <p className={styles.muted}>{t("recentEmpty")}</p> : <div className={styles.recentList}>
+                  {overview.recentRecipes.map((recipe) => <div key={recipe.id}><strong>{recipe.title}</strong><span>{recipe.author}</span><small>{t(`recipeStatus${recipe.status.toLowerCase()}`)}</small><time dateTime={recipe.createdAt}>{new Date(recipe.createdAt).toLocaleDateString(locale)}</time></div>)}
+                </div>}
+              </article>
+              <article className={styles.overviewPanel}>
+                <h2>{t("topCategoriesTitle")}</h2><p>{t("topCategoriesHint")}</p>
+                {topCategories.length === 0 ? <p className={styles.muted}>{t("topCategoriesEmpty")}</p> : <div className={styles.categoryRanking}>
+                  {topCategories.map((category, index) => <div key={category.id}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{category.name}</strong>
+                    <progress max={Math.max(topCategories[0].recipe_count, 1)} value={category.recipe_count} aria-label={category.name} />
+                    <small>{category.recipe_count}</small>
+                  </div>)}
+                </div>}
+              </article>
+            </>}
+          </section>
           <div className={styles.pageHead}>
             <div><p className={styles.kicker}>{t("breadcrumb")}</p><h1>{t("title")}</h1><p>{t("subtitle")}</p></div>
             <button className={styles.primaryButton} type="button" onClick={() => choose(null)}><AdminIcon name="plus" />{t("new")}</button>
