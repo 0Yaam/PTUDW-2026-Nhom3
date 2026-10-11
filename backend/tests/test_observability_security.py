@@ -2,6 +2,7 @@ import uuid
 from types import SimpleNamespace
 
 import pytest
+from structlog.testing import capture_logs
 
 from culinary_blog_api.api import health
 from culinary_blog_api.config import Settings
@@ -56,6 +57,9 @@ async def test_security_headers_and_correlation_ids(client) -> None:
     assert valid_response.headers["Permissions-Policy"] == (
         "camera=(), microphone=(), geolocation=()"
     )
+    assert valid_response.headers["Content-Security-Policy"] == (
+        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    )
 
 
 async def test_auth_responses_are_not_cached(client) -> None:
@@ -75,6 +79,48 @@ async def test_google_login_rate_limit_returns_problem_details(client) -> None:
     assert response.headers["Content-Type"].startswith("application/problem+json")
     assert int(response.headers["Retry-After"]) >= 1
     assert response.json()["type"] == "RATE_LIMIT_EXCEEDED"
+
+
+async def test_recipe_image_upload_has_stricter_rate_limit(client) -> None:
+    recipe_id = uuid.uuid4()
+    responses = [
+        await client.post(f"/api/v1/recipes/{recipe_id}/images") for _ in range(6)
+    ]
+
+    assert responses[-1].status_code == 429
+    assert responses[-1].json()["type"] == "RATE_LIMIT_EXCEEDED"
+
+
+async def test_authenticated_writes_emit_audit_event(client) -> None:
+    registered = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "fullName": "Nguyen Ngoc Truong Dan",
+            "email": "audit@example.com",
+            "userName": "audit_dan",
+            "password": "StrongPass1!",
+        },
+    )
+    body = registered.json()
+
+    with capture_logs() as logs:
+        response = await client.patch(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {body['accessToken']}"},
+            json={
+                "fullName": "Nguyễn Ngọc Trường Dân",
+                "userName": "audit_dan",
+                "avatarUrl": None,
+            },
+        )
+
+    audit = next(item for item in logs if item["event"] == "audit_http_request")
+    assert response.status_code == 200
+    assert audit["correlation_id"] == response.headers["X-Correlation-ID"]
+    assert audit["user_id"] == body["user"]["id"]
+    assert audit["method"] == "PATCH"
+    assert audit["path"] == "/api/v1/auth/me"
+    assert audit["status"] == 200
 
 
 def test_production_rejects_default_jwt_secret() -> None:
