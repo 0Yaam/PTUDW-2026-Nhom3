@@ -10,7 +10,17 @@ Only the useful dashboard patterns were adapted: sidebar, top bar, summary cards
 
 The browser treats the dashboard as presentation. Sign-in calls `/api/v1/auth/login`; the screen opens only when the response contains the `Admin` role. Every `POST /api/v1/categories`, `PUT /api/v1/categories/{id}`, and `DELETE /api/v1/categories/{id}` sends the Bearer token. The FastAPI `require_admin` dependency loads the current user from the database and returns 401/403 when appropriate, so hiding the dashboard is not the security boundary. The token remains in component memory and is cleared on sign-out, 401, or 403.
 
-The sidebar provides the full shared Admin information architecture. Categories and the public-site link are active. Overview, recipes, posts, media, users, comments, analytics, and settings are labelled as upcoming, use non-interactive elements, and have no route or click handler. Their owners can replace one placeholder with an authorized route without changing the category form or API logic.
+The sidebar provides the full shared Admin information architecture. Overview, categories, and the public-site link are active. Recipes, posts, media, users, comments, analytics, and settings are labelled as upcoming, use non-interactive elements, and have no route or click handler. Their owners can replace one placeholder with an authorized route without changing the category form or API logic.
+
+The Overview anchor at `/admin` leads to the existing Admin workspace. It calls
+`GET /api/v1/admin/overview` with the current Admin Bearer token and displays
+real database totals for users, categories, active recipes and image metadata;
+recipe status distribution; pending/failed email, resize and cleanup jobs; and
+the five latest active recipes. The UI ranks up to five categories using the
+existing category list response. The API uses SQL aggregates and one bounded
+recent-recipe query, requires `require_admin`, and never returns private user
+email addresses. Refresh can be requested from the panel. The login token
+remains in memory; reloading the page requires sign-in again.
 
 ## English and Vietnamese
 

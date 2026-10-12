@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from .admin.router import router as admin_router
 from .api.health import router as health_router
 from .auth import AuthProblem
 from .auth import router as auth_router
@@ -191,3 +192,4 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(categories_router)
 app.include_router(recipes_router)
+app.include_router(admin_router)

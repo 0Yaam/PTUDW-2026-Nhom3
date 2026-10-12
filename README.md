@@ -120,6 +120,7 @@ rebuilding the Docker frontend at `http://localhost:3000`.
 | Backend Healthcheck | [http://localhost:8000/health](http://localhost:8000/health)                     |
 | MinIO Console       | [http://localhost:9001](http://localhost:9001)                                   |
 | Mailpit Inbox       | [http://localhost:8025](http://localhost:8025)                                   |
+| Admin Overview      | [http://localhost:3000/admin](http://localhost:3000/admin)                       |
 
 
 Useful commands:
