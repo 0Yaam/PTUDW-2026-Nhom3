@@ -26,9 +26,9 @@ All Cycle 3 Issues are new Project items in `Ready`. Finish the related Lab 04 I
 
 | Owner | Remaining work |
 |---|---|
-| Dan | Final security audit, cross-feature integration, release checks, and review coordination |
-| Han | Safe file deletion, deployment, backup, data durability, container, and proxy setup |
-| Minh Anh | Final user documentation plus accessibility and SEO QA |
-| Hieu | Load testing, cache/storage cleanup, and final query tuning |
+| Dan | #58 - Security audit, cross-feature integration, and release checks |
+| Han | #59 - Storage lifecycle, email delivery, and deployment readiness |
+| Minh Anh | #60 - Accessibility, frontend performance, and user guide |
+| Hieu | #61 - Cache, worker recovery, and recipe performance verification |
 
 Cycle 4 contains no duplicated API endpoint work from Lab 04. Create new Cycle 4 Issues only when Cycle 3 is almost complete.
