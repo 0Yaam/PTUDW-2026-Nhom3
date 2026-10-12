@@ -82,6 +82,8 @@ def _rate_limit(path: str) -> tuple[str, int] | None:
         return "google-auth", 5
     if path.startswith("/api/v1/auth/"):
         return "auth", 10
+    if path.startswith("/api/v1/recipes/") and path.endswith("/images"):
+        return "upload", 5
     if path.startswith("/api/v1/"):
         return "api", 100
     return None
@@ -92,6 +94,10 @@ def _add_security_headers(response, path: str) -> None:
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if path not in {"/docs", "/openapi.json", "/redoc"}:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+        )
     if settings.environment.lower() == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     if path.startswith("/api/v1/auth/"):
@@ -170,6 +176,15 @@ async def request_context(request: Request, call_next):
         elapsed_ms=elapsed_ms,
         user_id=user_id,
     )
+    if user_id and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        logger.info(
+            "audit_http_request",
+            correlation_id=correlation_id,
+            user_id=user_id,
+            method=request.method,
+            path=request.url.path,
+            status=response.status_code,
+        )
     return response
 
 

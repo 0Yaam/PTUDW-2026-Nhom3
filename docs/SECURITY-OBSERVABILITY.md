@@ -23,3 +23,10 @@ Each request receives a validated `X-Correlation-ID`. Structured logs include th
 ## Secrets
 
 Configure secrets through environment variables and never commit them. The API refuses to start outside development or test when `JWT_SECRET` still uses the default value.
+
+## Cycle 4 hardening
+
+- Recipe image uploads are limited to 5 requests/minute/IP.
+- Non-documentation responses use a restrictive Content Security Policy.
+- Authenticated write requests emit `audit_http_request` with correlation ID, user ID, method, path, and status.
+- `test_release_integration.py` covers register, login, recipe creation, publish, and search as one release flow.

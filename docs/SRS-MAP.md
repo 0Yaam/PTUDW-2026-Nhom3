@@ -20,21 +20,21 @@
 | FR-SRCH-001 | Full-text search | Hieu | Lab 04 #43 - Ready |
 | FR-SRCH-002 to FR-SRCH-004 | Filters, sorting, and pagination | Hieu | Done - #32 |
 | FR-FILE-001 | MinIO upload and storage adapter | Han | Done - #45 |
-| FR-FILE-002 | Safe physical file deletion | Han / Hieu | Cycle 4 #59 - Ready for review |
-| FR-JOB-001 | Welcome email job | Han | Cycle 4 #59 - Ready for review |
+| FR-FILE-002 | Safe physical file deletion | Han / Hieu | Done - #59 |
+| FR-JOB-001 | Welcome email job | Han | Done - #45 and #59 |
 | FR-JOB-002 | Image resize job | Hieu | Cycle 3 #47 - Ready |
 | FR-JOB-003 | Sitemap job | Minh Anh | Done - #46 |
-| FR-OBS-001 to FR-OBS-003 | Health checks, logging, traces, and metrics | Dan | Cycle 3 #44 - Ready |
+| FR-OBS-001 to FR-OBS-003 | Health checks, logging, traces, and metrics | Dan | Done - #44 and #58 |
 | NFR-PERF-001 to NFR-PERF-004 | API, database, cache, and query performance | Hieu | Cycle 3 #47 - Ready |
 | NFR-PERF-005 | Frontend performance | Minh Anh | Cycle 3 #46 - Ready |
 | NFR-SEC-001 to NFR-SEC-002 | Password and ownership security | Dan | Done - #1 and #38 |
-| NFR-SEC-003 to NFR-SEC-007 | Shared security hardening | Dan | Cycle 3 #44 - Ready |
+| NFR-SEC-003 to NFR-SEC-007 | Shared security hardening | Dan | Done - #44 and #58 |
 | NFR-USE-001 to NFR-USE-004 | Responsive and accessible UI | Minh Anh | Cycle 3 #46 - Ready |
-| NFR-REL-001 to NFR-REL-002 | Health and error recovery | Dan | Cycle 3 #44 - Ready |
-| NFR-REL-003 | Deployment, backup, and data durability | Han | Cycle 4 #59 - Ready for review |
-| NFR-MAINT-001 to NFR-MAINT-002 | Code quality, tests, and integration | Dan / Team | Cycle 3 #44 and all cycles |
+| NFR-REL-001 to NFR-REL-002 | Health and error recovery | Dan | Done - #44 and #58 |
+| NFR-REL-003 | Deployment, backup, and data durability | Han | Done - #59 |
+| NFR-MAINT-001 to NFR-MAINT-002 | Code quality, tests, and integration | Dan / Team | Done for Dan - #44 and #58; team checks continue |
 | NFR-MAINT-003 to NFR-MAINT-004 | User documentation and clear modules | Minh Anh | Cycle 3 #46, final QA in Cycle 4 |
-| NFR-SCALE-001 | Stateless API and shared storage | Han | Cycle 4 #59 - Ready for review |
+| NFR-SCALE-001 | Stateless API and shared storage | Han | Done - #45 and #59 |
 | NFR-SCALE-002 | Database scaling path | Hieu | Cycle 3 #47 - Ready |
-| NFR-SCALE-003 | Container and proxy setup | Han | Cycle 4 #59 - Ready for review |
+| NFR-SCALE-003 | Container and proxy setup | Han | Done - #59 |
 | NFR-SEO-001 to NFR-SEO-004 | Recipe SEO, sitemap, and URLs | Minh Anh | Done - #46 |
