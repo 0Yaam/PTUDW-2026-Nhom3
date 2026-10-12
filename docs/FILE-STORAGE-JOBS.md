@@ -61,5 +61,59 @@ Compose passes these to both the API and worker. Do not commit `.env`.
    verify upload/read/delete with `backend/tests/test_storage.py`; no public
    image upload endpoint is added by #45.
 
-Migration `20261002_0006` follows #39's `20261002_0005`. Merge #39 first,
-then #45, to keep one Alembic migration chain.
+## Issue #59: durable cleanup and production delivery
+
+Recipe-image deletion and hard recipe deletion now create three
+`file_deletion_jobs` rows per image (original, medium, thumbnail) in the same
+PostgreSQL transaction as metadata deletion. The `file-worker` removes those
+objects after commit. An absent object counts as success. A transient storage
+failure leaves the job pending for retries after 1, 5, and 30 minutes; after
+the fourth failure it becomes `Failed` and logs its job ID. Once storage is
+repaired, run `docker compose exec file-worker python -m
+culinary_blog_api.storage.worker --retry-failed` to requeue failed jobs.
+The API returns 204 after durable enqueue; physical deletion is eventual.
+The worker must be running in every deployment, and `file_deletion_jobs`
+must be included in database backups. The cleanup table has no recipe FK so
+hard deletion cannot erase pending cleanup requests.
+
+Welcome mail supports authenticated SMTP with STARTTLS (`SMTP_STARTTLS=true`)
+or implicit TLS (`SMTP_SSL=true`, commonly port 465). Use exactly one TLS mode.
+Each welcome message has a deterministic Message-ID for providers with
+deduplication support. SMTP itself only guarantees at-least-once delivery:
+crashes after provider acceptance but before the database commit can replay a
+message. The registration outbox is unique by user ID, preventing duplicate
+registration jobs. After fixing a provider failure, requeue `Failed` messages
+with `docker compose exec email-worker python -m culinary_blog_api.jobs.worker
+--retry-failed`. Do not run this before fixing SMTP settings.
+
+Compose persists PostgreSQL, Redis, MinIO, and daily database backups in named
+volumes. `db-backup` writes a PostgreSQL custom-format dump during the 03:00
+UTC hour and retains 30 days. Check `docker compose logs db-backup` and verify
+the backup volume contains recent nonempty dumps; a successful process start
+does not prove a backup is restorable. For production, use externally managed
+PostgreSQL, S3/MinIO, Redis, HTTPS reverse proxy and off-site backup copies;
+set all secrets in the deployment environment and never commit `.env`.
+`infra/proxy/nginx.conf.example` documents TLS termination, static asset
+caching and an API upstream that can be extended with additional instances.
+Provide certificates and private keys outside the repository. Configure
+`FRONTEND_ORIGIN`, `APP_PUBLIC_URL`, `MINIO_PUBLIC_URL`, database credentials,
+JWT secret, SMTP credentials, and a durable Redis/S3 endpoint for each
+deployment; the local Compose defaults are for development only.
+
+To inspect the latest backup, run:
+
+```sh
+docker compose exec db-backup sh -c 'ls -lh /backups/*.dump'
+```
+
+For recovery, stop writes, preserve the damaged volume, create a fresh
+PostgreSQL database with the same application credentials, then restore a
+selected dump with `pg_restore --clean --if-exists --no-owner -d culinary_blog
+/backups/YYYYMMDD.dump` from the backup container. Restore the corresponding
+MinIO object volume or external bucket snapshot as well, then run migrations,
+start the API/workers, and verify login, recipe images, and pending jobs.
+Restoring only PostgreSQL can leave image references pointing to missing files.
+
+Migration `20261009_0009` adds the cleanup outbox after image-resize migration
+`20261006_0008`. Existing MinIO objects from deletions before this migration
+are not discoverable from recipe metadata and need a separate audited cleanup.

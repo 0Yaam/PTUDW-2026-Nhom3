@@ -1,6 +1,7 @@
 """Issue #43: public search, archiving, and owner-controlled images."""
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from test_recipe_list import add_recipe, create_category, create_user
@@ -10,7 +11,9 @@ from culinary_blog_api.main import app
 from culinary_blog_api.recipes.model import Recipe, RecipeImage, RecipeStatus
 from culinary_blog_api.recipes.router import get_recipe_storage
 from culinary_blog_api.storage import StorageUnavailable
+from culinary_blog_api.storage.model import FileDeletionJob
 from culinary_blog_api.storage.service import MAX_IMAGE_BYTES, validate_image
+from culinary_blog_api.storage.worker import process_due_job as process_cleanup_job
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"image"
 
@@ -157,6 +160,9 @@ async def test_images_persist_primary_switch_and_delete(client) -> None:
             assert [row.id for row in rows if row.is_primary] == [uuid.UUID(second.json()["id"])]
         deleted = await client.delete(image_path, headers=headers)
         assert deleted.status_code == 204
+        assert len(storage.files) == 2  # cleanup happens after the metadata transaction
+        while await process_cleanup_job(storage=storage):
+            pass
         assert len(storage.files) == 1
         async with SessionFactory() as session:
             row = await session.get(RecipeImage, uuid.UUID(first.json()["id"]))
@@ -197,7 +203,7 @@ async def test_images_reject_invalid_file_permission_and_storage_failure(client)
         app.dependency_overrides.pop(get_recipe_storage, None)
 
 
-async def test_admin_can_manage_images_and_failed_delete_preserves_metadata(client) -> None:
+async def test_admin_delete_queues_retryable_cleanup(client) -> None:
     storage = FakeStorage()
     app.dependency_overrides[get_recipe_storage] = lambda: storage
     try:
@@ -214,12 +220,46 @@ async def test_admin_can_manage_images_and_failed_delete_preserves_metadata(clie
         assert upload.status_code == 201
         image_id = uuid.UUID(upload.json()["id"])
         storage.unavailable = True
-        failed = await client.delete(f"{path}/{image_id}", headers=admin_headers)
-        assert failed.status_code == 503
+        deleted = await client.delete(f"{path}/{image_id}", headers=admin_headers)
+        assert deleted.status_code == 204
         async with SessionFactory() as session:
-            assert await session.get(RecipeImage, image_id) is not None
+            assert await session.get(RecipeImage, image_id) is None
+            jobs = list(await session.scalars(select(FileDeletionJob)))
+            assert len(jobs) == 3
+        assert await process_cleanup_job(storage=storage)
         storage.unavailable = False
-        assert (await client.delete(f"{path}/{image_id}", headers=admin_headers)).status_code == 204
+        later = datetime.now(UTC) + timedelta(hours=1)
+        while await process_cleanup_job(storage=storage, now=later):
+            pass
+        assert storage.files == {}
+        async with SessionFactory() as session:
+            jobs = await session.scalars(select(FileDeletionJob))
+            assert all(job.status == "Done" for job in jobs)
+    finally:
+        app.dependency_overrides.pop(get_recipe_storage, None)
+
+
+async def test_recipe_delete_queues_all_image_objects(client) -> None:
+    storage = FakeStorage()
+    app.dependency_overrides[get_recipe_storage] = lambda: storage
+    try:
+        category = await create_category()
+        owner, headers = await create_user(client, email="recipe-cleanup@example.com")
+        recipe = await add_recipe(category, owner, title="Recipe with file cleanup")
+        upload = await client.post(
+            f"/api/v1/recipes/{recipe.id}/images",
+            headers=headers,
+            files={"file": ("a.png", PNG, "image/png")},
+        )
+        assert upload.status_code == 201
+        deleted = await client.delete(f"/api/v1/recipes/{recipe.id}", headers=headers)
+        assert deleted.status_code == 204
+        async with SessionFactory() as session:
+            assert await session.get(Recipe, recipe.id) is None
+            jobs = list(await session.scalars(select(FileDeletionJob)))
+            assert len(jobs) == 3
+        while await process_cleanup_job(storage=storage):
+            pass
         assert storage.files == {}
     finally:
         app.dependency_overrides.pop(get_recipe_storage, None)

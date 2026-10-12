@@ -81,8 +81,9 @@ cd PTUDW-2026-Nhom3
 .\start-all.ps1
 ```
 
-The default command builds and starts PostgreSQL, MinIO, Mailpit, the email
-worker, the FastAPI backend, and the production-style frontend container. The
+The default command builds and starts PostgreSQL, MinIO, Redis, Mailpit, the
+email, image, and file cleanup workers, a daily database backup service, the
+FastAPI backend, and the production-style frontend container. The
 API container automatically runs database migrations and the safe seed command.
 For local passwords, copy `.env.example` to `.env` before starting.
 
@@ -119,6 +120,7 @@ rebuilding the Docker frontend at `http://localhost:3000`.
 | Backend Healthcheck | [http://localhost:8000/health](http://localhost:8000/health)                     |
 | MinIO Console       | [http://localhost:9001](http://localhost:9001)                                   |
 | Mailpit Inbox       | [http://localhost:8025](http://localhost:8025)                                   |
+| Admin Overview      | [http://localhost:3000/admin](http://localhost:3000/admin)                       |
 
 
 Useful commands:

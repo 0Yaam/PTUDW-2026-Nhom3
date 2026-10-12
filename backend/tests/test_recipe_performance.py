@@ -17,6 +17,7 @@ from culinary_blog_api.recipes.model import RecipeImage, RecipeImageResizeJob
 from culinary_blog_api.recipes.router import get_recipe_storage
 from culinary_blog_api.storage import StoredFile
 from culinary_blog_api.storage.service import MAX_IMAGE_BYTES, validate_image
+from culinary_blog_api.storage.worker import process_due_job as process_cleanup_job
 
 
 class MemoryRedis:
@@ -203,6 +204,8 @@ async def test_upload_outbox_worker_variants_and_delete(client, monkeypatch) -> 
             f"/api/v1/recipes/{recipe.id}/images/{image_id}", headers=headers
         )
         assert deleted.status_code == 204
+        while await process_cleanup_job(storage=storage):
+            pass
         assert storage.files == {}
     finally:
         app.dependency_overrides.pop(get_recipe_storage, None)
@@ -247,6 +250,8 @@ async def test_delete_before_worker_cancels_job_and_cleans_partial_variant(clien
             f"/api/v1/recipes/{recipe.id}/images/{image_id}", headers=headers
         )
         assert deleted.status_code == 204
+        while await process_cleanup_job(storage=storage):
+            pass
         assert storage.files == {}
         assert not await process_due_job(storage=storage)
         async with SessionFactory() as session:

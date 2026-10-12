@@ -96,6 +96,9 @@ async def test_worker_retries_three_times_then_marks_failed(client) -> None:
     assert job.attempts == 4
     assert not await process_due_job(sender=failing_sender, now=clock + timedelta(days=1))
 
+    assert await worker.retry_failed_jobs() == 1
+    assert (await get_job()).status == "Pending"
+
 
 def test_html_welcome_email_escapes_name_and_links_to_app(monkeypatch) -> None:
     sent = []
@@ -121,10 +124,42 @@ def test_html_welcome_email_escapes_name_and_links_to_app(monkeypatch) -> None:
     )
 
     worker.send_welcome_email("han@example.com", "<Han>", settings)
+    worker.send_welcome_email("han@example.com", "<Han>", settings)
 
-    assert len(sent) == 1
+    assert len(sent) == 2
     assert sent[0]["To"] == "han@example.com"
+    assert sent[0]["Message-ID"] == sent[1]["Message-ID"]
     html_body = sent[0].get_body(preferencelist=("html",)).get_content()
     assert "&lt;Han&gt;" in html_body
     assert "<Han>" not in html_body
     assert 'href="https://culinary.example/app"' in html_body
+
+
+def test_smtp_ssl_uses_implicit_tls_and_rejects_mixed_modes(monkeypatch) -> None:
+    used: list[str] = []
+
+    class FakeSMTP:
+        def __init__(self, *_args, **_kwargs) -> None:
+            used.append("ssl")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            pass
+
+        def send_message(self, _message) -> None:
+            used.append("sent")
+
+    monkeypatch.setattr(worker.smtplib, "SMTP_SSL", FakeSMTP)
+    settings = Settings(_env_file=None, smtp_host="smtp.test", smtp_port=465, smtp_ssl=True)
+    worker.send_welcome_email("han@example.com", "Han", settings)
+    assert used == ["ssl", "sent"]
+
+    import pytest
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        worker.send_welcome_email(
+            "han@example.com", "Han",
+            Settings(_env_file=None, smtp_host="smtp.test", smtp_ssl=True, smtp_starttls=True),
+        )

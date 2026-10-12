@@ -13,7 +13,7 @@ from sqlalchemy.orm.exc import StaleDataError
 from ..auth.model import User
 from ..categories.model import Category
 from .cache import invalidate_recipe_caches
-from .model import Ingredient, Recipe, RecipeIngredient, RecipeStatus, RecipeStep
+from .model import Ingredient, Recipe, RecipeImage, RecipeIngredient, RecipeStatus, RecipeStep
 from .problem import RecipeProblem
 from .schemas import (
     NutritionResponse,
@@ -335,8 +335,13 @@ async def delete_recipe(
     recipe_id: uuid.UUID,
     current_user: User,
 ) -> None:
-    """Hard-delete a recipe and its dependent rows through ORM cascades."""
+    """Hard-delete metadata and enqueue every image object for durable cleanup."""
     recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    from ..storage.cleanup import queue_image_cleanup
+
+    images = await session.scalars(select(RecipeImage).where(RecipeImage.recipe_id == recipe_id))
+    for image in images:
+        queue_image_cleanup(session, image)
     await session.delete(recipe)
     try:
         await session.commit()

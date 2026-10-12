@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     smtp_password: SecretStr = SecretStr("")
     smtp_from: str = "no-reply@culinary.local"
     smtp_starttls: bool = False
+    smtp_ssl: bool = False
     app_public_url: str = "http://localhost:3000"
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore")

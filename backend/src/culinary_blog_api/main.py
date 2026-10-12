@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from .admin.router import router as admin_router
 from .api.health import router as health_router
 from .auth import AuthProblem
 from .auth import router as auth_router
@@ -19,6 +20,7 @@ from .categories import router as categories_router
 from .config import get_settings
 from .recipes import RecipeProblem
 from .recipes import router as recipes_router
+from .storage import model as storage_model  # noqa: F401 - register cleanup table
 
 settings = get_settings()
 logger = structlog.get_logger()
@@ -190,3 +192,4 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(categories_router)
 app.include_router(recipes_router)
+app.include_router(admin_router)

@@ -5,14 +5,16 @@ crash rolls back its claim so another worker can try again.
 """
 
 import asyncio
+import hashlib
 import html
 import smtplib
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
+from email.utils import parseaddr
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from ..config import Settings, get_settings
 from ..db import SessionFactory
@@ -33,13 +35,21 @@ def send_welcome_email(recipient: str, full_name: str, settings: Settings) -> No
     message["Subject"] = "Welcome to Culinary Blog"
     message["From"] = settings.smtp_from
     message["To"] = recipient
+    # Stable per account: providers that deduplicate Message-ID can suppress a
+    # replay after SMTP accepted the email but the worker crashed before commit.
+    digest = hashlib.sha256(recipient.lower().encode()).hexdigest()[:32]
+    sender_domain = parseaddr(settings.smtp_from)[1].rpartition("@")[2] or "culinary-blog.local"
+    message["Message-ID"] = f"<welcome-{digest}@{sender_domain}>"
     message.set_content(f"Hello {full_name}, welcome to Culinary Blog! {settings.app_public_url}")
     message.add_alternative(
         f"<p>Hello {name}, welcome to Culinary Blog!</p>"
         f'<p><a href="{app_url}">Explore recipes</a></p>',
         subtype="html",
     )
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
+    if settings.smtp_ssl and settings.smtp_starttls:
+        raise ValueError("SMTP_SSL and SMTP_STARTTLS are mutually exclusive")
+    connection = smtplib.SMTP_SSL if settings.smtp_ssl else smtplib.SMTP
+    with connection(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
         if settings.smtp_starttls:
             smtp.starttls()
         if settings.smtp_username:
@@ -100,6 +110,18 @@ async def process_due_job(
             return True
 
 
+async def retry_failed_jobs() -> int:
+    """Requeue failed messages after an operator fixes delivery configuration."""
+    async with SessionFactory() as session:
+        async with session.begin():
+            result = await session.execute(
+                update(WelcomeEmailJob)
+                .where(WelcomeEmailJob.status == "Failed")
+                .values(status="Pending", attempts=0, next_attempt_at=datetime.now(UTC))
+            )
+            return result.rowcount
+
+
 async def run_worker() -> None:
     """Poll the shared database. Each worker instance is independent."""
     logger.info("welcome_email_worker_started")
@@ -115,4 +137,9 @@ async def run_worker() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(run_worker())
+    import sys
+
+    if "--retry-failed" in sys.argv:
+        print(asyncio.run(retry_failed_jobs()))
+    else:
+        asyncio.run(run_worker())

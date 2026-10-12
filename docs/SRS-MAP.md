@@ -19,9 +19,9 @@
 | FR-RCP-010 | Cooking steps | Han | Lab 04 #39 - Ready |
 | FR-SRCH-001 | Full-text search | Hieu | Lab 04 #43 - Ready |
 | FR-SRCH-002 to FR-SRCH-004 | Filters, sorting, and pagination | Hieu | Done - #32 |
-| FR-FILE-001 | MinIO upload and storage adapter | Han | Cycle 3 #45 - In Progress |
-| FR-FILE-002 | Safe physical file deletion | Han / Hieu | Cycle 4 |
-| FR-JOB-001 | Welcome email job | Han | Cycle 3 #45 - In Progress |
+| FR-FILE-001 | MinIO upload and storage adapter | Han | Done - #45 |
+| FR-FILE-002 | Safe physical file deletion | Han / Hieu | Done - #59 |
+| FR-JOB-001 | Welcome email job | Han | Done - #45 and #59 |
 | FR-JOB-002 | Image resize job | Hieu | Cycle 3 #47 - Ready |
 | FR-JOB-003 | Sitemap job | Minh Anh | Done - #46 |
 | FR-OBS-001 to FR-OBS-003 | Health checks, logging, traces, and metrics | Dan | Done - #44 and #58 |
@@ -31,10 +31,10 @@
 | NFR-SEC-003 to NFR-SEC-007 | Shared security hardening | Dan | Done - #44 and #58 |
 | NFR-USE-001 to NFR-USE-004 | Responsive and accessible UI | Minh Anh | Cycle 3 #46 - Ready |
 | NFR-REL-001 to NFR-REL-002 | Health and error recovery | Dan | Done - #44 and #58 |
-| NFR-REL-003 | Deployment, backup, and data durability | Han | Cycle 4 |
+| NFR-REL-003 | Deployment, backup, and data durability | Han | Done - #59 |
 | NFR-MAINT-001 to NFR-MAINT-002 | Code quality, tests, and integration | Dan / Team | Done for Dan - #44 and #58; team checks continue |
 | NFR-MAINT-003 to NFR-MAINT-004 | User documentation and clear modules | Minh Anh | Cycle 3 #46, final QA in Cycle 4 |
-| NFR-SCALE-001 | Stateless API and shared storage | Han | Cycle 3 #45 - In Progress |
+| NFR-SCALE-001 | Stateless API and shared storage | Han | Done - #45 and #59 |
 | NFR-SCALE-002 | Database scaling path | Hieu | Cycle 3 #47 - Ready |
-| NFR-SCALE-003 | Container and proxy setup | Han | Cycle 4 |
+| NFR-SCALE-003 | Container and proxy setup | Han | Done - #59 |
 | NFR-SEO-001 to NFR-SEO-004 | Recipe SEO, sitemap, and URLs | Minh Anh | Done - #46 |

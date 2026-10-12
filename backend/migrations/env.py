@@ -16,6 +16,7 @@ from culinary_blog_api.recipes import (  # noqa: F401
     RecipeIngredient,
     RecipeStep,
 )
+from culinary_blog_api.storage.model import FileDeletionJob  # noqa: F401
 
 config = context.config
 config.set_main_option(
