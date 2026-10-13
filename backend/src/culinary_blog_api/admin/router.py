@@ -12,12 +12,21 @@ from ..categories.model import Category
 from ..db import get_session
 from ..jobs.model import WelcomeEmailJob
 from ..recipes.model import Recipe, RecipeImage, RecipeImageResizeJob, RecipeStatus
+from ..recipes.problem import ProblemDetails
 from ..storage.model import FileDeletionJob
+from .schemas import AdminOverview
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
-@router.get("/overview")
+@router.get(
+    "/overview",
+    response_model=AdminOverview,
+    responses={
+        401: {"model": ProblemDetails, "description": "Bearer token is missing or invalid"},
+        403: {"model": ProblemDetails, "description": "Admin role is required"},
+    },
+)
 async def get_overview(
     session: Annotated[AsyncSession, Depends(get_session)],
     _admin: Annotated[User, Depends(require_admin)],

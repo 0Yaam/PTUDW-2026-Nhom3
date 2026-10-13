@@ -21,6 +21,10 @@ existing category list response. The API uses SQL aggregates and one bounded
 recent-recipe query, requires `require_admin`, and never returns private user
 email addresses. Refresh can be requested from the panel. The login token
 remains in memory; reloading the page requires sign-in again.
+The versioned endpoint now declares its `AdminOverview` response and 401/403
+Problem Details in OpenAPI. `frontend/src/lib/api/admin.ts` holds the matching
+TypeScript contract and fetch function instead of duplicating the overview
+shape inside the page component.
 
 ## English and Vietnamese
 

@@ -40,3 +40,15 @@ async def test_overview_requires_admin_and_reports_content(client) -> None:
     assert len(body["recentRecipes"]) == 2
     assert body["jobs"]["cleanup"] == {"pending": 0, "failed": 1}
     assert body["jobs"]["email"]["pending"] == 2
+
+
+async def test_overview_openapi_documents_response_and_permissions(client) -> None:
+    response = await client.get("/openapi.json")
+    assert response.status_code == 200
+    document = response.json()
+    operation = document["paths"]["/api/v1/admin/overview"]["get"]
+    assert operation["responses"]["200"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/AdminOverview"
+    }
+    assert {"401", "403"}.issubset(operation["responses"])
+    assert "recentRecipes" in document["components"]["schemas"]["AdminOverview"]["properties"]
