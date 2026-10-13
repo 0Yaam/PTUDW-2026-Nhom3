@@ -16,6 +16,7 @@ import {
   loadActiveAuthSession,
   type AuthSession,
 } from "@/lib/auth-session";
+import { focusFirstInvalidField } from "@/lib/form-errors";
 import styles from "./recipe-draft-form.module.css";
 
 type FieldErrors = Record<string, string>;
@@ -126,7 +127,10 @@ export function RecipeDraftForm() {
     setFieldErrors(errors);
     setFormError("");
     setCreatedRecipe(null);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      focusFirstInvalidField(form, Object.keys(errors));
+      return;
+    }
 
     const nutrition = Object.fromEntries(
       nutritionFields.flatMap((field) => {
@@ -163,6 +167,7 @@ export function RecipeDraftForm() {
             Object.entries(error.problem.errors).map(([field, messages]) => [field, messages[0]]),
           ));
           setFormError(t("validationSummary"));
+          focusFirstInvalidField(form, Object.keys(error.problem.errors));
           return;
         }
         if (error.status === 409) setFieldErrors({ title: problemMessage(error) });

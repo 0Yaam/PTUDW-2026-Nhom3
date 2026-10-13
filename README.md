@@ -179,7 +179,10 @@ npm run build --prefix frontend
 ```
 
 
-See [docs/TEAM.md](docs/TEAM.md) for the work split and Git workflow.
+See [docs/USER-GUIDE.md](docs/USER-GUIDE.md) for a walkthrough of the public
+flows, [docs/FRONTEND-QA.md](docs/FRONTEND-QA.md) for the accessibility, SEO,
+and performance record, and [docs/TEAM.md](docs/TEAM.md) for the work split and
+Git workflow.
 
 ## Backend data access
 

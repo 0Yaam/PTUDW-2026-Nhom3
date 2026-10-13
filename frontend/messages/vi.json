@@ -15,7 +15,9 @@
     "admin": "Quản trị",
     "main": "Điều hướng chính",
     "mobile": "Điều hướng di động",
-    "profile": "Trang cá nhân"
+    "profile": "Trang cá nhân",
+    "footer": "Điều hướng chân trang",
+    "brandHome": "Trang chủ Small Kitchen"
   },
   "site": {
     "tagline": "Câu chuyện và công thức",
@@ -94,7 +96,8 @@
     "welcome": "{message} Chào {name} ({roles}).",
     "createRecipe": "Tạo công thức mới",
     "requestFailed": "Yêu cầu không thành công. Vui lòng thử lại.",
-    "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend."
+    "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend.",
+    "modeLabel": "Hành động tài khoản"
   },
   "profile": {
     "eyebrow": "Tài khoản của bạn",

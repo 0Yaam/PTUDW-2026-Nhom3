@@ -15,6 +15,7 @@ import {
   loadActiveAuthSession,
   type AuthSession,
 } from "@/lib/auth-session";
+import { focusFirstInvalidField } from "@/lib/form-errors";
 import styles from "./profile-form.module.css";
 
 type FieldErrors = Record<string, string>;
@@ -85,11 +86,15 @@ export function ProfileForm() {
     event.preventDefault();
     if (!session) return;
 
+    const form = event.currentTarget;
     const errors = validate();
     setFieldErrors(errors);
     setFormError("");
     setSaved(false);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      focusFirstInvalidField(form, Object.keys(errors));
+      return;
+    }
 
     setPending(true);
     try {
@@ -121,6 +126,7 @@ export function ProfileForm() {
           ),
         );
         setFormError(t("validationSummary"));
+        focusFirstInvalidField(form, Object.keys(error.problem.errors));
         return;
       }
       const type = error.problem.type;

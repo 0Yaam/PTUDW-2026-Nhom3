@@ -26,14 +26,14 @@
 | FR-JOB-003 | Sitemap job | Minh Anh | Done - #46 |
 | FR-OBS-001 to FR-OBS-003 | Health checks, logging, traces, and metrics | Dan | Done - #44 and #58 |
 | NFR-PERF-001 to NFR-PERF-004 | API, database, cache, and query performance | Hieu | Cycle 3 #47 - Ready |
-| NFR-PERF-005 | Frontend performance | Minh Anh | Cycle 3 #46 - Ready |
+| NFR-PERF-005 | Frontend performance | Minh Anh | Done - #46 and #60 |
 | NFR-SEC-001 to NFR-SEC-002 | Password and ownership security | Dan | Done - #1 and #38 |
 | NFR-SEC-003 to NFR-SEC-007 | Shared security hardening | Dan | Done - #44 and #58 |
-| NFR-USE-001 to NFR-USE-004 | Responsive and accessible UI | Minh Anh | Cycle 3 #46 - Ready |
+| NFR-USE-001 to NFR-USE-004 | Responsive and accessible UI | Minh Anh | Done - #46 and #60 |
 | NFR-REL-001 to NFR-REL-002 | Health and error recovery | Dan | Done - #44 and #58 |
 | NFR-REL-003 | Deployment, backup, and data durability | Han | Done - #59 |
 | NFR-MAINT-001 to NFR-MAINT-002 | Code quality, tests, and integration | Dan / Team | Done for Dan - #44 and #58; team checks continue |
-| NFR-MAINT-003 to NFR-MAINT-004 | User documentation and clear modules | Minh Anh | Cycle 3 #46, final QA in Cycle 4 |
+| NFR-MAINT-003 to NFR-MAINT-004 | User documentation and clear modules | Minh Anh | Done - #60 |
 | NFR-SCALE-001 | Stateless API and shared storage | Han | Done - #45 and #59 |
 | NFR-SCALE-002 | Database scaling path | Hieu | Cycle 3 #47 - Ready |
 | NFR-SCALE-003 | Container and proxy setup | Han | Done - #59 |
