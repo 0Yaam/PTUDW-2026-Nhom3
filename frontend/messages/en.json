@@ -15,7 +15,9 @@
     "admin": "Admin",
     "main": "Main navigation",
     "mobile": "Mobile navigation",
-    "profile": "Profile"
+    "profile": "Profile",
+    "footer": "Footer navigation",
+    "brandHome": "Small Kitchen home"
   },
   "site": {
     "tagline": "Food stories & recipes",
@@ -94,7 +96,8 @@
     "createRecipe": "Create a new recipe",
     "signOut": "Sign out",
     "requestFailed": "Request failed. Please try again.",
-    "apiUnavailable": "Cannot reach the API. Check that the backend is running."
+    "apiUnavailable": "Cannot reach the API. Check that the backend is running.",
+    "modeLabel": "Account action"
   },
   "profile": {
     "eyebrow": "Your account",

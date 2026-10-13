@@ -106,7 +106,7 @@ export function AuthPanel() {
         <p>{t("description")}</p>
       </div>
       <div className="auth-card">
-        <div className="auth-tabs" aria-label="Account action">
+        <div className="auth-tabs" role="group" aria-label={t("modeLabel")}>
           {(["register", "login"] as const).map((value) => (
             <button
               type="button"
@@ -122,7 +122,7 @@ export function AuthPanel() {
             </button>
           ))}
         </div>
-        <form onSubmit={submit}>
+        <form onSubmit={submit} aria-describedby="auth-message">
           {mode === "register" && (
             <>
               <label>
@@ -165,7 +165,11 @@ export function AuthPanel() {
             {pending ? t("working") : mode === "register" ? t("register") : t("login")}
           </button>
         </form>
-        <p className={user ? "auth-message success" : "auth-message"} aria-live="polite">
+        <p
+          id="auth-message"
+          className={user ? "auth-message success" : "auth-message"}
+          aria-live="polite"
+        >
           {user ? t("welcome", { message, name: user.fullName, roles: user.roles.join(", ") }) : message}
         </p>
         {user && <div className="hero-actions"><Link className="primary-action" href="/recipes/new">{t("createRecipe")}</Link><button className="primary-action" type="button" onClick={signOut} disabled={pending}>{t("signOut")}</button></div>}
