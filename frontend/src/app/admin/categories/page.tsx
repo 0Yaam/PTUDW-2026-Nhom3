@@ -5,16 +5,10 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import type { Category } from "@/components/category-grid";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { getAdminOverview, type AdminLoginResponse, type AdminOverview } from "@/lib/api/admin";
 import styles from "./page.module.css";
 
 type Problem = { type?: string; detail?: string; errors?: Record<string, string[]> };
-type LoginResponse = { accessToken: string; user: { fullName: string; roles: string[] } };
-type Overview = {
-  users: number; categories: number; images: number;
-  recipes: { total: number; draft: number; published: number; archived: number };
-  jobs: Record<"email" | "resize" | "cleanup", { pending: number; failed: number }>;
-  recentRecipes: { id: string; title: string; status: string; author: string; createdAt: string }[];
-};
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -70,7 +64,7 @@ export default function ManageCategories() {
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
-  const [overview, setOverview] = useState<Overview | null>(null);
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [overviewLoading, setOverviewLoading] = useState(false);
   const [overviewError, setOverviewError] = useState(false);
   const errorRef = useRef<HTMLParagraphElement>(null);
@@ -81,11 +75,7 @@ export default function ManageCategories() {
     setOverviewLoading(true);
     setOverviewError(false);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/admin/overview`, {
-        headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store",
-      });
-      if (!response.ok) throw new Error("overview");
-      setOverview((await response.json()) as Overview);
+      setOverview(await getAdminOverview(accessToken));
     } catch {
       setOverviewError(true);
     } finally {
@@ -159,7 +149,7 @@ export default function ManageCategories() {
         setError(problemText((await response.json()) as Problem));
         return;
       }
-      const result = (await response.json()) as LoginResponse;
+      const result = (await response.json()) as AdminLoginResponse;
       if (!result.user.roles.includes("Admin")) {
         setError(t("notAdmin"));
         return;
