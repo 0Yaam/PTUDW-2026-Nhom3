@@ -1,8 +1,10 @@
 """Resize uploaded recipe images outside the HTTP request process."""
 
 import asyncio
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
+from uuid import UUID
 
 import structlog
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -18,6 +20,12 @@ RETRY_DELAYS = (60, 300, 1800)
 MAX_ATTEMPTS = len(RETRY_DELAYS) + 1
 LEASE = timedelta(minutes=5)
 Image.MAX_IMAGE_PIXELS = 25_000_000
+
+
+@dataclass(frozen=True)
+class ResizeClaim:
+    job_id: UUID
+    attempt: int
 
 
 def render_variants(data: bytes) -> dict[str, bytes]:
@@ -39,7 +47,7 @@ def render_variants(data: bytes) -> dict[str, bytes]:
         raise ValueError("Stored recipe image cannot be resized.") from error
 
 
-async def _claim(now: datetime) -> object | None:
+async def _claim(now: datetime) -> ResizeClaim | None:
     async with SessionFactory() as session:
         async with session.begin():
             query = (
@@ -65,28 +73,39 @@ async def _claim(now: datetime) -> object | None:
             job.status = "Processing"
             job.attempts += 1
             job.next_attempt_at = now + LEASE
-            return job.id
+            return ResizeClaim(job.id, job.attempts)
 
 
-async def _process(job_id: object, storage: FileStorage, now: datetime) -> None:
+async def _process(claim: ResizeClaim, storage: FileStorage, now: datetime) -> bool:
     async with SessionFactory() as session:
         async with session.begin():
             image_id = await session.scalar(
-                select(RecipeImageResizeJob.image_id).where(RecipeImageResizeJob.id == job_id)
+                select(RecipeImageResizeJob.image_id).where(
+                    RecipeImageResizeJob.id == claim.job_id
+                )
             )
             if image_id is None:
-                return  # An image deletion cascaded to its queued job.
+                return False  # An image deletion cascaded to its queued job.
             recipe_id = await session.scalar(
                 select(RecipeImage.recipe_id).where(RecipeImage.id == image_id)
             )
             if recipe_id is None:
-                return
+                return False
             # Image delete locks the recipe first; the worker takes the same lock.
             await session.scalar(select(Recipe).where(Recipe.id == recipe_id).with_for_update())
             image = await session.get(RecipeImage, image_id)
-            job = await session.get(RecipeImageResizeJob, job_id)
-            if image is None or job is None or job.status != "Processing":
-                return
+            # Hold the job lock through object writes, so a reclaimed lease cannot
+            # finish or fail an older attempt while the current one is running.
+            job = await session.scalar(
+                select(RecipeImageResizeJob)
+                .where(RecipeImageResizeJob.id == claim.job_id)
+                .with_for_update()
+            )
+            if (
+                image is None or job is None or job.status != "Processing"
+                or job.attempts != claim.attempt
+            ):
+                return False
             source = await storage.read(image.original_url)
             variants = await asyncio.to_thread(render_variants, source.data)
             medium_url = await storage.upload_variant(
@@ -101,27 +120,35 @@ async def _process(job_id: object, storage: FileStorage, now: datetime) -> None:
             job.finished_at = now
             job.last_error = None
     await invalidate_recipe_caches()
-    logger.info("recipe_image_resized", image_id=str(image_id), job_id=str(job_id))
+    logger.info("recipe_image_resized", image_id=str(image_id), job_id=str(claim.job_id))
+    return True
 
 
-async def _schedule_failure(job_id: object, error: Exception, now: datetime) -> None:
+async def _schedule_failure(claim: ResizeClaim, error: Exception, now: datetime) -> None:
     async with SessionFactory() as session:
         async with session.begin():
-            job = await session.get(RecipeImageResizeJob, job_id)
-            if job is None or job.status != "Processing":
+            job = await session.scalar(
+                select(RecipeImageResizeJob)
+                .where(RecipeImageResizeJob.id == claim.job_id)
+                .with_for_update()
+            )
+            if (
+                job is None or job.status != "Processing"
+                or job.attempts != claim.attempt
+            ):
                 return
             job.last_error = type(error).__name__
             if job.attempts >= MAX_ATTEMPTS:
                 job.status = "Failed"
                 logger.error(
-                    "recipe_image_resize_failed", job_id=str(job_id), attempts=job.attempts,
+                    "recipe_image_resize_failed", job_id=str(claim.job_id), attempts=job.attempts,
                     error_type=job.last_error,
                 )
             else:
                 job.status = "Pending"
                 job.next_attempt_at = now + timedelta(seconds=RETRY_DELAYS[job.attempts - 1])
                 logger.warning(
-                    "recipe_image_resize_retry", job_id=str(job_id), attempts=job.attempts,
+                    "recipe_image_resize_retry", job_id=str(claim.job_id), attempts=job.attempts,
                     error_type=job.last_error,
                 )
 
@@ -130,13 +157,13 @@ async def process_due_job(
     *, storage: FileStorage | None = None, now: datetime | None = None
 ) -> bool:
     now = now or datetime.now(UTC)
-    job_id = await _claim(now)
-    if job_id is None:
+    claim = await _claim(now)
+    if claim is None:
         return False
     try:
-        await _process(job_id, storage or S3FileStorage(), now)
+        await _process(claim, storage or S3FileStorage(), now)
     except Exception as error:
-        await _schedule_failure(job_id, error, now)
+        await _schedule_failure(claim, error, now)
     return True
 
 
