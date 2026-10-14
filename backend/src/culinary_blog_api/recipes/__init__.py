@@ -1,6 +1,7 @@
 from .model import (
     Ingredient,
     Recipe,
+    RecipeCacheGeneration,
     RecipeImage,
     RecipeImageResizeJob,
     RecipeIngredient,
@@ -13,6 +14,7 @@ from .router import router
 __all__ = [
     "Ingredient",
     "Recipe",
+    "RecipeCacheGeneration",
     "RecipeImage",
     "RecipeImageResizeJob",
     "RecipeIngredient",

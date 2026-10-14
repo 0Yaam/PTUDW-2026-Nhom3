@@ -1,5 +1,7 @@
-"""Issue #47: durable image resizing, shared cache, and bounded read queries."""
+"""Issues #47/#61: resize recovery, cache consistency, and bounded read queries."""
 
+import asyncio
+import importlib
 import uuid
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
@@ -12,7 +14,14 @@ from test_recipe_list import add_recipe, create_category, create_user
 from culinary_blog_api.db import SessionFactory, engine
 from culinary_blog_api.main import app
 from culinary_blog_api.recipes import Ingredient, RecipeIngredient, RecipeStep, cache
-from culinary_blog_api.recipes.image_worker import process_due_job, render_variants
+from culinary_blog_api.recipes.image_worker import (
+    LEASE,
+    _claim,
+    _process,
+    _schedule_failure,
+    process_due_job,
+    render_variants,
+)
 from culinary_blog_api.recipes.model import RecipeImage, RecipeImageResizeJob
 from culinary_blog_api.recipes.router import get_recipe_storage
 from culinary_blog_api.storage import StoredFile
@@ -139,6 +148,38 @@ async def test_redis_cache_hit_ttls_and_mutation_invalidation(client, monkeypatc
             assert fresh.json()["items"] == []
 
 
+async def test_expired_search_cache_coalesces_concurrent_database_reads(
+    client, monkeypatch
+) -> None:
+    redis = MemoryRedis()
+    monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
+    category = await create_category()
+    author, _ = await create_user(client, email="search-stampede@example.com")
+    await add_recipe(category, author, title="Phở cho nhiều người")
+    url = "/api/v1/recipes/search?q=Phở"
+    assert (await client.get(url)).headers["X-Recipe-Cache"] == "MISS"
+    for key in tuple(redis.values):
+        if ":search:" in key:
+            redis.values.pop(key)
+
+    recipe_router = importlib.import_module("culinary_blog_api.recipes.router")
+    original_search = recipe_router.search_recipes
+    loads = 0
+
+    async def counted_search(*args, **kwargs):
+        nonlocal loads
+        loads += 1
+        await asyncio.sleep(0.02)
+        return await original_search(*args, **kwargs)
+
+    monkeypatch.setattr(recipe_router, "search_recipes", counted_search)
+    responses = await asyncio.gather(*(client.get(url) for _ in range(30)))
+    assert all(response.status_code == 200 for response in responses)
+    assert all(response.json()["totalCount"] == 1 for response in responses)
+    assert loads == 1
+    assert sum(response.headers["X-Recipe-Cache"] == "HIT" for response in responses) == 29
+
+
 async def test_redis_outage_falls_back_to_database(client, monkeypatch) -> None:
     redis = MemoryRedis()
     monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
@@ -174,6 +215,178 @@ async def test_recovered_redis_flushes_failed_invalidation_before_serving_cache(
     assert fresh.json()["items"] == []
 
 
+async def test_redis_recovery_on_another_api_process_does_not_serve_stale_data(
+    client, monkeypatch
+) -> None:
+    redis = MemoryRedis()
+    monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
+    category = await create_category()
+    author, headers = await create_user(client, email="redis-cross-process@example.com")
+    recipe = await add_recipe(category, author, title="Món nhiều tiến trình")
+    url = "/api/v1/recipes?sort=title"
+    assert (await client.get(url)).headers["X-Recipe-Cache"] == "MISS"
+    assert (await client.get(url)).headers["X-Recipe-Cache"] == "HIT"
+
+    redis.offline = True
+    assert (
+        await client.patch(f"/api/v1/recipes/{recipe.id}/archive", headers=headers)
+    ).status_code == 200
+    redis.offline = False
+    # A second API process has no knowledge of the first process's pending counter.
+    monkeypatch.setattr(cache, "_pending_invalidations", 0)
+    fresh = await client.get(url)
+    assert fresh.headers["X-Recipe-Cache"] == "MISS"
+    assert fresh.json()["items"] == []
+
+
+async def test_ingredient_writes_invalidate_published_recipe_detail(client, monkeypatch) -> None:
+    redis = MemoryRedis()
+    monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
+    category = await create_category()
+    author, headers = await create_user(client, email="ingredient-cache@example.com")
+    recipe = await add_recipe(category, author, title="Món đổi nguyên liệu")
+    detail_url = f"/api/v1/recipes/{recipe.slug}"
+    ingredient_url = f"/api/v1/recipes/{recipe.id}/ingredients"
+
+    assert (await client.get(detail_url)).headers["X-Recipe-Cache"] == "MISS"
+    assert (await client.get(detail_url)).headers["X-Recipe-Cache"] == "HIT"
+    created = await client.post(
+        ingredient_url, headers=headers,
+        json={"ingredientName": "Muối", "quantity": 1, "unit": "g"},
+    )
+    assert created.status_code == 201
+    after_create = await client.get(detail_url)
+    assert after_create.headers["X-Recipe-Cache"] == "MISS"
+    assert after_create.json()["ingredients"][0]["quantity"] == 1
+
+    row_url = f"{ingredient_url}/{created.json()['id']}"
+    updated = await client.put(
+        row_url, headers=headers,
+        json={"ingredientName": "Muối", "quantity": 2, "unit": "g"},
+    )
+    assert updated.status_code == 200
+    after_update = await client.get(detail_url)
+    assert after_update.headers["X-Recipe-Cache"] == "MISS"
+    assert after_update.json()["ingredients"][0]["quantity"] == 2
+
+    assert (await client.delete(row_url, headers=headers)).status_code == 204
+    after_delete = await client.get(detail_url)
+    assert after_delete.headers["X-Recipe-Cache"] == "MISS"
+    assert after_delete.json()["ingredients"] == []
+
+
+async def test_recipe_step_publication_update_and_delete_invalidate_public_reads(
+    client, monkeypatch
+) -> None:
+    redis = MemoryRedis()
+    monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
+    category = await create_category()
+    author, headers = await create_user(client, email="write-cache@example.com")
+    recipe = await add_recipe(category, author, title="Phở cache")
+    list_url = "/api/v1/recipes?sort=title"
+    detail_url = f"/api/v1/recipes/{recipe.slug}"
+    search_url = "/api/v1/recipes/search?q=Phở"
+    for url in (list_url, detail_url, search_url):
+        assert (await client.get(url)).headers["X-Recipe-Cache"] == "MISS"
+        assert (await client.get(url)).headers["X-Recipe-Cache"] == "HIT"
+
+    step_url = f"/api/v1/recipes/{recipe.id}/steps"
+    step = await client.post(step_url, headers=headers, json={"instruction": "Nấu nước dùng."})
+    assert step.status_code == 201
+    assert (await client.get(detail_url)).json()["steps"][0]["instruction"] == "Nấu nước dùng."
+    changed_step = await client.put(
+        f"{step_url}/{step.json()['id']}", headers=headers,
+        json={"instruction": "Ninh nước dùng."},
+    )
+    assert changed_step.status_code == 200
+    changed_detail = await client.get(detail_url)
+    assert changed_detail.headers["X-Recipe-Cache"] == "MISS"
+    assert changed_detail.json()["steps"][0]["instruction"] == "Ninh nước dùng."
+
+    assert (
+        await client.delete(f"{step_url}/{step.json()['id']}", headers=headers)
+    ).status_code == 204
+    without_step = await client.get(detail_url)
+    assert without_step.headers["X-Recipe-Cache"] == "MISS"
+    assert without_step.json()["steps"] == []
+    replacement = await client.post(
+        step_url, headers=headers, json={"instruction": "Ninh nước dùng."}
+    )
+    assert replacement.status_code == 201
+
+    async with SessionFactory() as session:
+        current = await session.get(type(recipe), recipe.id)
+        row_version = current.row_version.hex()
+    changed_recipe = await client.put(
+        f"/api/v1/recipes/{recipe.id}", headers=headers,
+        json={
+            "title": "Phở cache", "description": "Công thức đã cập nhật.",
+            "instructions": "Ninh nước dùng.", "categoryId": str(category.id),
+            "prepTimeMinutes": 10, "cookTimeMinutes": 30, "servings": 4,
+            "difficulty": 1, "rowVersion": row_version,
+        },
+    )
+    assert changed_recipe.status_code == 200
+    for url in (list_url, detail_url, search_url):
+        fresh = await client.get(url)
+        assert fresh.headers["X-Recipe-Cache"] == "MISS"
+    assert (await client.get(detail_url)).json()["description"] == "Công thức đã cập nhật."
+
+    ingredient = await client.post(
+        f"/api/v1/recipes/{recipe.id}/ingredients", headers=headers,
+        json={"ingredientName": "Bánh phở", "quantity": 1, "unit": "g"},
+    )
+    assert ingredient.status_code == 201
+    unpublished = await client.patch(f"/api/v1/recipes/{recipe.id}/unpublish", headers=headers)
+    assert unpublished.status_code == 200
+    assert (await client.get(list_url)).json()["items"] == []
+    assert (await client.get(search_url)).json()["items"] == []
+    assert (await client.get(detail_url)).status_code == 403
+
+    published = await client.patch(f"/api/v1/recipes/{recipe.id}/publish", headers=headers)
+    assert published.status_code == 200
+    assert (await client.get(detail_url)).status_code == 200
+    deleted = await client.delete(f"/api/v1/recipes/{recipe.id}", headers=headers)
+    assert deleted.status_code == 204
+    assert (await client.get(list_url)).json()["items"] == []
+    assert (await client.get(detail_url)).status_code == 404
+
+
+async def test_rolled_back_recipe_write_keeps_cache_generation(client, monkeypatch) -> None:
+    redis = MemoryRedis()
+    monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
+    category = await create_category()
+    author, _ = await create_user(client, email="rollback-cache@example.com")
+    recipe = await add_recipe(category, author, title="Phở giữ nguyên")
+    url = f"/api/v1/recipes/{recipe.slug}"
+    assert (await client.get(url)).headers["X-Recipe-Cache"] == "MISS"
+    assert (await client.get(url)).headers["X-Recipe-Cache"] == "HIT"
+    async with SessionFactory() as session:
+        row = await session.get(type(recipe), recipe.id)
+        row.description = "Thay đổi chưa commit"
+        await session.flush()
+        await session.rollback()
+    cached = await client.get(url)
+    assert cached.headers["X-Recipe-Cache"] == "HIT"
+    assert cached.json()["description"] == recipe.description
+
+
+async def test_concurrent_cache_reads_share_one_generation_query() -> None:
+    selects: list[str] = []
+
+    def record(_conn, _cursor, statement, _params, _context, _many) -> None:
+        if "FROM recipe_cache_generation" in statement:
+            selects.append(statement)
+
+    event.listen(engine.sync_engine, "before_cursor_execute", record)
+    try:
+        versions = await asyncio.gather(*(cache._committed_generation() for _ in range(40)))
+        assert versions == ["0"] * 40
+        assert len(selects) == 1
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", record)
+
+
 async def test_upload_outbox_worker_variants_and_delete(client, monkeypatch) -> None:
     redis = MemoryRedis()
     monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
@@ -204,10 +417,74 @@ async def test_upload_outbox_worker_variants_and_delete(client, monkeypatch) -> 
             f"/api/v1/recipes/{recipe.id}/images/{image_id}", headers=headers
         )
         assert deleted.status_code == 204
+        without_image = await client.get(detail_url)
+        assert without_image.headers["X-Recipe-Cache"] == "MISS"
+        assert without_image.json()["images"] == []
         while await process_cleanup_job(storage=storage):
             pass
         assert storage.files == {}
     finally:
+        app.dependency_overrides.pop(get_recipe_storage, None)
+
+
+async def test_primary_image_update_and_delete_invalidate_detail(client, monkeypatch) -> None:
+    redis = MemoryRedis()
+    monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
+    storage = MemoryStorage()
+    try:
+        recipe, headers, first = await upload_image(client, storage)
+        url = f"/api/v1/recipes/{recipe.slug}"
+        assert (await client.get(url)).headers["X-Recipe-Cache"] == "MISS"
+        second = await client.post(
+            f"/api/v1/recipes/{recipe.id}/images", headers=headers,
+            files={"file": ("another.png", png_image(), "image/png")},
+        )
+        assert second.status_code == 201
+        with_two = await client.get(url)
+        assert with_two.headers["X-Recipe-Cache"] == "MISS"
+        assert len(with_two.json()["images"]) == 2
+
+        second_url = f"/api/v1/recipes/{recipe.id}/images/{second.json()['id']}"
+        promoted = await client.patch(
+            second_url, headers=headers, json={"isPrimary": True}
+        )
+        assert promoted.status_code == 200
+        after_primary = await client.get(url)
+        assert after_primary.headers["X-Recipe-Cache"] == "MISS"
+        assert next(image for image in after_primary.json()["images"] if image["isPrimary"])[
+            "id"
+        ] == second.json()["id"]
+
+        assert (await client.delete(second_url, headers=headers)).status_code == 204
+        after_delete = await client.get(url)
+        assert after_delete.headers["X-Recipe-Cache"] == "MISS"
+        assert [image["id"] for image in after_delete.json()["images"]] == [first["id"]]
+        assert after_delete.json()["images"][0]["isPrimary"] is True
+    finally:
+        app.dependency_overrides.pop(get_recipe_storage, None)
+
+
+async def test_upload_inserts_image_before_resize_job_foreign_key(client) -> None:
+    storage = MemoryStorage()
+    inserts: list[str] = []
+
+    def record(_conn, _cursor, statement, _params, _context, _many) -> None:
+        if statement.lstrip().upper().startswith("INSERT INTO RECIPE_"):
+            inserts.append(statement.lower())
+
+    event.listen(engine.sync_engine, "before_cursor_execute", record)
+    try:
+        await upload_image(client, storage)
+        image_index = next(
+            index for index, sql in enumerate(inserts) if "insert into recipe_images" in sql
+        )
+        job_index = next(
+            index for index, sql in enumerate(inserts)
+            if "insert into recipe_image_resize_jobs" in sql
+        )
+        assert image_index < job_index
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", record)
         app.dependency_overrides.pop(get_recipe_storage, None)
 
 
@@ -240,6 +517,41 @@ async def test_worker_retry_overwrites_same_object_and_eventually_fails(client) 
         app.dependency_overrides.pop(get_recipe_storage, None)
 
 
+async def test_expired_worker_claim_recovers_and_stale_failure_cannot_reset_new_claim(
+    client
+) -> None:
+    storage = MemoryStorage()
+    try:
+        recipe, _headers, payload = await upload_image(client, storage)
+        image_id = uuid.UUID(payload["id"])
+        clock = datetime.now(UTC) + timedelta(seconds=1)
+        first_claim = await _claim(clock)
+        assert first_claim is not None
+        second_clock = clock + LEASE + timedelta(seconds=1)
+        second_claim = await _claim(second_clock)
+        assert second_claim is not None
+        assert second_claim.job_id == first_claim.job_id
+        assert second_claim.attempt == 2
+
+        assert not await _process(first_claim, storage, second_clock)
+        assert len(storage.files) == 1
+
+        await _schedule_failure(first_claim, OSError("old worker failed"), second_clock)
+        async with SessionFactory() as session:
+            job = await session.scalar(select(RecipeImageResizeJob))
+            assert job.status == "Processing" and job.attempts == 2
+
+        assert await process_due_job(storage=storage, now=second_clock + LEASE)
+        async with SessionFactory() as session:
+            job = await session.scalar(select(RecipeImageResizeJob))
+            image = await session.get(RecipeImage, image_id)
+            assert job.status == "Done" and job.attempts == 3
+            assert image.medium_url and image.thumbnail_url
+        assert len(storage.files) == 3
+    finally:
+        app.dependency_overrides.pop(get_recipe_storage, None)
+
+
 async def test_delete_before_worker_cancels_job_and_cleans_partial_variant(client) -> None:
     storage = MemoryStorage()
     try:
@@ -260,7 +572,9 @@ async def test_delete_before_worker_cancels_job_and_cleans_partial_variant(clien
         app.dependency_overrides.pop(get_recipe_storage, None)
 
 
-async def test_read_queries_have_bounded_statement_count(client) -> None:
+async def test_read_queries_have_bounded_statement_count(client, monkeypatch) -> None:
+    redis = MemoryRedis()
+    monkeypatch.setattr(cache, "get_cache_client", lambda: redis)
     category = await create_category()
     author, _ = await create_user(client, email="query-count@example.com")
     recipes = [await add_recipe(category, author, title=f"Phở {i}") for i in range(8)]
@@ -292,9 +606,9 @@ async def test_read_queries_have_bounded_statement_count(client) -> None:
     event.listen(engine.sync_engine, "before_cursor_execute", record)
     try:
         for url, upper_bound in (
-            ("/api/v1/recipes?pageSize=8", 2),
-            ("/api/v1/recipes/search?q=Phở&pageSize=8", 2),
-            (f"/api/v1/recipes/{recipes[0].slug}", 5),
+            ("/api/v1/recipes?pageSize=8", 3),
+            ("/api/v1/recipes/search?q=Phở&pageSize=8", 3),
+            (f"/api/v1/recipes/{recipes[0].slug}", 6),
         ):
             statements.clear()
             response = await client.get(url)
