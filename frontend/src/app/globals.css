@@ -131,6 +131,14 @@ h1, h2, h3 { font-family: var(--font-display); }
 .loading-card { height: 350px; }
 .error-shell h1 { max-width: 800px; margin: 0 0 16px; font-size: clamp(48px, 6vw, 80px); }
 .error-shell button { margin-top: 24px; padding: 14px 24px; border: 0; background: var(--clay); color: white; }
+.shared-state { display: grid; justify-items: center; gap: 10px; padding: 70px 24px; border: 1px dashed var(--line); border-radius: var(--radius-md); background: var(--cream); text-align: center; }
+.shared-state > span { color: var(--clay); font-size: 38px; font-weight: 800; }
+.shared-state h2, .shared-state p { margin: 0; }
+.shared-state p { color: var(--muted); line-height: 1.6; }
+.shared-state button { margin-top: 8px; padding: 12px 20px; border: 0; border-radius: var(--radius-sm); background: var(--clay); color: var(--cream); font-weight: 800; }
+.shared-state-error { border-color: #e4b4ae; background: #fff8f6; }
+.shared-state-error > span { color: #b42318; }
+.shared-state-loading > span { animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .45; } }
 
 @media (max-width: 1100px) {
