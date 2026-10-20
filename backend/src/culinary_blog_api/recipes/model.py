@@ -5,6 +5,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -34,6 +35,15 @@ class RecipeStatus(IntEnum):
     DRAFT = 0
     PUBLISHED = 1
     ARCHIVED = 2
+
+
+class RecipeCacheGeneration(Base):
+    """Committed recipe-write generation shared by every API and worker process."""
+
+    __tablename__ = "recipe_cache_generation"
+
+    id: Mapped[int] = mapped_column(Integer(), primary_key=True)
+    version: Mapped[int] = mapped_column(BigInteger(), nullable=False, default=0)
 
 
 class Recipe(Base):

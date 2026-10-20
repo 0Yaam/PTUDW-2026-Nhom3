@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth.model import User
 from ..db import get_session
 from ..storage import FileStorage, S3FileStorage, StorageNotConfigured
-from .cache import get_cached, set_cached
+from .cache import get_or_load_cached
 from .dependencies import get_optional_recipe_viewer, require_author_or_admin
 from .detail import get_recipe_detail
 from .features import (
@@ -105,18 +105,15 @@ async def get_recipes(
 ) -> PagedRecipeResponse:
     """List published recipes publicly, with private rows only for their owner/Admin."""
     cache_key = f"{request.url.path}?{request.url.query}"
-    version = None
     if current_user is None:
-        version, cached = await get_cached("list", cache_key, PagedRecipeResponse)
-        if cached is not None:
-            response.headers["X-Recipe-Cache"] = "HIT"
-            return cached
-    response.headers["X-Recipe-Cache"] = "MISS" if version is not None else "BYPASS"
-
-    result = await list_recipes(session, query, current_user)
-    if current_user is None:
-        await set_cached("list", cache_key, result, version)
-    return result
+        cache_state, result = await get_or_load_cached(
+            "list", cache_key, PagedRecipeResponse,
+            lambda: list_recipes(session, query, current_user),
+        )
+        response.headers["X-Recipe-Cache"] = cache_state
+        return result
+    response.headers["X-Recipe-Cache"] = "BYPASS"
+    return await list_recipes(session, query, current_user)
 
 
 @router.get(
@@ -159,17 +156,15 @@ async def get_recipe_search(
         }
     )
     cache_key = f"{request.url.path}?{request.url.query}"
-    version = None
     if current_user is None:
-        version, cached = await get_cached("search", cache_key, PagedRecipeSearchResponse)
-        if cached is not None:
-            response.headers["X-Recipe-Cache"] = "HIT"
-            return cached
-    response.headers["X-Recipe-Cache"] = "MISS" if version is not None else "BYPASS"
-    result = await search_recipes(session, query)
-    if current_user is None:
-        await set_cached("search", cache_key, result, version)
-    return result
+        cache_state, result = await get_or_load_cached(
+            "search", cache_key, PagedRecipeSearchResponse,
+            lambda: search_recipes(session, query),
+        )
+        response.headers["X-Recipe-Cache"] = cache_state
+        return result
+    response.headers["X-Recipe-Cache"] = "BYPASS"
+    return await search_recipes(session, query)
 
 
 @router.get(
@@ -186,17 +181,16 @@ async def get_recipe_by_slug(
     session: Annotated[AsyncSession, Depends(get_session)],
     current_user: Annotated[User | None, Depends(get_optional_recipe_viewer)],
 ) -> RecipeDetailResponse:
-    version = None
     if current_user is None:
-        version, cached = await get_cached("detail", slug, RecipeDetailResponse)
-        if cached is not None:
-            response.headers["X-Recipe-Cache"] = "HIT"
-            return cached
-    response.headers["X-Recipe-Cache"] = "MISS" if version is not None else "BYPASS"
-    detail = await get_recipe_detail(session, slug, current_user)
-    if current_user is None and detail.status == "Published":
-        await set_cached("detail", slug, detail, version)
-    return detail
+        cache_state, detail = await get_or_load_cached(
+            "detail", slug, RecipeDetailResponse,
+            lambda: get_recipe_detail(session, slug, current_user),
+            cache_if=lambda detail: detail.status == "Published",
+        )
+        response.headers["X-Recipe-Cache"] = cache_state
+        return detail
+    response.headers["X-Recipe-Cache"] = "BYPASS"
+    return await get_recipe_detail(session, slug, current_user)
 
 
 @router.post(

@@ -168,9 +168,12 @@ async def upload_recipe_image(
         is_primary=count == 0,
     )
     session.add(image)
-    session.add(RecipeImageResizeJob(image_id=image.id))
     recipe.updated_at = datetime.now(UTC)
     try:
+        # Without an ORM relationship, the unit of work may insert the job
+        # before its image. Flush the parent first for PostgreSQL's FK.
+        await session.flush()
+        session.add(RecipeImageResizeJob(image_id=image.id))
         await session.commit()
     except (IntegrityError, StaleDataError) as error:
         await session.rollback()

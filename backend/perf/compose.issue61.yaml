@@ -1,0 +1,24 @@
+# Run with -p culinary-issue61 -f compose.yaml -f backend/perf/compose.issue61.yaml.
+# Volumes and ports stay separate from the normal culinary-blog stack.
+services:
+  postgres:
+    ports: !override
+      - "127.0.0.1:15461:5432"
+  redis:
+    ports: !override
+      - "127.0.0.1:16361:6379"
+  minio:
+    ports: !override
+      - "127.0.0.1:19061:9000"
+      - "127.0.0.1:19062:9001"
+  api:
+    environment:
+      MINIO_PUBLIC_URL: http://localhost:19061
+    ports: !override
+      - "127.0.0.1:18061:8000"
+  image-worker:
+    environment:
+      MINIO_PUBLIC_URL: http://localhost:19061
+  file-worker:
+    environment:
+      MINIO_PUBLIC_URL: http://localhost:19061

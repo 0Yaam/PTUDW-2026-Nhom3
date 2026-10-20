@@ -11,6 +11,7 @@ from culinary_blog_api.jobs.model import WelcomeEmailJob  # noqa: F401
 from culinary_blog_api.recipes import (  # noqa: F401
     Ingredient,
     Recipe,
+    RecipeCacheGeneration,
     RecipeImage,
     RecipeImageResizeJob,
     RecipeIngredient,
