@@ -1,0 +1,89 @@
+/* Hallmark · component: not-found state · genre: editorial · theme: Small Kitchen tokens
+ * pre-emit critique: P4 H4 E4 S4 R5 V3
+ */
+.page {
+  display: grid;
+  min-height: 100vh;
+  align-items: center;
+  padding: var(--space-6);
+  background: var(--paper);
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-8);
+  width: min(100%, 1080px);
+  margin: 0 auto;
+  padding: clamp(32px, 6vw, 80px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--cream);
+  box-shadow: var(--shadow-panel);
+}
+
+.code {
+  margin: 0;
+  color: var(--clay);
+  font-family: var(--font-display);
+  font-size: clamp(120px, 18vw, 240px);
+  line-height: 0.8;
+  letter-spacing: -0.09em;
+}
+
+.content { min-width: 0; }
+.eyebrow {
+  margin: 0 0 var(--space-4);
+  color: var(--clay);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.content h1 {
+  margin: 0;
+  font-size: clamp(38px, 4.5vw, 64px);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+.description {
+  max-width: 46ch;
+  margin: var(--space-5) 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.actions a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 18px;
+  border: 1px solid var(--clay);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+.actions a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+.primary { background: var(--clay); color: var(--cream); }
+.primary:hover { background: var(--ink); border-color: var(--ink); }
+.secondary { background: transparent; color: var(--clay); }
+.secondary:hover { background: var(--paper); }
+
+@media (max-width: 700px) {
+  .page { padding: var(--space-4); }
+  .panel { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); padding: var(--space-6); }
+  .code { font-size: clamp(92px, 24vw, 150px); }
+}
+
+@media (max-width: 360px) {
+  .panel { padding: var(--space-5); }
+  .actions { flex-direction: column; }
+}
