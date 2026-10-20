@@ -16,8 +16,8 @@ export function LocaleSwitcher({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={`locale-switcher${compact ? " compact" : ""}`} role="group" aria-label={t("choose")}>
-      <button type="button" lang="vi" aria-pressed={locale === "vi"} onClick={() => select("vi")}>VI</button>
-      <button type="button" lang="en" aria-pressed={locale === "en"} onClick={() => select("en")}>EN</button>
+      <button type="button" lang="vi" aria-pressed={locale === "vi"} aria-label={t("vi")} onClick={() => select("vi")}>VI</button>
+      <button type="button" lang="en" aria-pressed={locale === "en"} aria-label={t("en")} onClick={() => select("en")}>EN</button>
     </div>
   );
 }

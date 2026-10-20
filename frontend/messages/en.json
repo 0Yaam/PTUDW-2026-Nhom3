@@ -1,6 +1,8 @@
 {
   "language": {
-    "choose": "Choose language"
+    "choose": "Choose language",
+    "vi": "Tiếng Việt",
+    "en": "English"
   },
   "nav": {
     "skip": "Skip to content",

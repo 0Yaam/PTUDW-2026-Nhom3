@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Category } from "@/components/category-grid";
+import { EmptyState, ErrorState } from "@/components/ui/feedback";
 import { getCategories } from "@/lib/api/categories";
 import {
   getRecipeList,
@@ -175,10 +176,15 @@ export function RecipeList() {
         </form>
 
         {error ? (
-          <section className={`${styles.state} ${styles.error}`} role="alert">
-            <h2>{t("errorTitle")}</h2><p>{t("errorDescription")}</p>
-            <button type="button" onClick={() => setReload((value) => value + 1)}>{t("retry")}</button>
-          </section>
+          <ErrorState
+            title={t("errorTitle")}
+            description={t("errorDescription")}
+            action={{
+              label: t("retry"),
+              onClick: () => setReload((value) => value + 1),
+              disabled: loading,
+            }}
+          />
         ) : loading ? (
           <section className={styles.skeletonSection} aria-label={t("loading")} aria-busy="true" aria-live="polite">
             <p className={styles.visuallyHidden}>{t("loading")}</p>
@@ -194,7 +200,7 @@ export function RecipeList() {
             </div>
           </section>
         ) : result && result.items.length === 0 ? (
-          <section className={styles.state}><h2>{t("emptyTitle")}</h2><p>{t("emptyDescription")}</p></section>
+          <EmptyState title={t("emptyTitle")} description={t("emptyDescription")} />
         ) : result ? (
           <>
             <p className={styles.count}>{t("resultCount", { count: result.totalCount })}</p>
@@ -214,6 +220,11 @@ export function RecipeList() {
                 </article>
               ))}
             </div>
+            {/*
+              Issue #71: Kept inline because RecipeList is the only paginated
+              surface in the application (categories and admin lists are single-page).
+              If a second screen needs pagination, extract to a shared component.
+            */}
             <nav className={styles.pagination} aria-label={t("pagination")}>
               <button type="button" onClick={() => setPage((current) => current - 1)} disabled={!result.hasPreviousPage || loading}>{t("previous")}</button>
               <span>{t("pageOf", { page: result.page, total: result.totalPages || 1 })}</span>
