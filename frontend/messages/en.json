@@ -251,10 +251,13 @@
     "pageOf": "Page {page} of {total}"
   },
   "recipeDetail": {
+    "eyebrow": "Recipe",
     "back": "Back to recipes",
     "loading": "Loading recipe...",
     "notFoundTitle": "Recipe not found",
     "notFoundDescription": "This recipe does not exist or has been deleted. Return to the list to find another dish.",
+    "notFoundEyebrow": "Not found",
+    "notFoundAction": "Browse categories",
     "privateTitle": "This recipe is not public",
     "privateDescription": "Only its author or an Admin can view a draft or archived recipe. Sign in with the right account to continue.",
     "errorTitle": "Recipe could not be loaded",
@@ -280,14 +283,18 @@
     "servingCount": "{count} servings",
     "ingredientsKicker": "Before you begin",
     "ingredients": "Ingredients",
+    "ingredientsTitle": "Ingredients",
     "noIngredients": "The author has not added ingredients yet.",
     "stepsKicker": "Let's cook",
     "steps": "Method",
+    "stepsTitle": "Steps",
+    "stepDuration": "{minutes} min",
     "noSteps": "The author has not added preparation steps yet.",
     "stepImage": "Illustration for step {number}",
     "notes": "Additional notes",
     "nutritionKicker": "More details",
     "nutrition": "Nutrition",
+    "nutritionTitle": "Nutrition",
     "calories": "Calories",
     "protein": "Protein",
     "carbohydrates": "Carbohydrates",
@@ -442,17 +449,12 @@
     "retry": "Try again",
     "loading": "Loading data"
   },
-  "recipeDetail": {
-    "eyebrow": "Recipe",
-    "back": "All categories",
-    "byAuthor": "By {name}",
-    "ingredientsTitle": "Ingredients",
-    "stepsTitle": "Steps",
-    "nutritionTitle": "Nutrition",
-    "stepDuration": "{minutes} min",
-    "notFoundEyebrow": "Not found",
-    "notFoundTitle": "Recipe not found.",
-    "notFoundDescription": "This recipe is private or no longer exists.",
-    "notFoundAction": "Browse categories"
+  "notFound": {
+    "eyebrow": "Page not found",
+    "title": "This page is not on the menu.",
+    "description": "The link may have changed. Head home or browse the recipes to find your way back.",
+    "navigation": "Where to go next",
+    "home": "Back to home",
+    "recipes": "Browse recipes"
   }
 }
