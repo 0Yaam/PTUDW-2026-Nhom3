@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { EmptyState } from "@/components/ui/feedback";
 import { getCategory, type RecipeCard } from "@/lib/api/categories";
 import styles from "./page.module.css";
 import { siteUrl } from "@/lib/site-url";
@@ -92,11 +93,7 @@ export default async function CategoryDetailPage({
         <h2 id="recipes-title">{t("recipesTitle")}</h2>
 
         {category.recipes.length === 0 ? (
-          <div className="empty-state">
-            <span aria-hidden="true">✳</span>
-            <h3>{t("noRecipesTitle")}</h3>
-            <p>{t("noRecipesDescription")}</p>
-          </div>
+          <EmptyState title={t("noRecipesTitle")} description={t("noRecipesDescription")} />
         ) : (
           <ul className="recipe-cards">
             {category.recipes.map((recipe: RecipeCard) => (

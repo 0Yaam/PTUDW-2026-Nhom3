@@ -19,7 +19,7 @@ export function SiteHeader() {
       <a className="skip-link" href="#main-content">{t("skip")}</a>
       <header className="site-header"><div className="site-header-inner">
         <Link className="site-brand" href="/" aria-label={t("brandHome")}><span className="site-brand-mark" aria-hidden="true">✳</span><span className="site-brand-name">small<span>kitchen</span><small>{site("tagline")}</small></span></Link>
-        <nav className="desktop-nav" aria-label={t("main")}>{links.map((link) => <a href={link.href} key={link.href}>{link.label}</a>)}</nav>
+        <nav className="desktop-nav" aria-label={t("main")}>{links.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}</nav>
         <LocaleSwitcher compact />
         <Link className="header-action" href="/admin/categories">{t("manage")} <span aria-hidden="true">↗</span></Link>
         <MobileNav links={links} />

@@ -20,7 +20,7 @@ export function MobileNav({ links }: { links: NavLink[] }) {
     <details className="mobile-nav" ref={details}>
       <summary aria-label={t("menu")}>{t("menu")} <span aria-hidden="true">☰</span></summary>
       <nav aria-label={t("mobile")} onClick={() => details.current?.removeAttribute("open")}>
-        {links.map((link) => <a href={link.href} key={link.href}>{link.label}</a>)}
+        {links.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
         <Link href="/admin/categories">{t("manage")}</Link>
       </nav>
     </details>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { EmptyState, ErrorState } from "@/components/ui/feedback";
 import { getRecipeDetail, RecipeApiError, type RecipeDetail } from "@/lib/api/recipes";
 import {
   AUTH_SESSION_CHANGED,
@@ -83,13 +84,14 @@ export function RecipeDetailView({ slug }: { slug: string }) {
             <div className={styles.skeletonFacts}><i /><i /><i /><i /></div>
             <div className={styles.skeletonBody}><i /><i /></div>
           </div>
+        ) : errorStatus === 404 ? (
+          <EmptyState title={t("notFoundTitle")} description={t("notFoundDescription")} />
         ) : errorStatus !== null ? (
-          <section className={styles.state} role={errorStatus === 404 ? undefined : "alert"}>
-            <span className={styles.stateIcon} aria-hidden="true">✳</span>
-            <h1>{errorStatus === 404 ? t("notFoundTitle") : errorStatus === 403 || errorStatus === 401 ? t("privateTitle") : t("errorTitle")}</h1>
-            <p>{errorStatus === 404 ? t("notFoundDescription") : errorStatus === 403 || errorStatus === 401 ? t("privateDescription") : t("errorDescription")}</p>
-            {errorStatus !== 404 && <button type="button" onClick={() => setReload((value) => value + 1)}>{t("retry")}</button>}
-          </section>
+          <ErrorState
+            title={errorStatus === 403 || errorStatus === 401 ? t("privateTitle") : t("errorTitle")}
+            description={errorStatus === 403 || errorStatus === 401 ? t("privateDescription") : t("errorDescription")}
+            action={{ label: t("retry"), onClick: () => setReload((value) => value + 1) }}
+          />
         ) : recipe ? (
           <>
             <header className={`${styles.hero} ${activeImage ? "" : styles.heroNoImage}`}>

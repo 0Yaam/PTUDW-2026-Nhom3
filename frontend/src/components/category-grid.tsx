@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-
+import { EmptyState } from "@/components/ui/feedback";
 export type Category = {
   id: string;
   name: string;
@@ -25,7 +25,7 @@ function previewForCategory(name: string, index: number): string {
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   const t = useTranslations("category");
   if (categories.length === 0) {
-    return <div className="empty-state"><h3>{t("emptyTitle")}</h3><p>{t("emptyDescription")}</p></div>;
+    return <EmptyState title={t("emptyTitle")} description={t("emptyDescription")} />;
   }
 
   return <div className="category-grid">{categories.map((category, index) => (
