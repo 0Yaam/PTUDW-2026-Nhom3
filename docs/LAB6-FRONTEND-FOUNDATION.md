@@ -5,10 +5,10 @@ The blog frontend now has a shared foundation for the Lab 6 requirements.
 ## Completed pieces
 
 - `frontend/src/lib/api/client.ts` centralizes the API base URL, JSON requests,
-  HTTP status and RFC 7807 Problem Details errors.
+  HTTP status and RFC 7807 Problem Details errors for every API module.
 - `frontend/src/lib/auth-store.ts` exposes the current session through
-  `useSyncExternalStore`; login, refresh and logout updates are delivered to
-  every client screen through the existing session event.
+  `useSyncExternalStore`; it deduplicates initial token refresh and delivers
+  login, refresh and logout updates to profile and recipe screens.
 - Tailwind CSS 4 and CSS Modules are declared in `frontend/package.json` and
   share the tokens in `frontend/src/styles/tokens.css`.
 - `frontend/src/components/ui/feedback.tsx` provides loading, error and empty

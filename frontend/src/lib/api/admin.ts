@@ -1,3 +1,5 @@
+import { apiRequest } from "@/lib/api/client";
+
 /** Contracts for the Admin-only `/api/v1/admin` endpoints. */
 export type AdminLoginResponse = {
   accessToken: string;
@@ -19,13 +21,9 @@ export type AdminOverview = {
   }[];
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
 export async function getAdminOverview(accessToken: string): Promise<AdminOverview> {
-  const response = await fetch(`${apiUrl}/api/v1/admin/overview`, {
+  return apiRequest<AdminOverview>("/api/v1/admin/overview", {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`Admin overview request failed: ${response.status}`);
-  return (await response.json()) as AdminOverview;
 }

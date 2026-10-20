@@ -20,13 +20,25 @@ export function apiBaseUrl(): string {
   return typeof window === "undefined" ? serverApiUrl : browserApiUrl;
 }
 
+export async function readProblemDetails(response: Response): Promise<ProblemDetails> {
+  try {
+    const problem = (await response.json()) as ProblemDetails;
+    return { ...problem, status: problem.status ?? response.status };
+  } catch {
+    return {
+      status: response.status,
+      title: response.statusText || undefined,
+      detail: "The API returned an unreadable error.",
+    };
+  }
+}
+
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   const response = await fetch(`${apiBaseUrl()}${path}`, { ...init, headers });
   if (!response.ok) {
-    const problem = (await response.json().catch(() => ({}))) as ProblemDetails;
-    throw new ApiError(response.status, problem);
+    throw new ApiError(response.status, await readProblemDetails(response));
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;

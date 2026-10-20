@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Category } from "@/components/category-grid";
 import { EmptyState, ErrorState } from "@/components/ui/feedback";
+import { getCategories } from "@/lib/api/categories";
 import {
   getRecipeList,
   type PagedRecipeList,
@@ -12,12 +13,8 @@ import {
   type RecipeListParams,
   type RecipeListSort,
 } from "@/lib/api/recipe-list";
-import {
-  AUTH_SESSION_CHANGED,
-  clearAuthSession,
-  loadActiveAuthSession,
-  type AuthSession,
-} from "@/lib/auth-session";
+import { clearAuthSession } from "@/lib/auth-session";
+import { useAuthStore } from "@/lib/auth-store";
 import styles from "./recipe-list.module.css";
 
 type Filters = {
@@ -29,7 +26,6 @@ type Filters = {
   sort: RecipeListSort;
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const defaultFilters: Filters = {
   search: "",
   categoryId: "",
@@ -40,13 +36,14 @@ const defaultFilters: Filters = {
 };
 
 function toOptionalPositiveInteger(value: string): number | undefined {
+  if (value.trim() === "") return undefined;
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
 export function RecipeList() {
   const t = useTranslations("recipeList");
-  const [session, setSession] = useState<AuthSession | null | undefined>(undefined);
+  const session = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState<Filters>(defaultFilters);
@@ -57,19 +54,11 @@ export function RecipeList() {
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    const updateSession = () => void loadActiveAuthSession().then(setSession);
-    updateSession();
-    window.addEventListener(AUTH_SESSION_CHANGED, updateSession);
-    return () => window.removeEventListener(AUTH_SESSION_CHANGED, updateSession);
-  }, []);
-
-  useEffect(() => {
     let active = true;
     async function loadCategories() {
       try {
-        const response = await fetch(`${apiUrl}/api/v1/categories`, { cache: "no-store" });
-        if (!response.ok) throw new Error("categories");
-        if (active) setCategories((await response.json()) as Category[]);
+        const result = await getCategories();
+        if (active) setCategories(result);
       } catch {
         if (active) setCategories([]);
       }

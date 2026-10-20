@@ -253,10 +253,13 @@
     "pageOf": "Trang {page} / {total}"
   },
   "recipeDetail": {
+    "eyebrow": "Công thức",
     "back": "Về danh sách công thức",
     "loading": "Đang tải công thức...",
     "notFoundTitle": "Không tìm thấy công thức",
     "notFoundDescription": "Công thức này không tồn tại hoặc đã bị xóa. Hãy quay lại danh sách để chọn món khác.",
+    "notFoundEyebrow": "Không tìm thấy",
+    "notFoundAction": "Xem các danh mục",
     "privateTitle": "Công thức chưa được công khai",
     "privateDescription": "Chỉ tác giả sở hữu hoặc quản trị viên có thể xem bản nháp và công thức đã lưu trữ. Hãy đăng nhập đúng tài khoản để tiếp tục.",
     "errorTitle": "Chưa thể tải công thức",
@@ -282,14 +285,18 @@
     "servingCount": "{count} người",
     "ingredientsKicker": "Trước khi bắt đầu",
     "ingredients": "Nguyên liệu",
+    "ingredientsTitle": "Nguyên liệu",
     "noIngredients": "Tác giả chưa thêm nguyên liệu cho công thức này.",
     "stepsKicker": "Cùng vào bếp",
     "steps": "Các bước thực hiện",
+    "stepsTitle": "Các bước",
+    "stepDuration": "{minutes} phút",
     "noSteps": "Tác giả chưa thêm các bước thực hiện.",
     "stepImage": "Hình minh họa bước {number}",
     "notes": "Ghi chú thêm",
     "nutritionKicker": "Thông tin thêm",
     "nutrition": "Dinh dưỡng",
+    "nutritionTitle": "Dinh dưỡng",
     "calories": "Năng lượng",
     "protein": "Chất đạm",
     "carbohydrates": "Tinh bột",
@@ -444,17 +451,12 @@
     "retry": "Thử lại",
     "loading": "Đang tải dữ liệu"
   },
-  "recipeDetail": {
-    "eyebrow": "Công thức",
-    "back": "Tất cả danh mục",
-    "byAuthor": "Bởi {name}",
-    "ingredientsTitle": "Nguyên liệu",
-    "stepsTitle": "Các bước",
-    "nutritionTitle": "Dinh dưỡng",
-    "stepDuration": "{minutes} phút",
-    "notFoundEyebrow": "Không tìm thấy",
-    "notFoundTitle": "Không tìm thấy công thức.",
-    "notFoundDescription": "Công thức này riêng tư hoặc không còn tồn tại.",
-    "notFoundAction": "Xem các danh mục"
+  "notFound": {
+    "eyebrow": "Không tìm thấy trang",
+    "title": "Trang này không có trong thực đơn.",
+    "description": "Liên kết có thể đã thay đổi. Hãy về trang chủ hoặc xem danh sách công thức để tiếp tục.",
+    "navigation": "Điểm đến tiếp theo",
+    "home": "Về trang chủ",
+    "recipes": "Xem công thức"
   }
 }

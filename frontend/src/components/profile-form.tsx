@@ -10,11 +10,9 @@ import {
   updateProfile,
 } from "@/lib/api/profile";
 import {
-  AUTH_SESSION_CHANGED,
   clearAuthSession,
-  loadActiveAuthSession,
-  type AuthSession,
 } from "@/lib/auth-session";
+import { useAuthStore } from "@/lib/auth-store";
 import { focusFirstInvalidField } from "@/lib/form-errors";
 import styles from "./profile-form.module.css";
 
@@ -23,7 +21,7 @@ type FieldErrors = Record<string, string>;
 export function ProfileForm() {
   const t = useTranslations("profile");
   const errorT = useTranslations("errors");
-  const [session, setSession] = useState<AuthSession | null | undefined>(undefined);
+  const session = useAuthStore();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -40,13 +38,6 @@ export function ProfileForm() {
     setFullName(loaded.fullName);
     setUserName(loaded.userName);
     setAvatarUrl(loaded.avatarUrl ?? "");
-  }, []);
-
-  useEffect(() => {
-    const updateSession = () => void loadActiveAuthSession().then(setSession);
-    updateSession();
-    window.addEventListener(AUTH_SESSION_CHANGED, updateSession);
-    return () => window.removeEventListener(AUTH_SESSION_CHANGED, updateSession);
   }, []);
 
   useEffect(() => {
