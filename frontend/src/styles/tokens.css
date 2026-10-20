@@ -1,0 +1,53 @@
+:root {
+  /* Small Kitchen semantic palette. Keep components on tokens instead of hex literals. */
+  --paper: #fffaf9;
+  --cream: #ffffff;
+  --ink: #25262b;
+  --moss: #345d48;
+  --clay: #b44254;
+  --saffron: #f7c064;
+  --muted: #66646b;
+  --line: #eadfe0;
+  --focus-ring: 3px solid var(--clay);
+  --focus-offset: 3px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --radius-sm: 3px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-panel: 0 12px 32px rgba(22, 29, 35, 0.1);
+
+  --font-body: "Segoe UI", Arial, sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
+}
+
+/* Tailwind 4 reads this theme block and exposes the same tokens to utilities. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-moss: var(--moss);
+  --color-clay: var(--clay);
+  --color-saffron: var(--saffron);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --font-kitchen-body: var(--font-body);
+  --font-kitchen-display: var(--font-display);
+  --radius-kitchen-sm: var(--radius-sm);
+  --radius-kitchen-md: var(--radius-md);
+  --radius-kitchen-lg: var(--radius-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+}

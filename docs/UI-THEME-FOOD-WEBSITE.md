@@ -6,7 +6,7 @@ Visual reference: [Food Website Design by Azza khoffi](https://dribbble.com/shot
 
 The Dribbble shot is a design reference, not a downloadable application template or a code license. The UI is an original Next.js implementation. No Dribbble images, branding, source code, or scripts are copied into the project. Food photos in `frontend/public/images` were generated for this project. An earlier Bistro template was downloaded into the ignored `.template-audit/bistro` folder for comparison; no Bistro code or assets remain in the adapted UI.
 
-The visual system uses a light canvas, warm pink accents, a central food collage, editorial headings, photographed category cards, and simple forms. Shared colors and typography are in `frontend/src/app/globals.css`. The header, footer, home, loading and error states, and Admin category page use the same design tokens. For future pages, reuse those tokens and the shared shell rather than copying the Dribbble composition into every screen.
+The visual system uses a light canvas, warm pink accents, a central food collage, editorial headings, photographed category cards, and simple forms. Shared colors and typography are in `frontend/src/styles/tokens.css`, imported by `frontend/src/app/globals.css`. The header, footer, home, loading and error states, and Admin category page use the same design tokens. For future pages, reuse those tokens and the shared shell rather than copying the Dribbble composition into every screen.
 
 ## SRS and integration boundary
 

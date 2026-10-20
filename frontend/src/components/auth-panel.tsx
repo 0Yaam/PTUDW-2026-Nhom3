@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { clearAuthSession, loadAuthSession, saveAuthSession } from "@/lib/auth-session";
+import { ApiError, apiRequest } from "@/lib/api/client";
+import { useAuthStore } from "@/lib/auth-store";
 
 type Mode = "register" | "login";
 
@@ -19,20 +21,13 @@ type AuthResponse = {
   user: AuthUser;
 };
 
-type ProblemDetails = {
-  type?: string;
-  detail?: string;
-  errors?: Record<string, string[]>;
-};
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
 export function AuthPanel() {
   const t = useTranslations("auth");
   const errorT = useTranslations("errors");
   const [mode, setMode] = useState<Mode>("register");
   const [message, setMessage] = useState("");
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const sessionFromStore = useAuthStore();
+  const user = sessionFromStore?.user ?? null;
   const [pending, setPending] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -52,25 +47,20 @@ export function AuthPanel() {
         : { email: data.get("email"), password: data.get("password") };
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/auth/${mode}`, {
+      const result = await apiRequest<AuthResponse>(`/api/v1/auth/${mode}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) {
-        const problem = (await response.json()) as ProblemDetails;
+      saveAuthSession(result);
+      setMessage(mode === "register" ? t("registered") : t("signedIn"));
+      form.reset();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        const problem = error.problem;
         const knownType = problem.type && errorT.has(problem.type) ? problem.type : null;
         const fieldError = Object.values(problem.errors ?? {}).flat()[0];
         setMessage(knownType ? errorT(knownType) : fieldError ?? problem.detail ?? t("requestFailed"));
-        return;
-      }
-      const result = (await response.json()) as AuthResponse;
-      saveAuthSession(result);
-      setUser(result.user);
-      setMessage(mode === "register" ? t("registered") : t("signedIn"));
-      form.reset();
-    } catch {
-      setMessage(t("apiUnavailable"));
+      } else setMessage(t("apiUnavailable"));
     } finally {
       setPending(false);
     }
@@ -81,18 +71,14 @@ export function AuthPanel() {
     setPending(true);
     try {
       if (session) {
-        await fetch(`${apiUrl}/api/v1/auth/logout`, {
+        await apiRequest<void>("/api/v1/auth/logout", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${session.accessToken}` },
           body: JSON.stringify({ refreshToken: session.refreshToken }),
         });
       }
     } finally {
       clearAuthSession();
-      setUser(null);
       setMessage(t("signedOut"));
       setPending(false);
     }
@@ -115,8 +101,7 @@ export function AuthPanel() {
               onClick={() => {
                 setMode(value);
                 setMessage("");
-                setUser(null);
-              }}
+                        }}
             >
               {value === "register" ? t("register") : t("login")}
             </button>
