@@ -1,3 +1,5 @@
+import { apiRequest } from "@/lib/api/client";
+
 export type AuthSession = {
   accessToken: string;
   refreshToken: string;
@@ -8,9 +10,9 @@ export type AuthSession = {
   };
 };
 
-const AUTH_SESSION_KEY = "culinary-blog.auth-session";
+export const AUTH_SESSION_KEY = "culinary-blog.auth-session";
 export const AUTH_SESSION_CHANGED = "culinary-blog:auth-session-changed";
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+let refreshPromise: Promise<AuthSession | null> | null = null;
 
 function notifySessionChanged() {
   window.dispatchEvent(new Event(AUTH_SESSION_CHANGED));
@@ -42,29 +44,32 @@ export function loadAuthSession(): AuthSession | null {
   }
 }
 
-export async function loadActiveAuthSession(): Promise<AuthSession | null> {
+export function loadActiveAuthSession(): Promise<AuthSession | null> {
   const session = loadAuthSession();
-  if (session || typeof window === "undefined") return session;
+  if (session || typeof window === "undefined") return Promise.resolve(session);
 
   const stored = window.sessionStorage.getItem(AUTH_SESSION_KEY);
-  if (!stored) return null;
+  if (!stored) return Promise.resolve(null);
+  if (refreshPromise) return refreshPromise;
 
-  try {
-    const expired = JSON.parse(stored) as AuthSession;
-    if (!expired.refreshToken) return null;
-    const response = await fetch(`${apiUrl}/api/v1/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: expired.refreshToken }),
-    });
-    if (!response.ok) throw new Error("refresh failed");
-    const refreshed = (await response.json()) as AuthSession;
-    saveAuthSession(refreshed);
-    return refreshed;
-  } catch {
-    clearAuthSession();
-    return null;
-  }
+  refreshPromise = (async () => {
+    try {
+      const expired = JSON.parse(stored) as AuthSession;
+      if (!expired.refreshToken) return null;
+      const refreshed = await apiRequest<AuthSession>("/api/v1/auth/refresh", {
+        method: "POST",
+        body: JSON.stringify({ refreshToken: expired.refreshToken }),
+      });
+      saveAuthSession(refreshed);
+      return refreshed;
+    } catch {
+      clearAuthSession();
+      return null;
+    }
+  })().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
 }
 
 export function saveAuthSession(session: AuthSession) {

@@ -43,14 +43,6 @@ export type PagedRecipeList = {
   hasPreviousPage: boolean;
 };
 
-export class RecipeListApiError extends Error {
-  constructor(readonly status: number, readonly detail: string) {
-    super(detail);
-  }
-}
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
 export async function getRecipeList(
   params: RecipeListParams,
   accessToken?: string,
@@ -67,13 +59,11 @@ export async function getRecipeList(
   if (params.q) query.set("q", params.q);
 
   const endpoint = params.q ? "recipes/search" : "recipes";
-  const response = await fetch(`${apiUrl}/api/v1/${endpoint}?${query}`, {
+  return apiRequest<PagedRecipeList>(`/api/v1/${endpoint}?${query}`, {
     cache: "no-store",
     headers: !params.q && accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
   });
-  if (!response.ok) {
-    const problem = (await response.json().catch(() => null)) as { detail?: string } | null;
-    throw new RecipeListApiError(response.status, problem?.detail ?? "Recipe list request failed.");
-  }
-  return response.json() as Promise<PagedRecipeList>;
 }
+import { ApiError, apiRequest } from "@/lib/api/client";
+
+export { ApiError as RecipeListApiError };

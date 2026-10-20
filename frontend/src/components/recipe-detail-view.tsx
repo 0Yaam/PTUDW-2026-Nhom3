@@ -6,11 +6,9 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { getRecipeDetail, RecipeApiError, type RecipeDetail } from "@/lib/api/recipes";
 import {
-  AUTH_SESSION_CHANGED,
   clearAuthSession,
-  loadActiveAuthSession,
-  type AuthSession,
 } from "@/lib/auth-session";
+import { useAuthStore } from "@/lib/auth-store";
 import styles from "./recipe-detail-view.module.css";
 
 type NutritionKey = "calories" | "protein" | "carbohydrates" | "fat" | "fiber" | "sodium";
@@ -21,25 +19,12 @@ const nutritionKeys: NutritionKey[] = [
 export function RecipeDetailView({ slug }: { slug: string }) {
   const t = useTranslations("recipeDetail");
   const locale = useLocale();
-  const [session, setSession] = useState<AuthSession | null | undefined>(undefined);
+  const session = useAuthStore();
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [reload, setReload] = useState(0);
   const [activeImageId, setActiveImageId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const updateSession = () => void loadActiveAuthSession().then((value) => {
-      if (active) setSession(value);
-    });
-    updateSession();
-    window.addEventListener(AUTH_SESSION_CHANGED, updateSession);
-    return () => {
-      active = false;
-      window.removeEventListener(AUTH_SESSION_CHANGED, updateSession);
-    };
-  }, []);
 
   useEffect(() => {
     if (session === undefined) return;
