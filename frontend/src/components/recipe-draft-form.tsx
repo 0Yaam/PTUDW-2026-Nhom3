@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Category } from "@/components/category-grid";
+import { getCategories } from "@/lib/api/categories";
 import {
   RecipeApiError,
   type RecipeDraft,
@@ -11,18 +12,15 @@ import {
   createRecipeDraft,
 } from "@/lib/api/recipes";
 import {
-  AUTH_SESSION_CHANGED,
   clearAuthSession,
-  loadActiveAuthSession,
-  type AuthSession,
 } from "@/lib/auth-session";
+import { useAuthStore } from "@/lib/auth-store";
 import { focusFirstInvalidField } from "@/lib/form-errors";
 import styles from "./recipe-draft-form.module.css";
 
 type FieldErrors = Record<string, string>;
 type NutritionField = "calories" | "protein" | "carbohydrates" | "fat" | "fiber" | "sodium";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const nutritionFields: NutritionField[] = [
   "calories",
   "protein",
@@ -44,7 +42,7 @@ function optionalNumber(data: FormData, field: NutritionField): number | undefin
 export function RecipeDraftForm() {
   const t = useTranslations("recipeForm");
   const errorT = useTranslations("errors");
-  const [session, setSession] = useState<AuthSession | null | undefined>(undefined);
+  const session = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState(false);
@@ -67,21 +65,12 @@ export function RecipeDraftForm() {
   const totalTime = Math.max(0, Number(prepTime) || 0) + Math.max(0, Number(cookTime) || 0);
 
   useEffect(() => {
-    const updateSession = () => void loadActiveAuthSession().then(setSession);
-    updateSession();
-    window.addEventListener(AUTH_SESSION_CHANGED, updateSession);
-    return () => window.removeEventListener(AUTH_SESSION_CHANGED, updateSession);
-  }, []);
-
-  useEffect(() => {
     let active = true;
     async function loadCategories() {
       setCategoriesLoading(true);
       setCategoriesError(false);
       try {
-        const response = await fetch(`${apiUrl}/api/v1/categories`, { cache: "no-store" });
-        if (!response.ok) throw new Error("categories");
-        const result = (await response.json()) as Category[];
+        const result = await getCategories();
         if (active) setCategories(result);
       } catch {
         if (active) setCategoriesError(true);
