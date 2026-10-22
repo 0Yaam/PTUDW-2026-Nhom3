@@ -458,5 +458,15 @@
     "navigation": "Điểm đến tiếp theo",
     "home": "Về trang chủ",
     "recipes": "Xem công thức"
+  },
+  "categoryDirectory": {
+    "eyebrow": "Khám phá gian bếp",
+    "title": "Tất cả danh mục công thức",
+    "description": "Khám phá các danh mục trong gian bếp và tìm món ăn bạn muốn nấu.",
+    "total": "{count} danh mục",
+    "loading": "Đang tải danh mục…",
+    "errorTitle": "Chưa tải được danh mục",
+    "errorDescription": "Vui lòng thử lại. Kết nối hoặc dịch vụ có thể đang tạm gián đoạn.",
+    "retry": "Thử lại"
   }
 }
