@@ -458,5 +458,15 @@
     "navigation": "Where to go next",
     "home": "Back to home",
     "recipes": "Browse recipes"
+  },
+  "categoryDirectory": {
+    "eyebrow": "Explore the kitchen",
+    "title": "All recipe categories",
+    "description": "Find your next dish by exploring every category in our kitchen.",
+    "total": "{count, plural, =1 {# category} other {# categories}}",
+    "loading": "Loading categories…",
+    "errorTitle": "Categories could not be loaded",
+    "errorDescription": "Please try again. Your connection or the service may be temporarily unavailable.",
+    "retry": "Try again"
   }
 }

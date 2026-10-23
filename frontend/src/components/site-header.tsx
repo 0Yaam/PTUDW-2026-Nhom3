@@ -7,7 +7,7 @@ export function SiteHeader() {
   const t = useTranslations("nav");
   const site = useTranslations("site");
   const links = [
-    { href: "/#categories", label: t("categories") },
+    { href: "/categories", label: t("categories") },
     { href: "/recipes", label: t("recipes") },
     { href: "/recipes/new", label: t("createRecipe") },
     { href: "/#about", label: t("story") },

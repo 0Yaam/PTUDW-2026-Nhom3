@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/profile";
 import {
   clearAuthSession,
+  type AuthSession,
 } from "@/lib/auth-session";
 import { useAuthStore } from "@/lib/auth-store";
 import { focusFirstInvalidField } from "@/lib/form-errors";
@@ -19,9 +20,14 @@ import styles from "./profile-form.module.css";
 type FieldErrors = Record<string, string>;
 
 export function ProfileForm() {
+  const session = useAuthStore();
+  // Isolate loaded data by access token so switching accounts cannot show or save a previous profile.
+  return <ProfileSession key={session?.accessToken ?? (session === undefined ? "checking" : "signed-out")} session={session} />;
+}
+
+function ProfileSession({ session }: { session: AuthSession | null | undefined }) {
   const t = useTranslations("profile");
   const errorT = useTranslations("errors");
-  const session = useAuthStore();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -201,13 +207,14 @@ export function ProfileForm() {
                 </div>
               </div>
 
-              <form className={styles.form} onSubmit={submit} noValidate>
+              <form className={styles.form} onSubmit={submit} noValidate aria-busy={pending}>
                 <label>
                   {t("fullName")}
                   <input
                     name="fullName"
                     value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
+                    onChange={(event) => { setFullName(event.target.value); setSaved(false); }}
+                    disabled={pending}
                     maxLength={150}
                     aria-invalid={Boolean(fieldErrors.fullName)}
                     aria-describedby={fieldErrors.fullName ? "full-name-error" : undefined}
@@ -220,7 +227,8 @@ export function ProfileForm() {
                   <input
                     name="userName"
                     value={userName}
-                    onChange={(event) => setUserName(event.target.value)}
+                    onChange={(event) => { setUserName(event.target.value); setSaved(false); }}
+                    disabled={pending}
                     minLength={3}
                     maxLength={50}
                     aria-invalid={Boolean(fieldErrors.userName)}
@@ -239,7 +247,8 @@ export function ProfileForm() {
                     name="avatarUrl"
                     type="url"
                     value={avatarUrl}
-                    onChange={(event) => setAvatarUrl(event.target.value)}
+                    onChange={(event) => { setAvatarUrl(event.target.value); setSaved(false); }}
+                    disabled={pending}
                     maxLength={500}
                     placeholder="https://"
                     aria-invalid={Boolean(fieldErrors.avatarUrl)}

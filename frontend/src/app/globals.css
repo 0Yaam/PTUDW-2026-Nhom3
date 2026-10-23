@@ -60,7 +60,7 @@ h1, h2, h3 { font-family: var(--font-display); }
 
 .category-section { padding: 100px max(32px, calc((100vw - 1280px) / 2)); background: var(--paper); }
 .section-heading { display: grid; grid-template-columns: 1.3fr .7fr; align-items: end; gap: 50px; margin-bottom: 42px; }
-.section-heading h2 { max-width: 720px; margin: 0; font-size: clamp(48px, 5vw, 72px); line-height: 1.04; letter-spacing: -.06em; }
+.section-heading h1, .section-heading h2 { max-width: 720px; margin: 0; font-size: clamp(48px, 5vw, 72px); line-height: 1.04; letter-spacing: -.06em; }
 .section-heading h2 em, .story h2 em { color: var(--clay); font-style: normal; }
 .section-heading > p { max-width: 420px; margin: 0 0 8px; color: var(--muted); line-height: 1.8; }
 .category-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }

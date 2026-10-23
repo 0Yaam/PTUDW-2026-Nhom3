@@ -189,3 +189,27 @@ async def test_update_allows_keeping_the_same_user_name(client) -> None:
 
     assert response.status_code == 200
     assert response.json()["userName"] == REGISTER_PAYLOAD["userName"]
+
+
+async def test_profile_update_cannot_target_another_account(client) -> None:
+    other = await client.post(
+        "/api/v1/auth/register",
+        json={**REGISTER_PAYLOAD, "email": "other@example.com", "userName": "other"},
+    )
+    other_id = other.json()["user"]["id"]
+    headers = await sign_in(client)
+
+    response = await client.put(
+        "/api/v1/auth/profile",
+        json={**VALID_UPDATE, "id": other_id, "userId": other_id},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] != other_id
+    other_profile = await client.get(
+        "/api/v1/auth/profile",
+        headers={"Authorization": f"Bearer {other.json()['accessToken']}"},
+    )
+    assert other_profile.json()["userName"] == "other"
+    assert other_profile.json()["fullName"] == REGISTER_PAYLOAD["fullName"]

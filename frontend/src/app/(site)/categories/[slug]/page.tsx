@@ -49,7 +49,7 @@ export default async function CategoryDetailPage({
         <p className="eyebrow">{t("notFoundEyebrow")}</p>
         <h1>{t("notFoundTitle")}</h1>
         <p>{t("notFoundDescription")}</p>
-        <Link className="primary-action" href="/#categories">
+        <Link className="primary-action" href="/categories">
           {t("notFoundAction")} <span aria-hidden="true">↗</span>
         </Link>
       </main>
@@ -78,7 +78,7 @@ export default async function CategoryDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <Link className="back-link" href="/#categories">
+      <Link className="back-link" href="/categories">
         <span aria-hidden="true">←</span> {t("back")}
       </Link>
 

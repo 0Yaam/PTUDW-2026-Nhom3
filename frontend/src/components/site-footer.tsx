@@ -5,7 +5,7 @@ export function SiteFooter() {
   const t = useTranslations("nav");
   const site = useTranslations("site");
   const sectionLinks = [
-    { href: "/#categories", label: t("categories") },
+    { href: "/categories", label: t("categories") },
     { href: "/#about", label: t("story") },
     { href: "/#auth", label: t("account") },
   ];
