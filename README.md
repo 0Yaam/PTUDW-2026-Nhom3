@@ -28,21 +28,45 @@
 
 ## Work Assignment
 
-| Issue | Main work | Assigned member | SRS | Status |
-| --- | --- | --- | --- | --- |
-| [#1](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/1) | Local registration and login: User migration, auth API, UI, validation, security tests | Nguyễn Ngọc Trường Dân (`0Yaam`) | FR-AUTH-001, FR-AUTH-002, NFR-SEC-001 | Completed |
-| [#2](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/2) | Admin category creation and update: API, UI, authorization, tests | Nguyễn Ngọc Hân (`Meranh05`) | FR-CAT-003, FR-CAT-004 | Completed |
-| [#3](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/3) | Category detail page: detail API, recipe list, empty and not-found states | Nguyễn Minh Anh (`MinhAnhhhhhh`) | FR-CAT-002 | Completed |
-| [#4](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/4) | Draft recipe creation: recipe API, form, validation, integration tests | Trần Xuân Hiếu (`ThanhXuanHieu`) | FR-RCP-003 | Completed |
+The [GitHub Project](https://github.com/users/0Yaam/projects/1/views/3) is the
+source of truth. `Cycle` tracks development cycles 1-4, while `Lab` separately
+tracks Lab 04, Lab 06 and Lab 07 submissions.
 
-The assigned member owns the implementation and tests for the Issue. Dân coordinates
-integration and reviews team Pull Requests. Each change is developed on its own branch
-before being merged into `main`.
+### Completed Cycles
 
-**Read more:** [Full work assignment and four-cycle plan on GitHub Projects](https://github.com/users/0Yaam/projects/1/views/3)
+| Track | Dân | Hân | Minh Anh | Hiếu | Status |
+| --- | --- | --- | --- | --- | :---: |
+| Cycle 1 | [#1](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/1) | [#2](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/2) | [#3](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/3) | [#4](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/4) | Done |
+| Cycle 2 | [#30](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/30), [#34](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/34) | [#33](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/33) | [#31](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/31) | [#32](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/32) | Done |
+| Cycle 3 | [#44](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/44) | [#45](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/45) | [#46](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/46) | [#47](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/47) | Done |
+| Cycle 4 | [#58](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/58) | [#59](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/59) | [#60](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/60) | [#61](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/61) | Done |
+
+### Lab Assignments
+
+| Lab | Dân | Hân | Minh Anh | Hiếu | Progress |
+| --- | --- | --- | --- | --- | :---: |
+| Lab 04 | [#38](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/38) | [#39](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/39) | [#40](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/40) | [#43](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/43) | Done |
+| Lab 06 | [#69](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/69) | [#70](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/70) | [#71](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/71) | [#72](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/72) | Done |
+| Lab 07 | [#77](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/77) (Ready) | [#78](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/78) (Done) | [#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79) (Ready) | [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) (Ready) | 1/4 Done |
+
+Lab 07 currently meets **4/6 minimum criteria (66.7%) on `main`**. The two
+blocking assignments are password management ([#77](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/77))
+and missing home page content ([#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79)).
+Issue [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) is verification
+and hardening for recipe detail and search, which already meet the minimum criteria.
+
+### Collaboration Rules
+
+- The assignee owns the full vertical slice: API/UI integration, tests and documentation.
+- Dân reviews member Pull Requests; Hân reviews Dân's Pull Request.
+- Use one feature branch and one Pull Request per Issue, linked with `Closes #<issue>`.
+- Move work through `Ready` → `In Progress` → `Review` → `Done` on the Project board.
+- Do not count an open Pull Request as merged work on `main`.
+
+Track current status in the [GitHub Project board](https://github.com/users/0Yaam/projects/1/views/3).
+Detailed history also remains documented in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Overview
-
 Small Kitchen is a student project for sharing cooking recipes. The current
 working flow connects PostgreSQL, a FastAPI REST API, and a Next.js App Router
 frontend. Category administration supports Admin authorization, validation,
