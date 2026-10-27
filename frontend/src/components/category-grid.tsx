@@ -13,7 +13,7 @@ export type Category = {
 
 const previewDishes = ["/images/vietnamese-table.png", "/images/breakfast.png", "/images/plant-based.png", "/images/dessert.png"];
 
-function previewForCategory(name: string, index: number): string {
+export function previewForCategory(name: string, index: number): string {
   const normalized = name.toLowerCase();
   if (normalized.includes("viet") || normalized.includes("pho") || normalized.includes("phở")) return "/images/vietnamese-table.png";
   if (normalized.includes("breakfast")) return "/images/breakfast.png";
