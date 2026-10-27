@@ -12,6 +12,7 @@ export function SiteHeader() {
     { href: "/recipes/new", label: t("createRecipe") },
     { href: "/#about", label: t("story") },
     { href: "/profile", label: t("profile") },
+    { href: "/change-password", label: t("security") },
     { href: "/#auth", label: t("account") },
   ];
   return (

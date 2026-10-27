@@ -19,7 +19,8 @@
     "mobile": "Mobile navigation",
     "profile": "Profile",
     "footer": "Footer navigation",
-    "brandHome": "Small Kitchen home"
+    "brandHome": "Small Kitchen home",
+    "security": "Security"
   },
   "site": {
     "tagline": "Food stories & recipes",
@@ -99,7 +100,8 @@
     "signOut": "Sign out",
     "requestFailed": "Request failed. Please try again.",
     "apiUnavailable": "Cannot reach the API. Check that the backend is running.",
-    "modeLabel": "Account action"
+    "modeLabel": "Account action",
+    "forgotPassword": "Forgot your password?"
   },
   "profile": {
     "eyebrow": "Your account",
@@ -442,7 +444,10 @@
     "RECIPE_FORBIDDEN": "An Author or Admin account is required.",
     "RECIPE_SLUG_EXISTS": "That title is already in use. Choose a different title.",
     "fallback": "The request could not be completed.",
-    "USER_NAME_TAKEN": "That user name is already taken."
+    "USER_NAME_TAKEN": "That user name is already taken.",
+    "CURRENT_PASSWORD_INCORRECT": "The current password is incorrect.",
+    "PASSWORD_UNCHANGED": "Choose a password different from the current password.",
+    "INVALID_PASSWORD_RESET_TOKEN": "This password reset link is invalid, expired, or already used."
   },
   "status": {
     "connection": "Connection problem",
@@ -468,5 +473,41 @@
     "errorTitle": "Categories could not be loaded",
     "errorDescription": "Please try again. Your connection or the service may be temporarily unavailable.",
     "retry": "Try again"
+  },
+  "passwordSecurity": {
+    "eyebrow": "Account security",
+    "checkingSession": "Checking your session…",
+    "signInTitle": "Sign in to change your password",
+    "signInDescription": "Password changes are available only to the signed-in account.",
+    "signIn": "Go to sign in",
+    "invalidTitle": "This reset link is incomplete",
+    "invalidDescription": "Request a new password reset email and use its complete link.",
+    "requestAnother": "Request another link",
+    "changeTitle": "Change password",
+    "changeDescription": "Confirm your current password, then choose a new password. All existing sessions will be signed out.",
+    "forgotTitle": "Forgot password",
+    "forgotDescription": "Enter your email. If an account exists, we will send a one-time reset link.",
+    "resetTitle": "Set a new password",
+    "resetDescription": "Choose a strong new password. The link works once and expires after 30 minutes.",
+    "email": "Email",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordHint": "Use 8+ characters with uppercase, lowercase, number, and symbol.",
+    "passwordMismatch": "The password confirmation does not match.",
+    "changeSubmit": "Change password",
+    "forgotSubmit": "Send reset link",
+    "resetSubmit": "Reset password",
+    "working": "Working…",
+    "changeSuccessTitle": "Password changed",
+    "changeSuccessDescription": "All previous sessions were signed out. Sign in again with your new password.",
+    "forgotSuccessTitle": "Check your inbox",
+    "forgotSuccessDescription": "If that email belongs to an account, a reset link is on its way.",
+    "resetSuccessTitle": "Password reset",
+    "resetSuccessDescription": "The reset link is now used and all previous sessions were signed out.",
+    "backHome": "Back to home",
+    "signInAgain": "Sign in again",
+    "requestFailed": "The request could not be completed.",
+    "apiUnavailable": "Cannot reach the API. Check that the backend is running."
   }
 }
