@@ -47,11 +47,10 @@ tracks Lab 04, Lab 06 and Lab 07 submissions.
 | --- | --- | --- | --- | --- | :---: |
 | Lab 04 | [#38](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/38) | [#39](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/39) | [#40](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/40) | [#43](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/43) | Done |
 | Lab 06 | [#69](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/69) | [#70](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/70) | [#71](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/71) | [#72](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/72) | Done |
-| Lab 07 | [#77](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/77) (Ready) | [#78](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/78) (Done) | [#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79) (Ready) | [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) (Ready) | 1/4 Done |
+| Lab 07 | [#77](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/77) (Done) | [#78](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/78) (Done) | [#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79) (Ready) | [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) (Ready) | 2/4 Done |
 
-Lab 07 currently meets **4/6 minimum criteria (66.7%) on `main`**. The two
-blocking assignments are password management ([#77](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/77))
-and missing home page content ([#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79)).
+Lab 07 currently meets **5/6 minimum criteria (83.3%) on `main`**. The remaining
+blocking assignment is missing home page content ([#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79)).
 Issue [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) is verification
 and hardening for recipe detail and search, which already meet the minimum criteria.
 

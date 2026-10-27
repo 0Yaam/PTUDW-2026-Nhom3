@@ -19,7 +19,8 @@
     "mobile": "Điều hướng di động",
     "profile": "Trang cá nhân",
     "footer": "Điều hướng chân trang",
-    "brandHome": "Trang chủ Small Kitchen"
+    "brandHome": "Trang chủ Small Kitchen",
+    "security": "Bảo mật"
   },
   "site": {
     "tagline": "Câu chuyện và công thức",
@@ -99,7 +100,8 @@
     "createRecipe": "Tạo công thức mới",
     "requestFailed": "Yêu cầu không thành công. Vui lòng thử lại.",
     "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend.",
-    "modeLabel": "Hành động tài khoản"
+    "modeLabel": "Hành động tài khoản",
+    "forgotPassword": "Quên mật khẩu?"
   },
   "profile": {
     "eyebrow": "Tài khoản của bạn",
@@ -442,7 +444,10 @@
     "RECIPE_FORBIDDEN": "Tài khoản cần quyền Author hoặc Admin.",
     "RECIPE_SLUG_EXISTS": "Tiêu đề này đã được sử dụng. Hãy chọn tiêu đề khác.",
     "fallback": "Không thể hoàn thành yêu cầu.",
-    "USER_NAME_TAKEN": "Tên người dùng đó đã có người dùng."
+    "USER_NAME_TAKEN": "Tên người dùng đó đã có người dùng.",
+    "CURRENT_PASSWORD_INCORRECT": "Mật khẩu hiện tại không đúng.",
+    "PASSWORD_UNCHANGED": "Hãy chọn mật khẩu khác mật khẩu hiện tại.",
+    "INVALID_PASSWORD_RESET_TOKEN": "Liên kết đặt lại mật khẩu không hợp lệ, đã hết hạn hoặc đã được sử dụng."
   },
   "status": {
     "connection": "Lỗi kết nối",
@@ -468,5 +473,41 @@
     "errorTitle": "Chưa tải được danh mục",
     "errorDescription": "Vui lòng thử lại. Kết nối hoặc dịch vụ có thể đang tạm gián đoạn.",
     "retry": "Thử lại"
+  },
+  "passwordSecurity": {
+    "eyebrow": "Bảo mật tài khoản",
+    "checkingSession": "Đang kiểm tra phiên đăng nhập…",
+    "signInTitle": "Đăng nhập để đổi mật khẩu",
+    "signInDescription": "Chỉ tài khoản đang đăng nhập mới có thể đổi mật khẩu.",
+    "signIn": "Đi đến đăng nhập",
+    "invalidTitle": "Liên kết đặt lại chưa đầy đủ",
+    "invalidDescription": "Hãy yêu cầu email đặt lại mật khẩu mới và mở đúng liên kết trong email.",
+    "requestAnother": "Yêu cầu liên kết khác",
+    "changeTitle": "Đổi mật khẩu",
+    "changeDescription": "Xác nhận mật khẩu hiện tại rồi chọn mật khẩu mới. Tất cả phiên cũ sẽ bị đăng xuất.",
+    "forgotTitle": "Quên mật khẩu",
+    "forgotDescription": "Nhập email. Nếu tài khoản tồn tại, hệ thống sẽ gửi liên kết đặt lại dùng một lần.",
+    "resetTitle": "Đặt mật khẩu mới",
+    "resetDescription": "Chọn mật khẩu mới đủ mạnh. Liên kết chỉ dùng một lần và hết hạn sau 30 phút.",
+    "email": "Email",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu mới",
+    "passwordHint": "Dùng ít nhất 8 ký tự, có chữ hoa, chữ thường, số và ký hiệu.",
+    "passwordMismatch": "Mật khẩu xác nhận không khớp.",
+    "changeSubmit": "Đổi mật khẩu",
+    "forgotSubmit": "Gửi liên kết đặt lại",
+    "resetSubmit": "Đặt lại mật khẩu",
+    "working": "Đang xử lý…",
+    "changeSuccessTitle": "Đã đổi mật khẩu",
+    "changeSuccessDescription": "Tất cả phiên cũ đã bị đăng xuất. Hãy đăng nhập lại bằng mật khẩu mới.",
+    "forgotSuccessTitle": "Hãy kiểm tra hộp thư",
+    "forgotSuccessDescription": "Nếu email thuộc một tài khoản, liên kết đặt lại đang được gửi.",
+    "resetSuccessTitle": "Đã đặt lại mật khẩu",
+    "resetSuccessDescription": "Liên kết đã được sử dụng và tất cả phiên cũ đã bị đăng xuất.",
+    "backHome": "Về trang chủ",
+    "signInAgain": "Đăng nhập lại",
+    "requestFailed": "Không thể hoàn thành yêu cầu.",
+    "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend."
   }
 }

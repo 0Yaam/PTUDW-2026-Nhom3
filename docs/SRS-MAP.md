@@ -5,6 +5,7 @@
 | FR-AUTH-001 to FR-AUTH-002 | Local registration and login | Dan | Done - #1 |
 | FR-AUTH-003 | Google OAuth | Dan | Done - Lab 04 #38 |
 | FR-AUTH-004 to FR-AUTH-005 | Token refresh and logout | Dan | Done - #30 |
+| Lab 07 auth extension | Change password and forgot/reset password | Dan | Done - #77 |
 | FR-AUTH-006 to FR-AUTH-007 | View and update profile | Minh Anh / Dan | Done - #31 and #38 |
 | FR-CAT-001 to FR-CAT-005 | Category list, detail, management, and deletion | Team | Done - #2, #3, #33 |
 | FR-RCP-001 | Public recipe list | Hieu | Done - #32 |

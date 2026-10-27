@@ -7,25 +7,31 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import get_settings
-from ..jobs.model import WelcomeEmailJob
+from ..jobs.model import PasswordResetEmailJob, WelcomeEmailJob
 from ..unit_of_work import UnitOfWork
-from .model import RefreshToken, User
+from .model import PasswordResetToken, RefreshToken, User
 from .problem import AuthProblem
 from .schemas import (
     AuthResponse,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
     GoogleLoginRequest,
     LoginRequest,
     ProfileUpdateRequest,
     RefreshTokenRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     UserRead,
 )
 from .security import (
     DUMMY_PASSWORD_HASH,
     create_access_token,
+    create_password_reset_token,
     create_refresh_token,
     hash_password,
+    hash_password_reset_token_id,
     hash_refresh_token,
+    read_password_reset_token,
     verify_password,
 )
 
@@ -49,7 +55,9 @@ def user_profile(user: User) -> UserRead:
 
 
 async def _issue_tokens(unit_of_work: UnitOfWork, user: User) -> AuthResponse:
-    access_token, access_expires_at = create_access_token(user.id, user.email, user.role)
+    access_token, access_expires_at = create_access_token(
+        user.id, user.email, user.role, user.session_version
+    )
     refresh_token, token_hash, refresh_expires_at = create_refresh_token()
     unit_of_work.refresh_tokens.add(
         RefreshToken(user_id=user.id, token_hash=token_hash, expires_at=refresh_expires_at)
@@ -65,9 +73,7 @@ async def _issue_tokens(unit_of_work: UnitOfWork, user: User) -> AuthResponse:
 
 async def register_user(session: AsyncSession, request: RegisterRequest) -> AuthResponse:
     unit_of_work = UnitOfWork(session)
-    existing = await unit_of_work.users.get_by_email_or_user_name(
-        request.email, request.user_name
-    )
+    existing = await unit_of_work.users.get_by_email_or_user_name(request.email, request.user_name)
     if existing is not None:
         raise AuthProblem(
             409,
@@ -197,9 +203,7 @@ async def google_login(session: AsyncSession, request: GoogleLoginRequest) -> Au
     return await _issue_tokens(unit_of_work, user)
 
 
-async def refresh_tokens(
-    session: AsyncSession, request: RefreshTokenRequest
-) -> AuthResponse:
+async def refresh_tokens(session: AsyncSession, request: RefreshTokenRequest) -> AuthResponse:
     unit_of_work = UnitOfWork(session)
     now = datetime.now(UTC)
     stored_token = await unit_of_work.refresh_tokens.get_by_hash(
@@ -234,9 +238,7 @@ async def refresh_tokens(
     return await _issue_tokens(unit_of_work, user)
 
 
-async def logout_user(
-    session: AsyncSession, user: User, request: RefreshTokenRequest
-) -> None:
+async def logout_user(session: AsyncSession, user: User, request: RefreshTokenRequest) -> None:
     unit_of_work = UnitOfWork(session)
     stored_token = await unit_of_work.refresh_tokens.get_by_hash(
         hash_refresh_token(request.refresh_token)
@@ -251,18 +253,130 @@ async def logout_user(
     await unit_of_work.commit()
 
 
+async def change_password(
+    session: AsyncSession, user: User, request: ChangePasswordRequest
+) -> None:
+    if not verify_password(request.current_password, user.password_hash):
+        raise AuthProblem(
+            400,
+            "CURRENT_PASSWORD_INCORRECT",
+            "Bad Request",
+            "Current password is incorrect.",
+        )
+    if verify_password(request.new_password, user.password_hash):
+        raise AuthProblem(
+            400,
+            "PASSWORD_UNCHANGED",
+            "Bad Request",
+            "New password must be different from the current password.",
+        )
+
+    now = datetime.now(UTC)
+    unit_of_work = UnitOfWork(session)
+    user.password_hash = hash_password(request.new_password)
+    user.session_version += 1
+    user.access_failed_count = 0
+    user.lockout_until = None
+    await unit_of_work.refresh_tokens.revoke_all_for_user(user.id, now)
+    await unit_of_work.password_reset_tokens.invalidate_for_user(user.id, now)
+    await unit_of_work.commit()
+
+
+async def forgot_password(session: AsyncSession, request: ForgotPasswordRequest) -> None:
+    unit_of_work = UnitOfWork(session)
+    user = await unit_of_work.users.get_by_email(request.email)
+    if user is None:
+        hash_password_reset_token_id(secrets.token_urlsafe(48))
+        return
+
+    now = datetime.now(UTC)
+    await unit_of_work.password_reset_tokens.invalidate_for_user(user.id, now)
+    _, token_id, expires_at = create_password_reset_token(user.id)
+    reset_token = PasswordResetToken(
+        user_id=user.id,
+        token_hash=hash_password_reset_token_id(token_id),
+        expires_at=expires_at,
+    )
+    unit_of_work.password_reset_tokens.add(reset_token)
+    await unit_of_work.flush()
+    session.add(
+        PasswordResetEmailJob(
+            reset_token_id=reset_token.id,
+            recipient=user.email,
+            full_name=user.full_name,
+            token_id=token_id,
+            expires_at=expires_at,
+        )
+    )
+    await unit_of_work.commit()
+
+
+async def reset_password(session: AsyncSession, request: ResetPasswordRequest) -> None:
+    claims = read_password_reset_token(request.token)
+    if claims is None:
+        raise AuthProblem(
+            400,
+            "INVALID_PASSWORD_RESET_TOKEN",
+            "Bad Request",
+            "Password reset link is invalid or expired.",
+        )
+
+    unit_of_work = UnitOfWork(session)
+    stored_token = await unit_of_work.password_reset_tokens.get_by_hash(
+        hash_password_reset_token_id(claims.token_id), for_update=True
+    )
+    now = datetime.now(UTC)
+    stored_expires_at = stored_token.expires_at if stored_token is not None else None
+    if stored_expires_at is not None and stored_expires_at.tzinfo is None:
+        stored_expires_at = stored_expires_at.replace(tzinfo=UTC)
+    if (
+        stored_token is None
+        or stored_token.user_id != claims.user_id
+        or stored_token.used_at is not None
+        or stored_expires_at is None
+        or stored_expires_at <= now
+    ):
+        raise AuthProblem(
+            400,
+            "INVALID_PASSWORD_RESET_TOKEN",
+            "Bad Request",
+            "Password reset link is invalid or expired.",
+        )
+
+    user = await unit_of_work.users.get(claims.user_id)
+    if user is None:
+        raise AuthProblem(
+            400,
+            "INVALID_PASSWORD_RESET_TOKEN",
+            "Bad Request",
+            "Password reset link is invalid or expired.",
+        )
+    if verify_password(request.new_password, user.password_hash):
+        raise AuthProblem(
+            400,
+            "PASSWORD_UNCHANGED",
+            "Bad Request",
+            "New password must be different from the current password.",
+        )
+
+    user.password_hash = hash_password(request.new_password)
+    user.session_version += 1
+    user.access_failed_count = 0
+    user.lockout_until = None
+    stored_token.used_at = now
+    await unit_of_work.password_reset_tokens.invalidate_for_user(user.id, now)
+    await unit_of_work.refresh_tokens.revoke_all_for_user(user.id, now)
+    await unit_of_work.commit()
+
+
 async def update_profile(
     session: AsyncSession, user: User, request: ProfileUpdateRequest
 ) -> UserRead:
     unit_of_work = UnitOfWork(session)
     if request.user_name != user.user_name:
-        taken = await unit_of_work.users.get_by_user_name_except(
-            request.user_name, user.id
-        )
+        taken = await unit_of_work.users.get_by_user_name_except(request.user_name, user.id)
         if taken is not None:
-            raise AuthProblem(
-                409, "USER_NAME_TAKEN", "Conflict", "User name is already taken."
-            )
+            raise AuthProblem(409, "USER_NAME_TAKEN", "Conflict", "User name is already taken.")
 
     user.full_name = request.full_name
     user.user_name = request.user_name

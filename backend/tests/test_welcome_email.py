@@ -6,11 +6,12 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
+from culinary_blog_api.auth.security import read_password_reset_token
 from culinary_blog_api.config import Settings
 from culinary_blog_api.db import SessionFactory
 from culinary_blog_api.jobs import worker
-from culinary_blog_api.jobs.model import WelcomeEmailJob
-from culinary_blog_api.jobs.worker import process_due_job
+from culinary_blog_api.jobs.model import PasswordResetEmailJob, WelcomeEmailJob
+from culinary_blog_api.jobs.worker import process_due_job, process_due_password_reset_job
 
 REGISTER_PAYLOAD = {
     "fullName": "Nguyen Ngoc Han",
@@ -70,6 +71,26 @@ async def test_worker_sends_welcome_email_after_registration(client) -> None:
     assert sent == [(REGISTER_PAYLOAD["email"], REGISTER_PAYLOAD["fullName"])]
     assert (await get_job()).status == "Sent"
     assert not await process_due_job(sender=fake_sender)
+
+
+async def test_worker_sends_valid_one_time_password_reset_link(client) -> None:
+    await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
+    await client.post("/api/v1/auth/forgot-password", json={"email": REGISTER_PAYLOAD["email"]})
+    sent: list[tuple[str, str, str]] = []
+
+    def capture(recipient: str, full_name: str, token: str, _settings: Settings) -> None:
+        sent.append((recipient, full_name, token))
+
+    assert await process_due_password_reset_job(sender=capture)
+    assert len(sent) == 1
+    assert sent[0][:2] == (REGISTER_PAYLOAD["email"], REGISTER_PAYLOAD["fullName"])
+    assert read_password_reset_token(sent[0][2]) is not None
+
+    async with SessionFactory() as session:
+        job = await session.scalar(select(PasswordResetEmailJob))
+        assert job is not None
+        assert job.status == "Sent"
+        assert job.sent_at is not None
 
 
 async def test_worker_retries_three_times_then_marks_failed(client) -> None:
@@ -160,6 +181,7 @@ def test_smtp_ssl_uses_implicit_tls_and_rejects_mixed_modes(monkeypatch) -> None
 
     with pytest.raises(ValueError, match="mutually exclusive"):
         worker.send_welcome_email(
-            "han@example.com", "Han",
+            "han@example.com",
+            "Han",
             Settings(_env_file=None, smtp_host="smtp.test", smtp_ssl=True, smtp_starttls=True),
         )

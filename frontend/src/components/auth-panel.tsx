@@ -149,6 +149,7 @@ export function AuthPanel() {
           <button className="auth-submit" type="submit" disabled={pending}>
             {pending ? t("working") : mode === "register" ? t("register") : t("login")}
           </button>
+          {mode === "login" && <Link href="/forgot-password">{t("forgotPassword")}</Link>}
         </form>
         <p
           id="auth-message"

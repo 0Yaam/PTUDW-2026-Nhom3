@@ -4,7 +4,7 @@ from types import TracebackType
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .auth.repository import RefreshTokenRepository, UserRepository
+from .auth.repository import PasswordResetTokenRepository, RefreshTokenRepository, UserRepository
 
 
 class UnitOfWork:
@@ -12,6 +12,7 @@ class UnitOfWork:
         self.session = session
         self.users = UserRepository(session)
         self.refresh_tokens = RefreshTokenRepository(session)
+        self.password_reset_tokens = PasswordResetTokenRepository(session)
 
     async def __aenter__(self) -> UnitOfWork:
         return self

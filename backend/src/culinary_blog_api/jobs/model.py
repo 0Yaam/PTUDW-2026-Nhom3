@@ -28,13 +28,34 @@ class WelcomeEmailJob(Base):
     )
     last_error: Mapped[str | None] = mapped_column(String(120))
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (Index("ix_welcome_email_jobs_due", "status", "next_attempt_at"),)
 
 
+class PasswordResetEmailJob(Base):
+    __tablename__ = "password_reset_email_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    reset_token_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("password_reset_tokens.id", ondelete="CASCADE"), unique=True
+    )
+    recipient: Mapped[str] = mapped_column(String(320))
+    full_name: Mapped[str] = mapped_column(String(150))
+    token_id: Mapped[str] = mapped_column(String(86))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(16), default="Pending", server_default="Pending")
+    attempts: Mapped[int] = mapped_column(Integer(), default=0, server_default="0")
+    next_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_error: Mapped[str | None] = mapped_column(String(120))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (Index("ix_password_reset_email_jobs_due", "status", "next_attempt_at"),)
+
+
 # Register the FK target after defining the job so auth.service can import this
 # model while auth.__init__ loads its router in a standalone worker process.
-from ..auth.model import User  # noqa: E402, F401
+from ..auth.model import PasswordResetToken, User  # noqa: E402, F401

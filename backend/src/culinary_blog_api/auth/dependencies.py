@@ -17,12 +17,12 @@ async def get_current_user(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> User:
     """Xác minh Bearer token và tải tài khoản hiện còn tồn tại."""
-    user_id = read_access_token(credentials.credentials) if credentials else None
-    if user_id is None:
+    claims = read_access_token(credentials.credentials) if credentials else None
+    if claims is None:
         raise AuthProblem(401, "UNAUTHORIZED", "Unauthorized", "Sign in is required.")
 
-    user = await session.get(User, user_id)
-    if user is None:
+    user = await session.get(User, claims.user_id)
+    if user is None or user.session_version != claims.session_version:
         raise AuthProblem(401, "UNAUTHORIZED", "Unauthorized", "Sign in is required.")
 
     return user

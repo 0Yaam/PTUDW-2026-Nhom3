@@ -145,8 +145,8 @@ async def request_context(request: Request, call_next):
     user_id = None
     authorization = request.headers.get("Authorization", "")
     if authorization.startswith("Bearer "):
-        token_user_id = read_access_token(authorization.removeprefix("Bearer "))
-        user_id = str(token_user_id) if token_user_id else None
+        claims = read_access_token(authorization.removeprefix("Bearer "))
+        user_id = str(claims.user_id) if claims else None
 
     try:
         response = await _rate_limit_response(request) or await call_next(request)
