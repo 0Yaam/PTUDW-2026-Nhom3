@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Category } from "@/components/category-grid";
 import { getCategories } from "@/lib/api/categories";
+import { getProfile } from "@/lib/api/profile";
 import {
   RecipeApiError,
   type RecipeDraft,
@@ -43,6 +44,8 @@ export function RecipeDraftForm() {
   const t = useTranslations("recipeForm");
   const errorT = useTranslations("errors");
   const session = useAuthStore();
+  const accessToken = session?.accessToken;
+  const [authorName, setAuthorName] = useState<{ token: string; name: string } | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState(false);
@@ -63,6 +66,17 @@ export function RecipeDraftForm() {
     [categories, categoryId],
   );
   const totalTime = Math.max(0, Number(prepTime) || 0) + Math.max(0, Number(cookTime) || 0);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let active = true;
+    void getProfile(accessToken)
+      .then((profile) => {
+        if (active) setAuthorName({ token: accessToken, name: profile.fullName });
+      })
+      .catch(() => { /* The saved session name remains the fallback. */ });
+    return () => { active = false; };
+  }, [accessToken]);
 
   useEffect(() => {
     let active = true;
@@ -198,7 +212,10 @@ export function RecipeDraftForm() {
           <section className={styles.successBanner} aria-live="polite">
             <span aria-hidden="true">✓</span>
             <div><strong>{t("successTitle")}</strong><p>{t("successDescription", { title: createdRecipe.title, slug: createdRecipe.slug })}</p></div>
-            <button type="button" onClick={startAnotherRecipe}>{t("createAnother")}</button>
+            <div className={styles.successActions}>
+              <Link href={`/recipes/${createdRecipe.slug}`}>{t("manageImages")}</Link>
+              <button type="button" onClick={startAnotherRecipe}>{t("createAnother")}</button>
+            </div>
           </section>
         )}
 
@@ -267,7 +284,7 @@ export function RecipeDraftForm() {
               <div className={styles.privacy}><span aria-hidden="true">⌁</span><p><strong>{t("privateTitle")}</strong><br />{t("privateDescription")}</p></div>
               {formError && <p className={styles.formError} role="alert">{formError}</p>}
               <button className={styles.submit} type="button" disabled={pending || categoriesLoading || categoriesError || categories.length === 0} onClick={() => document.querySelector<HTMLFormElement>(`.${styles.form}`)?.requestSubmit()}>{pending ? t("saving") : t("save")}</button>
-              <p className={styles.submitHint}>{t("saveHint", { name: session.user.fullName })}</p>
+              <p className={styles.submitHint}>{t("saveHint", { name: authorName?.token === session.accessToken ? authorName.name : session.user.fullName })}</p>
             </aside>
           </div>
         )}

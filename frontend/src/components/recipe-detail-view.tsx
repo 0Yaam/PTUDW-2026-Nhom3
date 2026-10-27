@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { EmptyState, ErrorState } from "@/components/ui/feedback";
+import { RecipeImageManager } from "@/components/recipe-image-manager";
 import { getRecipeDetail, RecipeApiError, type RecipeDetail } from "@/lib/api/recipes";
+import { getProfile, type Profile } from "@/lib/api/profile";
 import {
   clearAuthSession,
 } from "@/lib/auth-session";
@@ -21,11 +23,26 @@ export function RecipeDetailView({ slug }: { slug: string }) {
   const t = useTranslations("recipeDetail");
   const locale = useLocale();
   const session = useAuthStore();
+  const accessToken = session?.accessToken;
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
+  const [viewer, setViewer] = useState<{ token: string; profile: Profile } | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [reload, setReload] = useState(0);
   const [activeImageId, setActiveImageId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let active = true;
+    void getProfile(accessToken)
+      .then((profile) => {
+        if (active) setViewer({ token: accessToken, profile });
+      })
+      .catch(() => {
+        if (active) setViewer(null);
+      });
+    return () => { active = false; };
+  }, [accessToken]);
 
   useEffect(() => {
     if (session === undefined) return;
@@ -56,6 +73,12 @@ export function RecipeDetailView({ slug }: { slug: string }) {
   const nutrients = recipe?.nutrition
     ? nutritionKeys.filter((key) => recipe.nutrition?.[key] !== null)
     : [];
+  const canManageImages = Boolean(
+    recipe && accessToken && viewer?.token === accessToken && (
+      viewer.profile.roles.includes("Admin") ||
+      (viewer.profile.roles.includes("Author") && viewer.profile.id === recipe.authorId)
+    ),
+  );
 
   return (
     <main id="main-content" className={styles.page}>
@@ -87,7 +110,7 @@ export function RecipeDetailView({ slug }: { slug: string }) {
                 </div>
                 <h1>{recipe.title}</h1>
                 <p className={styles.description}>{recipe.description}</p>
-                <p className={styles.byline}>{t("byAuthor")}</p>
+                <p className={styles.byline}>{t("byAuthor", { name: recipe.author.fullName })}</p>
               </div>
               <div className={styles.heroMedia}>
                 {activeImage ? (
@@ -123,6 +146,16 @@ export function RecipeDetailView({ slug }: { slug: string }) {
                   </button>
                 ))}
               </div>
+            )}
+
+            {canManageImages && accessToken && (
+              <RecipeImageManager
+                recipeId={recipe.id}
+                recipeTitle={recipe.title}
+                images={recipe.images}
+                accessToken={accessToken}
+                onChanged={() => setReload((value) => value + 1)}
+              />
             )}
 
             <section className={styles.overview} aria-labelledby="recipe-overview-title">

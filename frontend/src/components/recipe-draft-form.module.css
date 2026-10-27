@@ -68,6 +68,9 @@
 .successBanner strong { color: var(--moss); }
 .successBanner p { margin: 4px 0 0; color: #51665a; font-size: 12px; }
 .successBanner button { padding: 9px 12px; border: 1px solid #9fbea8; border-radius: 4px; background: white; color: var(--moss); font-size: 12px; font-weight: 700; }
+.successActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.successActions a { display: inline-flex; align-items: center; padding: 9px 12px; border: 1px solid var(--moss); border-radius: 4px; background: var(--moss); color: white; font-size: 12px; font-weight: 700; }
+.successActions a:focus-visible, .successActions button:focus-visible { outline: 3px solid var(--clay); outline-offset: 2px; }
 @media (max-width: 860px) {
   .workspace { grid-template-columns: 1fr; }
   .summary { position: static; order: -1; }
@@ -80,5 +83,5 @@
   .numberGrid, .nutritionGrid { grid-template-columns: 1fr; }
   .difficulty > div { grid-template-columns: 1fr 1fr; }
   .successBanner { grid-template-columns: auto 1fr; }
-  .successBanner button { grid-column: 1 / -1; }
+  .successActions { grid-column: 1 / -1; justify-content: flex-start; }
 }

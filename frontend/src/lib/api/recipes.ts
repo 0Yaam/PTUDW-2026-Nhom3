@@ -1,4 +1,4 @@
-import { ApiError, apiRequest } from "@/lib/api/client";
+import { ApiError, apiBaseUrl, apiRequest, readProblemDetails } from "@/lib/api/client";
 
 export { ApiError as RecipeApiError };
 export type { ProblemDetails } from "@/lib/api/client";
@@ -63,6 +63,8 @@ export type RecipeDetail = Omit<RecipeDraftInput, "nutrition"> & {
   }[];
 };
 
+export type RecipeImage = RecipeDetail["images"][number];
+
 export async function getRecipe(slug: string): Promise<RecipeDetail | null> {
   try {
     return await apiRequest<RecipeDetail>(`/api/v1/recipes/${encodeURIComponent(slug)}`, {
@@ -115,5 +117,65 @@ export async function getRecipeDetail(
   return apiRequest<RecipeDetail>(`/api/v1/recipes/${encodeURIComponent(slug)}`, {
     cache: "no-store",
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+  });
+}
+
+async function sendRecipeImage(
+  path: string,
+  file: File,
+  accessToken: string,
+): Promise<RecipeImage> {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await fetch(`${apiBaseUrl()}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: form,
+  });
+  if (!response.ok) throw new ApiError(response.status, await readProblemDetails(response));
+  return (await response.json()) as RecipeImage;
+}
+
+export function uploadRecipeImage(
+  recipeId: string,
+  file: File,
+  accessToken: string,
+): Promise<RecipeImage> {
+  return sendRecipeImage(`/api/v1/recipes/${recipeId}/images`, file, accessToken);
+}
+
+export function replaceRecipeImage(
+  recipeId: string,
+  imageId: string,
+  file: File,
+  accessToken: string,
+): Promise<RecipeImage> {
+  return sendRecipeImage(
+    `/api/v1/recipes/${recipeId}/images/${imageId}/replace`,
+    file,
+    accessToken,
+  );
+}
+
+export function setPrimaryRecipeImage(
+  recipeId: string,
+  imageId: string,
+  accessToken: string,
+): Promise<RecipeImage> {
+  return apiRequest<RecipeImage>(`/api/v1/recipes/${recipeId}/images/${imageId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ isPrimary: true }),
+  });
+}
+
+export function deleteRecipeImage(
+  recipeId: string,
+  imageId: string,
+  accessToken: string,
+): Promise<void> {
+  return apiRequest<void>(`/api/v1/recipes/${recipeId}/images/${imageId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
