@@ -48,7 +48,7 @@ tracks Lab 04, Lab 06, Lab 07 and Lab 08 submissions.
 | Lab 04 | [#38](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/38) | [#39](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/39) | [#40](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/40) | [#43](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/43) | Done |
 | Lab 06 | [#69](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/69) | [#70](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/70) | [#71](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/71) | [#72](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/72) | Done |
 | Lab 07 | [#77](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/77) (Done) | [#78](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/78) (Done) | [#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79) (Ready) | [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) (In Progress) | 2/4 Done |
-| Lab 08 | [#87](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/87) (Ready) | [#88](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/88) (Ready) | [#89](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/89) (Ready) | [#90](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/90) (Ready) | 0/4 Done |
+| Lab 08 | [#87](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/87) (In Progress) | [#88](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/88) (Ready) | [#89](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/89) (Ready) | [#90](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/90) (Ready) | 0/4 Done |
 
 Lab 07 currently meets **5/6 minimum criteria (83.3%) on `main`**. The remaining
 blocking assignment is missing home page content ([#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79)).
