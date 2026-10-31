@@ -13,9 +13,10 @@ or completion by itself.
    email/roles, editable fields, validation and retry are implemented. API tests
    and browser QA pass. Owner for this integration: Ericismee, #78.
 3. Home with shared header/footer, category sidebar/area and newest recipes:
-   partial. Header/footer and live category grid exist. The home page does not
-   load the newest recipe list and has no category sidebar. Remaining work:
-   #79, owner MinhAnhhhhhh. This whole requirement is not counted as complete.
+   complete in code via #79. Shared header/footer layout, category sidebar
+   linked to category details, and newest published recipe feed with loading,
+   empty, error, and retry states are implemented and checked. Owner:
+   MinhAnhhhhhh, #79.
 4. Recipe detail: complete for the school minimum in current code, including
    ingredients, steps, images and permission-aware API. Relevant backend tests
    pass. Additional issue #80 refinements remain the owner's responsibility.
@@ -26,7 +27,7 @@ or completion by itself.
 6. All-category directory: complete in code via #78. Public `/categories`,
    stable links, metadata, navigation and UI states are implemented and checked.
 
-Result: **4 of 6 fully completed minimum requirements, or 66.7 percent**.
+Result: **5 of 6 fully completed minimum requirements, or 83.3 percent**.
 This is a minimum-requirements checklist estimate, not an instructor grade.
 It includes the current #78 branch; integration on main awaits PR review/merge.
 No work on #77, #79 or #80 is credited to Ericismee.

@@ -1,16 +1,26 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { AuthPanel } from "@/components/auth-panel";
-import { CategoryGrid } from "@/components/category-grid";
+import { HomeFeed } from "@/components/home-feed";
 import { getCategories } from "@/lib/api/categories";
+import { getRecipeList } from "@/lib/api/recipe-list";
 
 export const dynamic = "force-dynamic";
 
 const previewDishes = ["/images/vietnamese-table.png", "/images/breakfast.png", "/images/plant-based.png", "/images/dessert.png"];
 
 export default async function Home() {
-  const [categories, t] = await Promise.all([getCategories(), getTranslations("home")]);
-
+  const [categoriesResult, recipesResult, t] = await Promise.all([
+    getCategories().then(
+      (data) => ({ ok: true as const, data }),
+      () => ({ ok: false as const, data: [] }),
+    ),
+    getRecipeList({ page: 1, pageSize: 6, sort: "-createdAt" }).then(
+      (data) => ({ ok: true as const, data: data.items }),
+      () => ({ ok: false as const, data: [] }),
+    ),
+    getTranslations("home"),
+  ]);
   return (
     <main id="main-content">
       <section className="hero" aria-labelledby="hero-title">
@@ -36,11 +46,12 @@ export default async function Home() {
         <div className="hero-bottom" aria-hidden="true"><span>{t("ribbonDiscover")}</span><span>{t("ribbonCook")}</span><span>{t("ribbonShare")}</span><span>{t("ribbonEnjoy")}</span></div>
       </section>
 
-      <section className="category-section" id="categories" aria-labelledby="categories-title">
-        <div className="section-heading"><div><p className="eyebrow">{t("categoryEyebrow")}</p><h2 id="categories-title">{t("categoryTitle1")} <em>{t("categoryTitle2")}</em></h2></div><p>{t("categoryDescription")}</p></div>
-        <CategoryGrid categories={categories} />
-        <p className="section-footnote">{t("categoryTotal", { count: categories.length })}</p>
-      </section>
+      <HomeFeed
+        initialCategories={categoriesResult.ok ? categoriesResult.data : undefined}
+        initialRecipes={recipesResult.ok ? recipesResult.data : undefined}
+        initialCategoriesError={!categoriesResult.ok}
+        initialRecipesError={!recipesResult.ok}
+      />
 
       <section className="story" id="about" aria-labelledby="story-title">
         <div className="story-visual" aria-hidden="true">{previewDishes.map((dish, index) => <div className="story-dish" key={dish}><Image src={dish} alt="" fill sizes="(max-width: 560px) 42vw, 220px" /><span>{String(index + 1).padStart(2, "0")}</span></div>)}</div>
