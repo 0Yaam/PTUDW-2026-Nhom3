@@ -25,6 +25,7 @@ from .storage import model as storage_model  # noqa: F401 - register cleanup tab
 settings = get_settings()
 logger = structlog.get_logger()
 correlation_id_pattern = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 app = FastAPI(title=settings.app_name, version="0.1.0", docs_url="/docs")
 app.state.rate_limit_buckets = {}
@@ -135,6 +136,21 @@ async def _rate_limit_response(request: Request) -> JSONResponse | None:
     return None
 
 
+def _audit_result(status_code: int) -> str:
+    if status_code < 400:
+        return "success"
+    if status_code in {401, 403}:
+        return "denied"
+    return "failure"
+
+
+def _audit_route(request: Request) -> tuple[str, str]:
+    route = request.scope.get("route")
+    action = getattr(route, "name", None) or f"{request.method.lower()}_unmatched"
+    resource = getattr(route, "path", None) or request.url.path
+    return action, resource
+
+
 @app.middleware("http")
 async def request_context(request: Request, call_next):
     incoming_id = request.headers.get("X-Correlation-ID", "")
@@ -176,14 +192,21 @@ async def request_context(request: Request, call_next):
         elapsed_ms=elapsed_ms,
         user_id=user_id,
     )
-    if user_id and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+    if request.url.path.startswith("/api/v1/") and request.method in WRITE_METHODS:
+        action, resource = _audit_route(request)
         logger.info(
             "audit_http_request",
             correlation_id=correlation_id,
             user_id=user_id,
+            actor_id=user_id,
+            actor_type="authenticated" if user_id else "anonymous",
+            action=action,
+            resource=resource,
+            result=_audit_result(response.status_code),
             method=request.method,
             path=request.url.path,
             status=response.status_code,
+            elapsed_ms=elapsed_ms,
         )
     return response
 

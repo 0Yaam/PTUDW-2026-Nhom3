@@ -43,7 +43,7 @@
 
 | Issue | Owner | Lab 08 scope | SRS coverage | Status |
 |---|---|---|---|---|
-| #87 | Dan | Logging, audit events, and final SRS gap review | FR-OBS-001 to FR-OBS-003; NFR-SEC-003 to NFR-SEC-007; NFR-MAINT-001 to NFR-MAINT-004 | Ready |
+| #87 | Dan | Logging, audit events, and final SRS gap review | FR-OBS-001 to FR-OBS-003; NFR-SEC-003 to NFR-SEC-007; NFR-MAINT-001 to NFR-MAINT-004 | In Progress - local branch |
 | #88 | Han | End-to-end recipe image upload and management | FR-RCP-008; FR-FILE-001 to FR-FILE-002; FR-JOB-002 | Ready |
 | #89 | Minh Anh | Admin user directory | Lab 08 admin-user extension; FR-AUTH-006 to FR-AUTH-007; NFR-USE-001 to NFR-USE-004 | Ready |
 | #90 | Hieu | Recipe create/update form and status lifecycle | FR-RCP-003 to FR-RCP-007; FR-RCP-009 to FR-RCP-010 | Ready |
