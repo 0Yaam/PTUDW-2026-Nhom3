@@ -198,6 +198,76 @@ async def upload_recipe_image(
     return _image_response(image)
 
 
+async def replace_recipe_image(
+    session: AsyncSession,
+    recipe_id: uuid.UUID,
+    image_id: uuid.UUID,
+    current_user: User,
+    file: UploadFile,
+    storage: FileStorage,
+) -> RecipeImageResponse:
+    """Replace an image with a new ID so cleanup cannot delete its new variants."""
+    recipe = await _owned_recipe(session, recipe_id, current_user, lock=True)
+    old_image = await session.scalar(
+        select(RecipeImage).where(
+            RecipeImage.id == image_id, RecipeImage.recipe_id == recipe_id
+        )
+    )
+    if old_image is None:
+        raise RecipeProblem(
+            status=404,
+            error_code="RECIPE_IMAGE_NOT_FOUND",
+            title="Not Found",
+            detail="Recipe image was not found.",
+        )
+    try:
+        url = await storage.upload_file(file, f"recipes/{recipe_id}")
+    except (InvalidImage, StorageUnavailable) as error:
+        raise _image_problem(error) from error
+
+    replacement = RecipeImage(
+        id=uuid.uuid4(),
+        recipe_id=recipe_id,
+        original_url=url,
+        order_index=old_image.order_index,
+        is_primary=old_image.is_primary,
+        alt_text=old_image.alt_text,
+    )
+    try:
+        queue_image_cleanup(session, old_image)
+        await session.execute(
+            delete(RecipeImageResizeJob).where(RecipeImageResizeJob.image_id == image_id)
+        )
+        await session.delete(old_image)
+        await session.flush()
+        session.add(replacement)
+        await session.flush()
+        session.add(RecipeImageResizeJob(image_id=replacement.id))
+        recipe.updated_at = datetime.now(UTC)
+        await session.commit()
+    except Exception as error:
+        await session.rollback()
+        try:
+            await storage.delete(url)
+        except (InvalidImage, StorageUnavailable):
+            try:
+                session.add(FileDeletionJob(
+                    original_url=url, recipe_id=recipe_id, image_id=replacement.id
+                ))
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                logger.exception(
+                    "recipe_image_replace_cleanup_queue_failed", recipe_id=str(recipe_id)
+                )
+        if isinstance(error, (IntegrityError, StaleDataError)):
+            raise _version_conflict() from error
+        raise
+    await session.refresh(replacement)
+    await invalidate_recipe_caches()
+    return _image_response(replacement)
+
+
 async def set_primary_recipe_image(
     session: AsyncSession,
     recipe_id: uuid.UUID,

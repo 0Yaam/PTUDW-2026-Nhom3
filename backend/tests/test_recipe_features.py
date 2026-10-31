@@ -8,7 +8,12 @@ from test_recipe_list import add_recipe, create_category, create_user
 
 from culinary_blog_api.db import SessionFactory
 from culinary_blog_api.main import app
-from culinary_blog_api.recipes.model import Recipe, RecipeImage, RecipeStatus
+from culinary_blog_api.recipes.model import (
+    Recipe,
+    RecipeImage,
+    RecipeImageResizeJob,
+    RecipeStatus,
+)
 from culinary_blog_api.recipes.router import get_recipe_storage
 from culinary_blog_api.storage import StorageUnavailable
 from culinary_blog_api.storage.model import FileDeletionJob
@@ -199,6 +204,122 @@ async def test_images_reject_invalid_file_permission_and_storage_failure(client)
         assert unavailable.status_code == 503
         assert unavailable.json()["type"] == "IMAGE_STORAGE_UNAVAILABLE"
         assert storage.files == {}
+    finally:
+        app.dependency_overrides.pop(get_recipe_storage, None)
+
+
+async def test_replace_image_keeps_position_and_primary_without_leaking_old_objects(client) -> None:
+    storage = FakeStorage()
+    app.dependency_overrides[get_recipe_storage] = lambda: storage
+    try:
+        category = await create_category()
+        owner, headers = await create_user(client, email="image-replace-owner@example.com")
+        recipe = await add_recipe(category, owner, title="Thay ảnh món ăn")
+        path = f"/api/v1/recipes/{recipe.id}/images"
+        first = await client.post(
+            path, headers=headers, files={"file": ("a.png", PNG, "image/png")}
+        )
+        second = await client.post(
+            path, headers=headers, files={"file": ("b.png", PNG, "image/png")}
+        )
+        assert first.status_code == second.status_code == 201
+        old_image = first.json()
+        old_medium = f"http://storage.test/recipes/{recipe.id}/{old_image['id']}/medium.webp"
+        old_thumbnail = f"http://storage.test/recipes/{recipe.id}/{old_image['id']}/thumbnail.webp"
+        storage.files[old_medium] = b"old medium"
+        storage.files[old_thumbnail] = b"old thumbnail"
+
+        replacement = await client.post(
+            f"{path}/{old_image['id']}/replace",
+            headers=headers,
+            files={"file": ("new.png", PNG + b"new", "image/png")},
+        )
+        assert replacement.status_code == 201
+        body = replacement.json()
+        assert body["id"] != old_image["id"]
+        assert body["isPrimary"] is True
+        assert body["orderIndex"] == old_image["orderIndex"]
+        assert body["mediumUrl"] is None and body["thumbnailUrl"] is None
+        assert replacement.headers["location"] == f"{path}/{body['id']}"
+        detail = await client.get(f"/api/v1/recipes/{recipe.slug}")
+        assert [image["id"] for image in detail.json()["images"]] == [
+            body["id"], second.json()["id"]
+        ]
+        async with SessionFactory() as session:
+            assert await session.get(RecipeImage, uuid.UUID(old_image["id"])) is None
+            jobs = list(await session.scalars(select(RecipeImageResizeJob)))
+            assert all(job.image_id != uuid.UUID(old_image["id"]) for job in jobs)
+            assert any(job.image_id == uuid.UUID(body["id"]) for job in jobs)
+            cleanup = list(await session.scalars(select(FileDeletionJob)))
+            assert len(cleanup) == 3
+
+        new_medium = f"http://storage.test/recipes/{recipe.id}/{body['id']}/medium.webp"
+        new_thumbnail = f"http://storage.test/recipes/{recipe.id}/{body['id']}/thumbnail.webp"
+        storage.files[new_medium] = b"new medium"
+        storage.files[new_thumbnail] = b"new thumbnail"
+        while await process_cleanup_job(storage=storage):
+            pass
+        assert old_image["originalUrl"] not in storage.files
+        assert old_medium not in storage.files and old_thumbnail not in storage.files
+        assert body["originalUrl"] in storage.files
+        assert new_medium in storage.files and new_thumbnail in storage.files
+
+        second_replacement = await client.post(
+            f"{path}/{second.json()['id']}/replace",
+            headers=headers,
+            files={"file": ("new-second.png", PNG + b"second", "image/png")},
+        )
+        assert second_replacement.status_code == 201
+        assert second_replacement.json()["isPrimary"] is False
+        assert second_replacement.json()["orderIndex"] == 1
+        refreshed = await client.get(f"/api/v1/recipes/{recipe.slug}")
+        assert [image["id"] for image in refreshed.json()["images"]] == [
+            body["id"], second_replacement.json()["id"]
+        ]
+        assert [image["id"] for image in refreshed.json()["images"] if image["isPrimary"]] == [
+            body["id"]
+        ]
+    finally:
+        app.dependency_overrides.pop(get_recipe_storage, None)
+
+
+async def test_replace_image_rejects_other_users_invalid_files_and_missing_image(client) -> None:
+    storage = FakeStorage()
+    app.dependency_overrides[get_recipe_storage] = lambda: storage
+    try:
+        category = await create_category()
+        owner, headers = await create_user(client, email="replace-owner@example.com")
+        _, other_headers = await create_user(client, email="replace-other@example.com")
+        recipe = await add_recipe(category, owner, title="Thay ảnh được bảo vệ")
+        path = f"/api/v1/recipes/{recipe.id}/images"
+        uploaded = await client.post(
+            path, headers=headers, files={"file": ("a.png", PNG, "image/png")}
+        )
+        image_path = f"{path}/{uploaded.json()['id']}/replace"
+        files = {"file": ("b.png", PNG, "image/png")}
+        assert (await client.post(image_path, files=files)).status_code == 401
+        assert (
+            await client.post(image_path, headers=other_headers, files=files)
+        ).status_code == 403
+        assert (
+            await client.post(
+                f"{path}/{uuid.uuid4()}/replace", headers=headers, files=files
+            )
+        ).status_code == 404
+        invalid = await client.post(
+            image_path,
+            headers=headers,
+            files={"file": ("bad.png", b"bad", "image/png")},
+        )
+        assert invalid.status_code == 400
+        assert invalid.headers["content-type"].startswith("application/problem+json")
+        storage.unavailable = True
+        assert (
+            await client.post(image_path, headers=headers, files=files)
+        ).status_code == 503
+        async with SessionFactory() as session:
+            assert await session.get(RecipeImage, uuid.UUID(uploaded.json()["id"])) is not None
+        assert len(storage.files) == 1
     finally:
         app.dependency_overrides.pop(get_recipe_storage, None)
 

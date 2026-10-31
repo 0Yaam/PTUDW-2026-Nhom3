@@ -13,6 +13,7 @@ from .detail import get_recipe_detail
 from .features import (
     archive_recipe,
     delete_recipe_image,
+    replace_recipe_image,
     search_recipes,
     set_primary_recipe_image,
     upload_recipe_image,
@@ -401,6 +402,27 @@ async def post_recipe_image(
     file: Annotated[UploadFile, File()],
 ) -> RecipeImageResponse:
     image = await upload_recipe_image(session, recipe_id, current_user, file, storage)
+    response.headers["Location"] = f"/api/v1/recipes/{recipe_id}/images/{image.id}"
+    return image
+
+
+@router.post(
+    "/{recipe_id}/images/{image_id}/replace",
+    response_model=RecipeImageResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def post_recipe_image_replacement(
+    recipe_id: uuid.UUID,
+    image_id: uuid.UUID,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Annotated[User, Depends(require_author_or_admin)],
+    storage: Annotated[FileStorage, Depends(get_recipe_storage)],
+    file: Annotated[UploadFile, File()],
+) -> RecipeImageResponse:
+    image = await replace_recipe_image(
+        session, recipe_id, image_id, current_user, file, storage
+    )
     response.headers["Location"] = f"/api/v1/recipes/{recipe_id}/images/{image.id}"
     return image
 

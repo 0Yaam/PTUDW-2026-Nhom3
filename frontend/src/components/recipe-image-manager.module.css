@@ -1,0 +1,36 @@
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V3 · Recipe photo controls use the site's existing palette. */
+.manager { margin-top: 24px; padding: clamp(22px, 3vw, 32px); border: 1px solid var(--line); border-radius: 12px; background: var(--cream); }
+.heading h2 { margin: 0; font-size: clamp(25px, 3vw, 34px); font-weight: 500; }
+.heading p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
+
+.upload { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 18px; margin-top: 24px; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.fileSelection { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; }
+.picker { position: relative; flex: none; }
+.fileInput { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.chooseButton { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 16px; border: 1px solid var(--moss); border-radius: 5px; background: var(--cream); color: var(--moss); font-size: 13px; font-weight: 800; line-height: 1.2; text-align: center; cursor: pointer; }
+.chooseButton:hover { background: var(--line); }
+.fileInput:disabled + .chooseButton { opacity: .55; cursor: not-allowed; }
+.fileInput:focus-visible + .chooseButton { outline: 3px solid var(--clay); outline-offset: 3px; }
+.fileName { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+.manager button { min-height: 40px; padding: 8px 13px; border: 1px solid var(--moss); border-radius: 5px; background: var(--moss); color: white; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.manager button:hover:not(:disabled) { filter: brightness(.88); }
+.manager button:disabled { opacity: .55; cursor: not-allowed; }
+.manager button:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; }
+.manager .uploadButton { min-width: 152px; min-height: 44px; padding-inline: 18px; font-size: 13px; }
+.error { margin: 16px 0 0; color: #9b1c36; font-weight: 700; }
+.empty { margin: 18px 0 0; padding: 19px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); text-align: center; }
+
+.list { display: grid; gap: 14px; margin: 24px 0 0; padding: 0; list-style: none; }
+.item { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: 8px; }
+.thumbnail { width: 84px; height: 70px; border-radius: 4px; object-fit: cover; }
+.details { display: grid; justify-items: start; gap: 7px; min-width: 0; }
+.details strong { font-size: 14px; }
+.primary { color: var(--moss); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: 340px; }
+.actions button:last-child { background: transparent; color: var(--moss); }
+.confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; font-size: 12px; }
+.confirm button:last-child { background: transparent; color: var(--moss); }
+
+@media (max-width: 760px) { .upload { grid-template-columns: minmax(0, 1fr); } .item { grid-template-columns: 84px minmax(0, 1fr); } .actions { grid-column: 1 / -1; justify-content: flex-start; max-width: none; } }
+@media (max-width: 450px) { .upload { padding: 14px; } .fileSelection { align-items: stretch; flex-direction: column; } .chooseButton, .uploadButton { width: 100%; } .item { grid-template-columns: minmax(0, 1fr); } .actions { grid-column: auto; } }
