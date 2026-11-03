@@ -214,7 +214,7 @@ h1, h2, h3 { font-weight: 500; }
 .desktop-nav { gap: 22px; font-size: 12px; }
 .header-action { gap: 8px; padding: 10px 14px; border-radius: 999px; font-size: 11px; }
 .site-header .locale-switcher { gap: 2px; padding: 3px; border: 1px solid #ead7d5; border-radius: 999px; background: #fff8f7; box-shadow: 0 5px 14px rgba(57,32,36,.08); }
-.site-header .locale-switcher button { min-width: 34px; padding: 6px 9px; border-radius: 999px; color: #7e6b6d; }
+.site-header .locale-switcher button { min-width: 27px; padding: 4px 6px; border-radius: 999px; color: #7e6b6d; font-size: 10px; }
 .site-header .locale-switcher button[aria-pressed="true"] { background: var(--clay); color: #fff; box-shadow: 0 3px 8px rgba(189,23,37,.2); }
 .site-brand { gap: 7px; color: var(--clay); }
 .site-brand-mark { width: auto; height: auto; background: transparent; color: var(--clay); font-size: 38px; }
