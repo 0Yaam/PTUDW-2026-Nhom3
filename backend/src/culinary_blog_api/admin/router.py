@@ -2,8 +2,8 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.dependencies import require_admin
@@ -14,7 +14,7 @@ from ..jobs.model import WelcomeEmailJob
 from ..recipes.model import Recipe, RecipeImage, RecipeImageResizeJob, RecipeStatus
 from ..recipes.problem import ProblemDetails
 from ..storage.model import FileDeletionJob
-from .schemas import AdminOverview
+from .schemas import AdminOverview, AdminUserItem, PagedAdminUsersResponse
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -84,3 +84,68 @@ async def get_overview(
             for recipe_id, title, status, created_at, author in recent
         ],
     }
+
+
+@router.get(
+    "/users",
+    response_model=PagedAdminUsersResponse,
+    response_model_by_alias=True,
+    responses={
+        401: {"model": ProblemDetails, "description": "Bearer token is missing or invalid"},
+        403: {"model": ProblemDetails, "description": "Admin role is required"},
+    },
+)
+async def list_admin_users(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    _admin: Annotated[User, Depends(require_admin)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(alias="pageSize", ge=1, le=50)] = 10,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    role: Annotated[str | None, Query()] = None,
+) -> PagedAdminUsersResponse:
+    """List users with pagination, search, and role filter for Admin only."""
+    filters = []
+    if q and q.strip():
+        term = f"%{q.strip()}%"
+        filters.append(
+            or_(
+                User.full_name.ilike(term),
+                User.email.ilike(term),
+                User.user_name.ilike(term),
+            )
+        )
+    if role and role.strip():
+        filters.append(User.role == role.strip())
+
+    total_count = await session.scalar(select(func.count(User.id)).where(*filters)) or 0
+    total_pages = (total_count + page_size - 1) // page_size if total_count > 0 else 0
+
+    stmt = (
+        select(User)
+        .where(*filters)
+        .order_by(User.created_at.desc(), User.id.asc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    users = (await session.scalars(stmt)).all()
+
+    return PagedAdminUsersResponse(
+        items=[
+            AdminUserItem(
+                id=u.id,
+                full_name=u.full_name,
+                email=u.email,
+                user_name=u.user_name,
+                role=u.role,
+                avatar_url=u.avatar_url,
+                created_at=u.created_at,
+            )
+            for u in users
+        ],
+        total_count=total_count,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        has_next_page=page < total_pages,
+        has_previous_page=page > 1,
+    )

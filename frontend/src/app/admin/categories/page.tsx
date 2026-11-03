@@ -310,7 +310,7 @@ export default function ManageCategories() {
         </nav>
         <p className={styles.navLabel}>{t("management")}</p>
         <nav aria-label={t("management")}>
-          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="users" />{t("navUsers")}<small>{t("comingSoon")}</small></div>
+          <Link className={styles.navItem} href="/admin/users"><AdminIcon name="users" />{t("navUsers")}</Link>
           <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="chat" />{t("navComments")}<small>{t("comingSoon")}</small></div>
           <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="chart" />{t("navAnalytics")}<small>{t("comingSoon")}</small></div>
         </nav>
