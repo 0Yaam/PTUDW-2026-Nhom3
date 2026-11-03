@@ -2,8 +2,8 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.dependencies import require_admin
@@ -14,9 +14,54 @@ from ..jobs.model import WelcomeEmailJob
 from ..recipes.model import Recipe, RecipeImage, RecipeImageResizeJob, RecipeStatus
 from ..recipes.problem import ProblemDetails
 from ..storage.model import FileDeletionJob
-from .schemas import AdminOverview
+from .schemas import AdminOverview, AdminUserPage
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+
+
+@router.get(
+    "/users",
+    response_model=AdminUserPage,
+    response_model_by_alias=True,
+    responses={
+        401: {"model": ProblemDetails, "description": "Bearer token is missing or invalid"},
+        403: {"model": ProblemDetails, "description": "Admin role is required"},
+    },
+)
+async def list_admin_users(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    _admin: Annotated[User, Depends(require_admin)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(alias="pageSize", ge=1, le=50)] = 20,
+    q: Annotated[str | None, Query(min_length=1, max_length=100)] = None,
+    role: Annotated[str | None, Query(pattern="^(Admin|Author)$")] = None,
+) -> AdminUserPage:
+    """Return a paged, secret-free directory of Admin and Author accounts."""
+    filters = [User.role.in_(("Admin", "Author"))]
+    if q and q.strip():
+        pattern = f"%{q.strip()}%"
+        filters.append(
+            or_(
+                User.full_name.ilike(pattern),
+                User.email.ilike(pattern),
+                User.user_name.ilike(pattern),
+            )
+        )
+    if role:
+        filters.append(User.role == role)
+    total = await session.scalar(select(func.count(User.id)).where(*filters)) or 0
+    rows = await session.scalars(
+        select(User)
+        .where(*filters)
+        .order_by(User.created_at.desc(), User.id)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    total_pages = max(1, (total + page_size - 1) // page_size)
+    return AdminUserPage(
+        items=list(rows), totalCount=total, page=page, pageSize=page_size,
+        totalPages=total_pages, hasNextPage=page < total_pages, hasPreviousPage=page > 1,
+    )
 
 
 @router.get(

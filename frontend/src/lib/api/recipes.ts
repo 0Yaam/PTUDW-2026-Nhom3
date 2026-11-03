@@ -110,6 +110,53 @@ export async function createRecipeDraft(
   });
 }
 
+export async function updateRecipe(
+  recipeId: string,
+  input: RecipeDraftInput & { rowVersion: string },
+  accessToken: string,
+): Promise<RecipeCreateResponse> {
+  return apiRequest<RecipeCreateResponse>(`/api/v1/recipes/${recipeId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}`, "If-Match": `"${input.rowVersion}"` },
+    body: JSON.stringify(input),
+  });
+}
+
+export type RecipeCreateResponse = Omit<RecipeDraft, "status"> & { status: "Draft" | "Published" | "Archived"; rowVersion: string };
+
+export function publishRecipe(recipeId: string, accessToken: string): Promise<RecipeCreateResponse> {
+  return apiRequest<RecipeCreateResponse>(`/api/v1/recipes/${recipeId}/publish`, { method: "PATCH", headers: { Authorization: `Bearer ${accessToken}` } });
+}
+export function unpublishRecipe(recipeId: string, accessToken: string): Promise<RecipeCreateResponse> {
+  return apiRequest<RecipeCreateResponse>(`/api/v1/recipes/${recipeId}/unpublish`, { method: "PATCH", headers: { Authorization: `Bearer ${accessToken}` } });
+}
+export function archiveRecipe(recipeId: string, accessToken: string): Promise<RecipeCreateResponse> {
+  return apiRequest<RecipeCreateResponse>(`/api/v1/recipes/${recipeId}/archive`, { method: "PATCH", headers: { Authorization: `Bearer ${accessToken}` } });
+}
+export function deleteRecipe(recipeId: string, accessToken: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/recipes/${recipeId}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } });
+}
+
+export function createRecipeIngredient(recipeId: string, input: { ingredientName: string; quantity: number; unit: string }, accessToken: string): Promise<unknown> {
+  return apiRequest(`/api/v1/recipes/${recipeId}/ingredients`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(input) });
+}
+export function createRecipeStep(recipeId: string, input: { instruction: string; stepNumber?: number }, accessToken: string): Promise<unknown> {
+  return apiRequest(`/api/v1/recipes/${recipeId}/steps`, { method: "POST", headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(input) });
+}
+
+export function updateRecipeIngredient(recipeId: string, ingredientId: string, input: { ingredientName: string; quantity: number; unit: string; orderIndex?: number }, accessToken: string): Promise<unknown> {
+  return apiRequest(`/api/v1/recipes/${recipeId}/ingredients/${ingredientId}`, { method: "PUT", headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(input) });
+}
+export function deleteRecipeIngredient(recipeId: string, ingredientId: string, accessToken: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/recipes/${recipeId}/ingredients/${ingredientId}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } });
+}
+export function updateRecipeStep(recipeId: string, stepId: string, input: { instruction: string; stepNumber?: number }, accessToken: string): Promise<unknown> {
+  return apiRequest(`/api/v1/recipes/${recipeId}/steps/${stepId}`, { method: "PUT", headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(input) });
+}
+export function deleteRecipeStep(recipeId: string, stepId: string, accessToken: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/recipes/${recipeId}/steps/${stepId}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } });
+}
+
 export async function getRecipeDetail(
   slug: string,
   accessToken?: string,

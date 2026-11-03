@@ -262,6 +262,7 @@
     "servingCount": "{count, plural, =1 {# serving} other {# servings}}",
     "statusDraft": "Draft",
     "statusPublished": "Published",
+    "statusPublished": "Published",
     "statusArchived": "Archived",
     "emptyTitle": "No recipes match those filters.",
     "emptyDescription": "Try broadening the filters or return later as the kitchen grows.",
@@ -326,7 +327,16 @@
     "sodium": "Sodium",
     "calorieUnit": "kcal",
     "gramUnit": "g",
-    "milligramUnit": "mg"
+    "milligramUnit": "mg",
+    "lifecycleKicker": "RECIPE WORKFLOW",
+    "lifecycleTitle": "Manage recipe status",
+    "editRecipe": "Edit recipe",
+    "publish": "Publish",
+    "unpublish": "Move to draft",
+    "archive": "Archive",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this recipe permanently?",
+    "lifecycleError": "The action could not be completed."
   },
   "recipeImages": {
     "title": "Manage recipe photos",
@@ -550,5 +560,32 @@
     "signInAgain": "Sign in again",
     "requestFailed": "The request could not be completed.",
     "apiUnavailable": "Cannot reach the API. Check that the backend is running."
+  },
+  "adminUsers": {
+    "back": "Back to Admin workspace",
+    "eyebrow": "USER DIRECTORY",
+    "title": "Users and roles",
+    "subtitle": "Accounts visible to {name}",
+    "filters": "User filters",
+    "searchPlaceholder": "Search name, email, or user name...",
+    "roleFilter": "Filter by role",
+    "allRoles": "All roles",
+    "name": "Name",
+    "email": "Email",
+    "userName": "User name",
+    "role": "Role",
+    "created": "Created",
+    "pagination": "User pages",
+    "page": "Page {page} of {total}",
+    "loading": "Loading users...",
+    "empty": "No users match these filters.",
+    "loadError": "Could not load users.",
+    "loginTitle": "Admin users",
+    "loginDescription": "Sign in with an Admin account to view the directory.",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "signOut": "Sign out",
+    "notAdmin": "This account does not have Admin access.",
+    "loginError": "Sign in failed. Try again."
   }
 }

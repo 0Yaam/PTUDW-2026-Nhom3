@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { EmptyState, ErrorState } from "@/components/ui/feedback";
 import { RecipeImageManager } from "@/components/recipe-image-manager";
+import { RecipeLifecycleActions } from "@/components/recipe-lifecycle-actions";
 import { getRecipeDetail, RecipeApiError, type RecipeDetail } from "@/lib/api/recipes";
 import { getProfile, type Profile } from "@/lib/api/profile";
 import {
@@ -156,6 +157,10 @@ export function RecipeDetailView({ slug }: { slug: string }) {
                 accessToken={accessToken}
                 onChanged={() => setReload((value) => value + 1)}
               />
+            )}
+
+            {canManageImages && accessToken && (
+              <RecipeLifecycleActions recipe={recipe} accessToken={accessToken} onChanged={() => setReload((value) => value + 1)} />
             )}
 
             <section className={styles.overview} aria-labelledby="recipe-overview-title">

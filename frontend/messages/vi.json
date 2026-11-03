@@ -261,6 +261,7 @@
     "minuteCount": "{count} phút",
     "servingCount": "{count} người",
     "statusDraft": "Bản nháp",
+    "statusPublished": "Đã đăng",
     "statusPublished": "Đã xuất bản",
     "statusArchived": "Đã lưu trữ",
     "emptyTitle": "Không có công thức phù hợp.",
@@ -326,7 +327,16 @@
     "sodium": "Natri",
     "calorieUnit": "kcal",
     "gramUnit": "g",
-    "milligramUnit": "mg"
+    "milligramUnit": "mg",
+    "lifecycleKicker": "VÒNG ĐỜI CÔNG THỨC",
+    "lifecycleTitle": "Quản lý trạng thái",
+    "editRecipe": "Sửa công thức",
+    "publish": "Đăng công khai",
+    "unpublish": "Đưa về bản nháp",
+    "archive": "Lưu trữ",
+    "delete": "Xóa",
+    "deleteConfirm": "Xóa vĩnh viễn công thức này?",
+    "lifecycleError": "Không thể hoàn thành thao tác."
   },
   "recipeImages": {
     "title": "Quản lý ảnh công thức",
@@ -550,5 +560,32 @@
     "signInAgain": "Đăng nhập lại",
     "requestFailed": "Không thể hoàn thành yêu cầu.",
     "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend."
+  },
+  "adminUsers": {
+    "back": "Về không gian Admin",
+    "eyebrow": "DANH SÁCH NGƯỜI DÙNG",
+    "title": "Người dùng và quyền",
+    "subtitle": "Các tài khoản hiển thị cho {name}",
+    "filters": "Bộ lọc người dùng",
+    "searchPlaceholder": "Tìm tên, email hoặc username...",
+    "roleFilter": "Lọc theo vai trò",
+    "allRoles": "Tất cả vai trò",
+    "name": "Họ tên",
+    "email": "Email",
+    "userName": "Username",
+    "role": "Vai trò",
+    "created": "Ngày tạo",
+    "pagination": "Trang người dùng",
+    "page": "Trang {page}/{total}",
+    "loading": "Đang tải người dùng...",
+    "empty": "Không có người dùng phù hợp.",
+    "loadError": "Không tải được danh sách người dùng.",
+    "loginTitle": "Người dùng Admin",
+    "loginDescription": "Đăng nhập bằng tài khoản Admin để xem danh sách.",
+    "signIn": "Đăng nhập",
+    "signingIn": "Đang đăng nhập...",
+    "signOut": "Đăng xuất",
+    "notAdmin": "Tài khoản này không có quyền Admin.",
+    "loginError": "Đăng nhập thất bại. Hãy thử lại."
   }
 }
