@@ -33,6 +33,18 @@ h1, h2, h3 { font-family: var(--font-display); }
 .locale-switcher button { min-width: 36px; padding: 7px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; }
 .locale-switcher button[aria-pressed="true"] { background: #465fff; color: white; }
 .locale-switcher.compact button { min-width: 31px; padding: 5px 6px; }
+.user-menu { position: relative; }
+.user-menu summary { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 5px 10px 5px 6px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); cursor: pointer; list-style: none; font-size: 12px; font-weight: 800; }
+.user-menu summary::-webkit-details-marker { display: none; }
+.user-menu-icon { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: #f3dce0; color: var(--clay); }
+.user-menu-icon svg { width: 17px; height: 17px; }
+.user-menu-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-menu-chevron { color: var(--muted); font-size: 15px; line-height: 1; }
+.user-menu-popover { position: absolute; z-index: 20; top: calc(100% + 10px); right: 0; display: grid; min-width: 210px; gap: 8px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 18px 40px rgba(22,29,35,.15); }
+.user-menu-popover strong { font-size: 13px; }
+.user-menu-popover small { margin-top: -5px; color: var(--muted); font-size: 11px; }
+.user-menu-popover a, .user-menu-popover button { padding: 9px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); text-align: left; font-size: 12px; font-weight: 700; }
+.user-menu-popover a:hover, .user-menu-popover button:hover { background: #f8edf0; color: var(--clay); }
 
 .eyebrow { margin: 0 0 20px; color: var(--clay); font-size: 12px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
 .hero { overflow: hidden; background: #101820; color: white; }
@@ -150,6 +162,7 @@ h1, h2, h3 { font-family: var(--font-display); }
 @media (max-width: 800px) {
   .desktop-nav, .header-action { display: none; }
   .mobile-nav { display: block; }
+  .user-menu-name { display: none; }
   .hero-inner { grid-template-columns: 1fr; }
   .hero-copy { padding: 80px 0 20px; }
   .hero-visual { min-height: 510px; }
@@ -193,6 +206,9 @@ h1, h2, h3 { font-family: var(--font-display); }
 html { scroll-behavior: smooth; }
 h1, h2, h3 { font-weight: 500; }
 .site-header { background: white; color: var(--ink); border-bottom: 1px solid var(--line); }
+.site-header .locale-switcher { gap: 2px; padding: 3px; border: 1px solid #ead7d5; border-radius: 999px; background: #fff8f7; box-shadow: 0 5px 14px rgba(57,32,36,.08); }
+.site-header .locale-switcher button { min-width: 34px; padding: 6px 9px; border-radius: 999px; color: #7e6b6d; }
+.site-header .locale-switcher button[aria-pressed="true"] { background: var(--clay); color: #fff; box-shadow: 0 3px 8px rgba(189,23,37,.2); }
 .site-brand { gap: 7px; color: var(--clay); }
 .site-brand-mark { width: auto; height: auto; background: transparent; color: var(--clay); font-size: 38px; }
 .site-brand-name { font-size: 29px; font-weight: 500; font-style: italic; }
