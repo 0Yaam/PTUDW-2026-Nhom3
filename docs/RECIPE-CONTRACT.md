@@ -49,8 +49,10 @@ The response returns the next `rowVersion` and `ETag`. Changing the title preser
 the existing slug and public URL.
 
 `DELETE /api/v1/recipes/{id}` hard-deletes the recipe and cascades to its existing
-ingredient and step rows. It returns `204` with no body. Future image records and
-object storage cleanup are owned by the separate image/storage integration issues.
+ingredient, step, and image rows. It returns `204` with no body. Image cleanup
+requests are committed in the same transaction, including original and variant
+objects; pending resize jobs are cancelled. File removal is asynchronous through
+the existing file worker and can retry without restoring deleted recipe metadata.
 
 ## Cooking steps
 
@@ -108,7 +110,24 @@ Errors use `application/problem+json` without stack traces:
 - `409 RECIPE_SLUG_EXISTS` or `RECIPE_INGREDIENT_EXISTS`
 - `422 VALIDATION_ERROR`, with field messages in `errors`
 
-## Deferred scope
+## Authoring UI (Issue #90)
 
-Recipe image metadata, stored objects, search vectors, and Redis cache invalidation
-belong to their assigned integration issues.
+`/recipes/new` and `/recipes/{slug}/edit` share the existing Draft form. Create
+saves base fields first, then opens the edit page for ingredients and cooking steps.
+Each ingredient/step is saved separately through the existing CRUD routes; there
+is no aggregate replacement endpoint. Move up/down uses `orderIndex` (zero-based)
+or `stepNumber` (one-based). Save recipe fields before editing rows; save all rows
+before changing publication status. Validation/network/conflict errors preserve
+the current form values. Reload explicitly confirms discarding unsaved input.
+
+The detail page links to edit for the owner/Admin. Publication requires at least
+one ingredient and one step, matching the existing backend business rule (which
+is stricter than the source SRS step-only minimum). Published can return to Draft
+or become Archived. Archived cannot publish/unpublish through the current
+contract. Archive and permanent delete both require UI confirmation.
+
+## Related contracts
+
+Image management, storage, search, and cache behavior continue to use their
+existing implementations and contracts. Issue #90 adds no REST endpoints or
+database migrations.

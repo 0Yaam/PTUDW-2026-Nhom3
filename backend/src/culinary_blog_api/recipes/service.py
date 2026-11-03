@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -13,7 +13,15 @@ from sqlalchemy.orm.exc import StaleDataError
 from ..auth.model import User
 from ..categories.model import Category
 from .cache import invalidate_recipe_caches
-from .model import Ingredient, Recipe, RecipeImage, RecipeIngredient, RecipeStatus, RecipeStep
+from .model import (
+    Ingredient,
+    Recipe,
+    RecipeImage,
+    RecipeImageResizeJob,
+    RecipeIngredient,
+    RecipeStatus,
+    RecipeStep,
+)
 from .problem import RecipeProblem
 from .schemas import (
     NutritionResponse,
@@ -342,6 +350,15 @@ async def delete_recipe(
     images = await session.scalars(select(RecipeImage).where(RecipeImage.recipe_id == recipe_id))
     for image in images:
         queue_image_cleanup(session, image)
+    # Cancel queued resize work in the same transaction as recipe deletion.
+    # Explicit removal also keeps SQLite tests consistent with PostgreSQL's FK cascade.
+    await session.execute(
+        delete(RecipeImageResizeJob).where(
+            RecipeImageResizeJob.image_id.in_(
+                select(RecipeImage.id).where(RecipeImage.recipe_id == recipe_id)
+            )
+        )
+    )
     await session.delete(recipe)
     try:
         await session.commit()

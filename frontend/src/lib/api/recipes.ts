@@ -22,12 +22,14 @@ export type RecipeDraftInput = {
   };
 };
 
-export type RecipeDraft = RecipeDraftInput & {
+export type RecipeDraft = Omit<RecipeDraftInput, "nutrition"> & {
   id: string;
   slug: string;
   authorId: string;
-  status: "Draft";
+  status: "Draft" | "Published" | "Archived";
   createdAt: string;
+  rowVersion: string;
+  nutrition: RecipeDetail["nutrition"];
 };
 
 export type RecipeDetail = Omit<RecipeDraftInput, "nutrition"> & {
@@ -117,6 +119,46 @@ export async function getRecipeDetail(
   return apiRequest<RecipeDetail>(`/api/v1/recipes/${encodeURIComponent(slug)}`, {
     cache: "no-store",
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+  });
+}
+
+export function updateRecipe(input: RecipeDraftInput, recipe: RecipeDetail, accessToken: string) {
+  return apiRequest<RecipeDraft>(`/api/v1/recipes/${recipe.id}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}`, "If-Match": `"${recipe.rowVersion}"` },
+    body: JSON.stringify(input),
+  });
+}
+
+export type RecipeAction = "publish" | "unpublish" | "archive" | "delete";
+
+export function changeRecipeStatus(recipeId: string, action: RecipeAction, accessToken: string) {
+  return apiRequest<RecipeDraft | void>(
+    `/api/v1/recipes/${recipeId}${action === "delete" ? "" : `/${action}`}`,
+    { method: action === "delete" ? "DELETE" : "PATCH", headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+}
+
+export type RecipeIngredientInput = { ingredientName: string; quantity: number; unit: string; orderIndex?: number };
+export type RecipeStepInput = { instruction: string; durationMinutes: number | null; imageUrl: string | null; stepNumber?: number };
+
+export function saveRecipeIngredient(recipeId: string, input: RecipeIngredientInput, accessToken: string, id?: string) {
+  return apiRequest<RecipeDetail["ingredients"][number]>(
+    `/api/v1/recipes/${recipeId}/ingredients${id ? `/${id}` : ""}`,
+    { method: id ? "PUT" : "POST", headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(input) },
+  );
+}
+
+export function saveRecipeStep(recipeId: string, input: RecipeStepInput, accessToken: string, id?: string) {
+  return apiRequest<RecipeDetail["steps"][number]>(
+    `/api/v1/recipes/${recipeId}/steps${id ? `/${id}` : ""}`,
+    { method: id ? "PUT" : "POST", headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(input) },
+  );
+}
+
+export function deleteRecipeContent(recipeId: string, kind: "ingredients" | "steps", id: string, accessToken: string) {
+  return apiRequest<void>(`/api/v1/recipes/${recipeId}/${kind}/${id}`, {
+    method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
 
