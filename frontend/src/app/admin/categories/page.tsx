@@ -5,12 +5,15 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import type { Category } from "@/components/category-grid";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { clearAuthSession, loadActiveAuthSession, saveAuthSession, type AuthSession } from "@/lib/auth-session";
 import { getAdminOverview, type AdminLoginResponse, type AdminOverview } from "@/lib/api/admin";
 import styles from "./page.module.css";
 
 type Problem = { type?: string; detail?: string; errors?: Record<string, string[]> };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const ADMIN_SESSION_STARTED_KEY = "culinary-blog.admin-session-started-at";
+const ADMIN_SESSION_MAX_AGE_MS = 30 * 60 * 1000;
 
 type IconName = "spark" | "grid" | "book" | "post" | "image" | "users" | "chat" | "chart" | "settings" | "external" | "search" | "plus" | "list" | "link";
 
@@ -67,6 +70,7 @@ export default function ManageCategories() {
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [overviewLoading, setOverviewLoading] = useState(false);
   const [overviewError, setOverviewError] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
   const errorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
@@ -82,6 +86,29 @@ export default function ManageCategories() {
       setOverviewLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const startedAt = Number(window.localStorage.getItem(ADMIN_SESSION_STARTED_KEY));
+    if (!startedAt || Date.now() - startedAt >= ADMIN_SESSION_MAX_AGE_MS) {
+      clearAuthSession();
+      window.localStorage.removeItem(ADMIN_SESSION_STARTED_KEY);
+      void Promise.resolve().then(() => { if (active) setSessionChecked(true); });
+      return () => { active = false; };
+    }
+    void loadActiveAuthSession().then((session) => {
+      if (!active) return;
+      if (session?.user.roles.includes("Admin")) {
+        setToken(session.accessToken);
+        setAdminName(session.user.fullName);
+        void loadOverview(session.accessToken);
+      } else if (session) {
+        clearAuthSession();
+      }
+      setSessionChecked(true);
+    });
+    return () => { active = false; };
+  }, [loadOverview]);
 
   const recipeTotal = useMemo(
     () => categories.reduce((sum, category) => sum + category.recipe_count, 0),
@@ -156,6 +183,10 @@ export default function ManageCategories() {
       }
       setToken(result.accessToken);
       setAdminName(result.user.fullName);
+      if (result.refreshToken && result.expiresAt) {
+        saveAuthSession(result as AuthSession);
+        window.localStorage.setItem(ADMIN_SESSION_STARTED_KEY, String(Date.now()));
+      }
       void loadOverview(result.accessToken);
       form.reset();
     } catch {
@@ -178,6 +209,8 @@ export default function ManageCategories() {
   }
 
   function signOut() {
+    clearAuthSession();
+    window.localStorage.removeItem(ADMIN_SESSION_STARTED_KEY);
     setToken("");
     setAdminName("");
     setOverview(null);
@@ -267,6 +300,10 @@ export default function ManageCategories() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (!sessionChecked) {
+    return <main id="main-content" className={styles.loginShell}><p className={styles.state}>{t("checkingSession")}</p></main>;
   }
 
   if (!token) {
