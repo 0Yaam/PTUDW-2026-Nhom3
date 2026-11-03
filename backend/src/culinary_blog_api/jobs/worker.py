@@ -16,9 +16,11 @@ from email.utils import parseaddr
 import structlog
 from sqlalchemy import select, update
 
+from ..auth.model import PasswordResetToken
+from ..auth.security import create_password_reset_token
 from ..config import Settings, get_settings
 from ..db import SessionFactory
-from .model import WelcomeEmailJob
+from .model import PasswordResetEmailJob, WelcomeEmailJob
 
 logger = structlog.get_logger()
 RETRY_DELAYS = (60, 300, 1800)
@@ -44,6 +46,40 @@ def send_welcome_email(recipient: str, full_name: str, settings: Settings) -> No
     message.add_alternative(
         f"<p>Hello {name}, welcome to Culinary Blog!</p>"
         f'<p><a href="{app_url}">Explore recipes</a></p>',
+        subtype="html",
+    )
+    if settings.smtp_ssl and settings.smtp_starttls:
+        raise ValueError("SMTP_SSL and SMTP_STARTTLS are mutually exclusive")
+    connection = smtplib.SMTP_SSL if settings.smtp_ssl else smtplib.SMTP
+    with connection(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
+        if settings.smtp_starttls:
+            smtp.starttls()
+        if settings.smtp_username:
+            smtp.login(settings.smtp_username, settings.smtp_password.get_secret_value())
+        smtp.send_message(message)
+
+
+def send_password_reset_email(
+    recipient: str, full_name: str, token: str, settings: Settings
+) -> None:
+    if not settings.smtp_host:
+        raise RuntimeError("SMTP_HOST is not configured")
+    name = html.escape(full_name)
+    reset_url = f"{settings.app_public_url.rstrip('/')}/reset-password?token={token}"
+    safe_reset_url = html.escape(reset_url, quote=True)
+    message = EmailMessage()
+    message["Subject"] = "Reset your Culinary Blog password"
+    message["From"] = settings.smtp_from
+    message["To"] = recipient
+    digest = hashlib.sha256(token.encode()).hexdigest()[:32]
+    sender_domain = parseaddr(settings.smtp_from)[1].rpartition("@")[2] or "culinary-blog.local"
+    message["Message-ID"] = f"<password-reset-{digest}@{sender_domain}>"
+    message.set_content(f"Hello {full_name}, reset your Culinary Blog password: {reset_url}")
+    message.add_alternative(
+        f"<p>Hello {name},</p>"
+        "<p>Use this one-time link to reset your Culinary Blog password. "
+        "It expires in 30 minutes.</p>"
+        f'<p><a href="{safe_reset_url}">Reset password</a></p>',
         subtype="html",
     )
     if settings.smtp_ssl and settings.smtp_starttls:
@@ -110,6 +146,74 @@ async def process_due_job(
             return True
 
 
+async def process_due_password_reset_job(
+    *,
+    sender: Callable[[str, str, str, Settings], None] = send_password_reset_email,
+    now: datetime | None = None,
+) -> bool:
+    now = now or datetime.now(UTC)
+    async with SessionFactory() as session:
+        async with session.begin():
+            query = (
+                select(PasswordResetEmailJob, PasswordResetToken)
+                .join(
+                    PasswordResetToken,
+                    PasswordResetToken.id == PasswordResetEmailJob.reset_token_id,
+                )
+                .where(
+                    PasswordResetEmailJob.status == "Pending",
+                    PasswordResetEmailJob.next_attempt_at <= now,
+                )
+                .order_by(
+                    PasswordResetEmailJob.next_attempt_at,
+                    PasswordResetEmailJob.id,
+                )
+                .limit(1)
+            )
+            if session.bind.dialect.name == "postgresql":
+                query = query.with_for_update(skip_locked=True)
+            row = (await session.execute(query)).first()
+            if row is None:
+                return False
+            job, reset_token = row
+            expires_at = job.expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=UTC)
+            if expires_at <= now or reset_token.used_at is not None:
+                job.status = "Failed"
+                job.last_error = "ExpiredOrUsed"
+                return True
+            token, _, _ = create_password_reset_token(reset_token.user_id, job.token_id, expires_at)
+            try:
+                await asyncio.to_thread(sender, job.recipient, job.full_name, token, get_settings())
+            except Exception as error:
+                job.attempts += 1
+                job.last_error = type(error).__name__
+                if job.attempts >= MAX_ATTEMPTS:
+                    job.status = "Failed"
+                    logger.error(
+                        "password_reset_email_failed_permanently",
+                        job_id=str(job.id),
+                        attempts=job.attempts,
+                        error_type=job.last_error,
+                    )
+                else:
+                    job.next_attempt_at = now + timedelta(seconds=RETRY_DELAYS[job.attempts - 1])
+                    logger.warning(
+                        "password_reset_email_retry_scheduled",
+                        job_id=str(job.id),
+                        attempts=job.attempts,
+                        error_type=job.last_error,
+                    )
+            else:
+                job.status = "Sent"
+                job.attempts += 1
+                job.sent_at = now
+                job.last_error = None
+                logger.info("password_reset_email_sent", job_id=str(job.id))
+            return True
+
+
 async def retry_failed_jobs() -> int:
     """Requeue failed messages after an operator fixes delivery configuration."""
     async with SessionFactory() as session:
@@ -128,6 +232,8 @@ async def run_worker() -> None:
     while True:
         try:
             processed = await process_due_job()
+            if not processed:
+                processed = await process_due_password_reset_job()
         except Exception:
             logger.exception("welcome_email_worker_error")
             await asyncio.sleep(5)

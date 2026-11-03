@@ -11,6 +11,9 @@ The API includes categories, authentication, profiles, and recipe publication un
 | `POST /api/v1/auth/google` | Google ID token in the request body | `200`, local access and refresh tokens |
 | `GET /api/v1/auth/me` | Bearer token | `200`, current profile |
 | `PATCH /api/v1/auth/me` | Bearer token | `200`, updated profile |
+| `POST /api/v1/auth/change-password` | Bearer token and current/new password | `204`; all sessions revoked |
+| `POST /api/v1/auth/forgot-password` | Email in request body | `202` generic response |
+| `POST /api/v1/auth/reset-password` | One-time token and new password | `204`; all sessions revoked |
 | `PATCH /api/v1/recipes/{id}/publish` | Recipe owner or Admin | `200`, published recipe |
 | `PATCH /api/v1/recipes/{id}/unpublish` | Recipe owner or Admin | `200`, draft recipe |
 
@@ -60,8 +63,10 @@ secret rules are documented in
 The S3-compatible `S3FileStorage` adapter offers validated image upload,
 read, and idempotent delete operations for Issue #43's image endpoints. It
 accepts JPEG, PNG, WebP, and AVIF up to 5 MB and validates file signatures.
-The welcome-email outbox is created during local registration and processed
-by the separate `email-worker` service with three scheduled retries. Set the
+The welcome-email outbox is created during local registration. Password reset
+requests create a separate outbox entry without storing the signed reset token
+in plaintext. The `email-worker` processes both queues with three scheduled
+retries. Set the
 MinIO and SMTP variables in `.env.example`; see
 [`docs/FILE-STORAGE-JOBS.md`](../docs/FILE-STORAGE-JOBS.md) for the contract
 and local verification steps.

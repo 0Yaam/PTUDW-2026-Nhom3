@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
+from structlog.testing import capture_logs
 
 from culinary_blog_api.db import SessionFactory
 from culinary_blog_api.storage.model import FileDeletionJob
@@ -36,3 +37,24 @@ async def test_cleanup_retries_then_can_be_requeued() -> None:
     async with SessionFactory() as session:
         job = await session.scalar(select(FileDeletionJob))
         assert job.status == "Pending" and job.attempts == 0
+
+async def test_cleanup_retry_log_has_job_attempt_and_error_type() -> None:
+    async with SessionFactory() as session:
+        session.add(
+            FileDeletionJob(
+                original_url="http://storage.test/recipes/retry.png",
+                recipe_id=uuid.uuid4(),
+                image_id=uuid.uuid4(),
+            )
+        )
+        await session.commit()
+
+    with capture_logs() as logs:
+        assert await process_due_job(
+            storage=OfflineStorage(), now=datetime.now(UTC) + timedelta(seconds=1)
+        )
+
+    retry = next(item for item in logs if item["event"] == "file_cleanup_retry")
+    assert retry["attempts"] == 1
+    assert retry["error_type"] == "OSError"
+    uuid.UUID(retry["job_id"])

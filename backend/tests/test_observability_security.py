@@ -1,3 +1,4 @@
+import json
 import uuid
 from types import SimpleNamespace
 
@@ -118,9 +119,38 @@ async def test_authenticated_writes_emit_audit_event(client) -> None:
     assert response.status_code == 200
     assert audit["correlation_id"] == response.headers["X-Correlation-ID"]
     assert audit["user_id"] == body["user"]["id"]
+    assert audit["actor_id"] == body["user"]["id"]
+    assert audit["actor_type"] == "authenticated"
+    assert audit["action"] == "replace_profile"
+    assert audit["resource"] == "/api/v1/auth/me"
+    assert audit["result"] == "success"
     assert audit["method"] == "PATCH"
     assert audit["path"] == "/api/v1/auth/me"
     assert audit["status"] == 200
+    assert audit["elapsed_ms"] >= 0
+
+
+async def test_auth_audit_does_not_log_credentials_or_tokens(client) -> None:
+    password = "Never-log-this-password-1!"
+    bearer = "Never-log-this-bearer-token"
+
+    with capture_logs() as logs:
+        response = await client.post(
+            "/api/v1/auth/login",
+            headers={"Authorization": f"Bearer {bearer}"},
+            json={"email": "missing@example.com", "password": password},
+        )
+
+    audit = next(item for item in logs if item["event"] == "audit_http_request")
+    serialized_logs = json.dumps(logs)
+    assert response.status_code == 401
+    assert audit["actor_id"] is None
+    assert audit["actor_type"] == "anonymous"
+    assert audit["action"] == "login"
+    assert audit["resource"] == "/api/v1/auth/login"
+    assert audit["result"] == "denied"
+    assert password not in serialized_logs
+    assert bearer not in serialized_logs
 
 
 def test_production_rejects_default_jwt_secret() -> None:

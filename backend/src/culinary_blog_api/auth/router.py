@@ -8,19 +8,25 @@ from .dependencies import get_current_user
 from .model import User
 from .schemas import (
     AuthResponse,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
     GoogleLoginRequest,
     LoginRequest,
     ProfileUpdateRequest,
     RefreshTokenRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     UserRead,
 )
 from .service import (
+    change_password,
+    forgot_password,
     google_login,
     login_user,
     logout_user,
     refresh_tokens,
     register_user,
+    reset_password,
     update_profile,
     user_profile,
 )
@@ -67,6 +73,34 @@ async def logout(
     user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     await logout_user(session, user, request)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_account_password(
+    request: ChangePasswordRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> Response:
+    await change_password(session, user, request)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+async def request_password_reset(
+    request: ForgotPasswordRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> Response:
+    await forgot_password(session, request)
+    return Response(status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+async def complete_password_reset(
+    request: ResetPasswordRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> Response:
+    await reset_password(session, request)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

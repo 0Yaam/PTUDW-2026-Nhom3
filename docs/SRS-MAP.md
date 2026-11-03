@@ -5,6 +5,7 @@
 | FR-AUTH-001 to FR-AUTH-002 | Local registration and login | Dan | Done - #1 |
 | FR-AUTH-003 | Google OAuth | Dan | Done - Lab 04 #38 |
 | FR-AUTH-004 to FR-AUTH-005 | Token refresh and logout | Dan | Done - #30 |
+| Lab 07 auth extension | Change password and forgot/reset password | Dan | Done - #77 |
 | FR-AUTH-006 to FR-AUTH-007 | View and update profile | Minh Anh / Dan | Done - #31 and #38 |
 | FR-CAT-001 to FR-CAT-005 | Category list, detail, management, and deletion | Team | Done - #2, #3, #33 |
 | FR-RCP-001 | Public recipe list | Hieu | Done - #32 |
@@ -38,3 +39,11 @@
 | NFR-SCALE-002 | Database scaling path | Hieu | Cycle 3 #47 - Ready |
 | NFR-SCALE-003 | Container and proxy setup | Han | Done - #59 |
 | NFR-SEO-001 to NFR-SEO-004 | Recipe SEO, sitemap, and URLs | Minh Anh | Done - #46 |
+## Lab 08 assignments
+
+| Issue | Owner | Lab 08 scope | SRS coverage | Status |
+|---|---|---|---|---|
+| #87 | Dan | Logging, audit events, and final SRS gap review | FR-OBS-001 to FR-OBS-003; NFR-SEC-003 to NFR-SEC-007; NFR-MAINT-001 to NFR-MAINT-004 | In Progress - local branch |
+| #88 | Han | End-to-end recipe image upload and management | FR-RCP-008; FR-FILE-001 to FR-FILE-002; FR-JOB-002 | Ready |
+| #89 | Minh Anh | Admin user directory | Lab 08 admin-user extension; FR-AUTH-006 to FR-AUTH-007; NFR-USE-001 to NFR-USE-004 | Ready |
+| #90 | Hieu | Recipe create/update form and status lifecycle | FR-RCP-003 to FR-RCP-007; FR-RCP-009 to FR-RCP-010 | Ready |

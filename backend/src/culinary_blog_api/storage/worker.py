@@ -48,19 +48,25 @@ async def process_due_job(
                 if job.attempts >= MAX_ATTEMPTS:
                     job.status = "Failed"
                     logger.error(
-                        "file_cleanup_failed", job_id=str(job.id), error_type=job.last_error
+                        "file_cleanup_failed",
+                        job_id=str(job.id),
+                        attempts=job.attempts,
+                        error_type=job.last_error,
                     )
                 else:
                     job.next_attempt_at = now + timedelta(seconds=RETRY_DELAYS[job.attempts - 1])
                     logger.warning(
-                        "file_cleanup_retry", job_id=str(job.id), error_type=job.last_error
+                        "file_cleanup_retry",
+                        job_id=str(job.id),
+                        attempts=job.attempts,
+                        error_type=job.last_error,
                     )
             else:
                 job.status = "Done"
                 job.attempts += 1
                 job.finished_at = now
                 job.last_error = None
-                logger.info("file_cleanup_done", job_id=str(job.id))
+                logger.info("file_cleanup_done", job_id=str(job.id), attempts=job.attempts)
             return True
 
 
