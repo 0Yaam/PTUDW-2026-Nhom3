@@ -20,7 +20,8 @@
     "profile": "Profile",
     "footer": "Footer navigation",
     "brandHome": "Small Kitchen home",
-    "security": "Security"
+    "security": "Security",
+    "userMenu": "Open user menu for {name}"
   },
   "site": {
     "tagline": "Food stories & recipes",

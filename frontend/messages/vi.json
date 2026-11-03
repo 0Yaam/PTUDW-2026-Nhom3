@@ -20,7 +20,8 @@
     "profile": "Trang cá nhân",
     "footer": "Điều hướng chân trang",
     "brandHome": "Trang chủ Small Kitchen",
-    "security": "Bảo mật"
+    "security": "Bảo mật",
+    "userMenu": "Mở menu người dùng của {name}"
   },
   "site": {
     "tagline": "Câu chuyện và công thức",

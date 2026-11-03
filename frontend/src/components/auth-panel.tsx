@@ -30,6 +30,8 @@ export function AuthPanel() {
   const user = sessionFromStore?.user ?? null;
   const [pending, setPending] = useState(false);
 
+  if (Boolean(user)) return null;
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
