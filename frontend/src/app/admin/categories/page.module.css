@@ -155,6 +155,7 @@
 .overviewStats strong { font-size: 32px; letter-spacing: -.04em; }
 .overviewStats small { color: #766d63; font-size: 11px; }
 .overviewGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.analyticsGrid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 14px; scroll-margin-top: 100px; }
 .overviewPanel { padding: 23px; }
 .overviewPanel h2 { margin: 0 0 4px; font-size: 18px; }
 .overviewPanel > p { margin: 0 0 22px; color: #625e58; font-size: 12px; }
@@ -176,16 +177,36 @@
 .categoryRanking span, .categoryRanking small { color: #766d63; }
 .categoryRanking strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .categoryRanking progress { width: 100%; height: 8px; accent-color: #8b5927; }
+.chartHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.chartBadge { padding: 5px 9px; border-radius: 999px; background: #eaf7ee; color: #20663c; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+.barChart { display: grid; gap: 17px; margin-top: 24px; }
+.barLabel { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; font-size: 12px; }
+.barLabel span { color: #625e58; }
+.barLabel small { color: #766d63; font-size: 11px; font-weight: 500; }
+.barTrack { height: 12px; overflow: hidden; border-radius: 99px; background: #eee8df; }
+.barFill { display: block; height: 100%; min-width: 0; border-radius: inherit; transition: width 300ms ease; }
+.barpublished { background: #27855a; }
+.bardraft { background: #bd8244; }
+.bararchived { background: #8e8174; }
+.healthGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 24px; }
+.healthCard { display: grid; gap: 8px; padding: 14px 12px; border: 1px solid #eee8df; border-radius: 11px; background: #fcfaf6; }
+.healthCard span { color: #625e58; font-size: 11px; font-weight: 700; }
+.healthCard strong { font-size: 13px; }
+.healthCard small { color: #766d63; font-size: 10px; }
+.healthOk { color: #24734b; }
+.healthWarning { color: #a9232d; }
+.healthDot { width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: #27855a; box-shadow: 0 0 0 4px #e3f3e9; }
 @media (max-width: 1100px) { .overviewStats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) {
   .overviewHeading { align-items: start; flex-direction: column; }
-  .overviewStats, .overviewGrid { grid-template-columns: 1fr; }
+  .overviewStats, .overviewGrid, .analyticsGrid { grid-template-columns: 1fr; }
   .jobRow { grid-template-columns: 1fr auto; }
   .jobRow > span:last-child { grid-column: 2; }
   .recentList > div { grid-template-columns: 1fr auto; }
   .recentList > div span { grid-column: 1; }
   .categoryRanking > div { grid-template-columns: 24px minmax(0, 1fr) 28px; }
   .categoryRanking progress { grid-column: 2 / 3; grid-row: 2; }
+  .healthGrid { grid-template-columns: 1fr; }
 }
 .dashboard { background: #f7f5f0; }
 .dashboard svg, .loginShell svg { width: 19px; height: 19px; flex: none; }

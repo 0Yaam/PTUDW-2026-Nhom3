@@ -45,7 +45,7 @@ services:
       DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-20}
       DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-80}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-culinary}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-change-this-local-password}
       MINIO_BUCKET: ${MINIO_BUCKET:-culinary-blog}
@@ -85,7 +85,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-culinary}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-change-this-local-password}
       MINIO_BUCKET: ${MINIO_BUCKET:-culinary-blog}
@@ -101,7 +101,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-culinary}:${POSTGRES_PASSWORD:-culinary}@postgres:5432/${POSTGRES_DB:-culinary_blog}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-culinary}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-change-this-local-password}
       MINIO_BUCKET: ${MINIO_BUCKET:-culinary-blog}
@@ -162,8 +162,10 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-culinary}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-change-this-local-password}
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      # Keep MinIO's internal ports unchanged; host ports are configurable so
+      # local tools (for example IDEs) can use port 9000 without blocking startup.
+      - "127.0.0.1:${MINIO_API_PORT:-9002}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
 
@@ -172,7 +174,7 @@ services:
     command: python -m culinary_blog_api.storage.init_bucket
     environment:
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-culinary}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-change-this-local-password}
       MINIO_BUCKET: ${MINIO_BUCKET:-culinary-blog}
