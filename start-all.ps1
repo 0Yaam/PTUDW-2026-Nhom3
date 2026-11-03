@@ -61,6 +61,7 @@ switch ($Mode) {
         Write-Host "  - Frontend Web        : http://localhost:3000" -ForegroundColor Cyan
         Write-Host "  - Backend API Swagger : http://localhost:8000/docs" -ForegroundColor Cyan
         Write-Host "  - Backend Healthcheck : http://localhost:8000/health" -ForegroundColor Cyan
+        Write-Host "  - MinIO API            : http://localhost:9002" -ForegroundColor Cyan
         Write-Host "  - MinIO Console        : http://localhost:9001" -ForegroundColor Cyan
         Write-Host "  - Mailpit Inbox        : http://localhost:8025" -ForegroundColor Cyan
         Write-Host "  - Frontend Hot Reload : http://localhost:3001 (optional)" -ForegroundColor DarkCyan

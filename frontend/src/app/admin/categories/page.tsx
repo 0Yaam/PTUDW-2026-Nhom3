@@ -312,7 +312,7 @@ export default function ManageCategories() {
         <nav aria-label={t("management")}>
           <Link className={styles.navItem} href="/admin/users"><AdminIcon name="users" />{t("navUsers")}</Link>
           <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="chat" />{t("navComments")}<small>{t("comingSoon")}</small></div>
-          <div className={styles.navItemDisabled} aria-disabled="true"><AdminIcon name="chart" />{t("navAnalytics")}<small>{t("comingSoon")}</small></div>
+          <a className={styles.navItem} href="#analytics"><AdminIcon name="chart" />{t("navAnalytics")}</a>
         </nav>
         <p className={styles.navLabel}>{t("system")}</p>
         <nav aria-label={t("system")}>
@@ -364,6 +364,22 @@ export default function ManageCategories() {
                   </div>)}
                 </article>
               </div>
+              <section id="analytics" className={styles.analyticsGrid} aria-labelledby="analytics-title">
+                <article className={styles.overviewPanel}>
+                  <div className={styles.chartHeading}><div><h2 id="analytics-title">{t("analyticsTitle")}</h2><p>{t("analyticsHint")}</p></div><span className={styles.chartBadge}>{t("liveData")}</span></div>
+                  <div className={styles.barChart} role="img" aria-label={t("recipeChartLabel")}>
+                    {(["published", "draft", "archived"] as const).map((status) => {
+                      const value = overview.recipes[status];
+                      const percent = overview.recipes.total ? Math.round((value / overview.recipes.total) * 100) : 0;
+                      return <div className={styles.barItem} key={status}><div className={styles.barLabel}><span>{t(`recipeStatus${status}`)}</span><strong>{value} <small>({percent}%)</small></strong></div><div className={styles.barTrack}><span className={`${styles.barFill} ${styles[`bar${status}`]}`} style={{ width: `${Math.max(percent, value ? 3 : 0)}%` }} /></div></div>;
+                    })}
+                  </div>
+                </article>
+                <article className={styles.overviewPanel}>
+                  <div className={styles.chartHeading}><div><h2>{t("healthTitle")}</h2><p>{t("healthHint")}</p></div><span className={styles.healthDot} aria-hidden="true" /></div>
+                  <div className={styles.healthGrid}>{(["email", "resize", "cleanup"] as const).map((kind) => { const job = overview.jobs[kind]; return <div className={styles.healthCard} key={kind}><span>{t(`job${kind}`)}</span><strong className={job.failed ? styles.healthWarning : styles.healthOk}>{job.failed ? t("attention") : t("healthy")}</strong><small>{t("pendingJobs", { count: job.pending })}</small></div>; })}</div>
+                </article>
+              </section>
               <article className={styles.overviewPanel}>
                 <h2>{t("recentTitle")}</h2><p>{t("recentHint")}</p>
                 {overview.recentRecipes.length === 0 ? <p className={styles.muted}>{t("recentEmpty")}</p> : <div className={styles.recentList}>
