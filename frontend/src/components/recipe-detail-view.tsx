@@ -21,6 +21,7 @@ const nutritionKeys: NutritionKey[] = [
 
 export function RecipeDetailView({ slug }: { slug: string }) {
   const t = useTranslations("recipeDetail");
+  const editorT = useTranslations("recipeEditor");
   const locale = useLocale();
   const session = useAuthStore();
   const accessToken = session?.accessToken;
@@ -111,6 +112,7 @@ export function RecipeDetailView({ slug }: { slug: string }) {
                 <h1>{recipe.title}</h1>
                 <p className={styles.description}>{recipe.description}</p>
                 <p className={styles.byline}>{t("byAuthor", { name: recipe.author.fullName })}</p>
+                {canManageImages && <Link className={styles.editLink} href={`/recipes/${recipe.slug}/edit`}>{editorT("editRecipe")}</Link>}
               </div>
               <div className={styles.heroMedia}>
                 {activeImage ? (

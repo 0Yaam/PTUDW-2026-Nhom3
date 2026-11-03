@@ -73,7 +73,7 @@
 .successActions a:focus-visible, .successActions button:focus-visible { outline: 3px solid var(--clay); outline-offset: 2px; }
 @media (max-width: 860px) {
   .workspace { grid-template-columns: 1fr; }
-  .summary { position: static; order: -1; }
+  .summary { position: static; }
 }
 @media (max-width: 620px) {
   .page { padding: 38px 18px 65px; }
@@ -85,3 +85,26 @@
   .successBanner { grid-template-columns: auto 1fr; }
   .successActions { grid-column: 1 / -1; justify-content: flex-start; }
 }
+.baseFields { min-width: 0; display: grid; gap: 18px; margin: 0; padding: 0; border: 0; }
+.nutritionGrid[hidden] { display: none; }
+.contentRow { padding: 18px 0; border-top: 1px solid #e1d8cb; }
+.contentRow fieldset { min-width: 0; border: 0; margin: 0; padding: 0; }
+.contentRow legend { padding: 0 0 12px; font-weight: 700; color: var(--moss); }
+.ingredientGrid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; align-items: start; }
+.ingredientGrid label + label { margin-top: 0; }
+.rowActions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.rowActions button, .secondaryButton, .lifecycle button { min-height: 44px; padding: 9px 12px; border: 1px solid var(--moss); border-radius: 5px; background: white; color: var(--moss); font-weight: 700; }
+.rowActions button[type="submit"], .lifecycle > button:first-of-type { background: var(--moss); color: white; }
+.rowActions button:disabled, .lifecycle button:disabled { opacity: .5; cursor: not-allowed; }
+.rowActions button:focus-visible, .secondaryButton:focus-visible, .lifecycle button:focus-visible { outline: 3px solid var(--clay); outline-offset: 2px; }
+.rowActions .dangerButton, .lifecycle .dangerButton { border-color: #b42318; color: #b42318; background: #fff8f6; }
+.secondaryButton { width: 100%; margin-top: 12px; }
+.lifecycle { display: grid; gap: 10px; padding-top: 24px; margin-top: 24px; border-top: 1px solid #e1d8cb; }
+.lifecycle > a { text-decoration: underline; color: var(--moss); }
+.lifecycle p { margin: 0; font-size: 12px; line-height: 1.6; }
+.confirmation { display: grid; gap: 10px; padding: 12px; border: 1px solid #b42318; border-radius: 5px; }
+.editorSkeleton { display: grid; gap: 20px; }
+.editorSkeleton i { display: block; min-height: 180px; border-radius: 8px; background: linear-gradient(90deg, #eee5da, #faf6f0, #eee5da); background-size: 200% 100%; animation: editorLoading 1.5s ease infinite; }
+@keyframes editorLoading { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .editorSkeleton i { animation: none; } }
+@media (max-width: 620px) { .ingredientGrid { grid-template-columns: 1fr; } }
