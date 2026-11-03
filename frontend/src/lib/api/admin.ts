@@ -3,6 +3,8 @@ import { apiRequest } from "@/lib/api/client";
 /** Contracts for the Admin-only `/api/v1/admin` endpoints. */
 export type AdminLoginResponse = {
   accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
   user: { fullName: string; roles: string[] };
 };
 
