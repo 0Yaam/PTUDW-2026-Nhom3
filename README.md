@@ -28,9 +28,7 @@
 
 ## Work Assignment
 
-The [GitHub Project](https://github.com/users/0Yaam/projects/1/views/3) is the
-source of truth. `Cycle` tracks development cycles 1-4, while `Lab` separately
-tracks Lab 04, Lab 06, Lab 07 and Lab 08 submissions.
+[GitHub Project](https://github.com/users/0Yaam/projects/1/views/3) is the source of truth. `Cycle` tracks development cycles 1-4, while `Lab` separately tracks Lab 04, Lab 06, Lab 07 and Lab 08 submissions.
 
 ### Completed Cycles
 
@@ -41,39 +39,33 @@ tracks Lab 04, Lab 06, Lab 07 and Lab 08 submissions.
 | Cycle 3 | [#44](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/44) | [#45](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/45) | [#46](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/46) | [#47](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/47) | Done |
 | Cycle 4 | [#58](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/58) | [#59](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/59) | [#60](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/60) | [#61](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/61) | Done |
 
-### Lab Assignments
+### Lab Submissions
 
-| Lab | Dân | Hân | Minh Anh | Hiếu | Progress |
+| Lab | Dân | Hân | Minh Anh | Hiếu | Status |
 | --- | --- | --- | --- | --- | :---: |
-| Lab 04 | [#38](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/38) | [#39](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/39) | [#40](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/40) | [#43](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/43) | Done |
-| Lab 06 | [#69](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/69) | [#70](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/70) | [#71](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/71) | [#72](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/72) | Done |
-| Lab 07 | [#77](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/77) (Done) | [#78](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/78) (Done) | [#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79) (Ready) | [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) (In Progress) | 2/4 Done |
-| Lab 08 | [#87](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/87) (In Progress) | [#88](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/88) (Ready) | [#89](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/89) (Ready) | [#90](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/90) (Ready) | 0/4 Done |
+| Lab 04 | [#38](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/38) | [#39](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/39) | [#40](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/40) | [#43](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/43) | 4/4 Done |
+| Lab 06 | [#69](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/69) | [#70](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/70) | [#71](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/71) | [#72](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/72) | 4/4 Done |
+| Lab 07 | [#77](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/77) | [#78](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/78) | [#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79) | [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) | 4/4 Done |
+| Lab 08 | [#87](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/87) / [PR #93](https://github.com/0Yaam/PTUDW-2026-Nhom3/pull/93) | [#88](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/88) / [PR #92](https://github.com/0Yaam/PTUDW-2026-Nhom3/pull/92) | [#89](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/89) / [PR #95](https://github.com/0Yaam/PTUDW-2026-Nhom3/pull/95) | [#90](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/90) / [PR #96](https://github.com/0Yaam/PTUDW-2026-Nhom3/pull/96) | 4/4 Done |
 
-Lab 07 currently meets **5/6 minimum criteria (83.3%) on `main`**. The remaining
-blocking assignment is missing home page content ([#79](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/79)).
-Issue [#80](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/80) is verification
-and hardening for recipe detail and search, which already meet the minimum criteria.
+### Lab 08 Results
 
-### Lab 08 Scope
+- Dân completed structured logging, audit events, secret redaction and the final SRS gap review in [#87](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/87).
+- Hân completed end-to-end recipe image upload, primary image selection, deletion, cleanup and resize integration in [#88](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/88).
+- Minh Anh completed the Admin user directory with search, role filter, pagination and backend authorization in [#89](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/89).
+- Hiếu completed the recipe create/update form and Draft → Published → Archived/Deleted lifecycle in [#90](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/90).
 
-- Dân [#87](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/87): logging, audit events and final SRS gap review.
-- Hân [#88](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/88): recipe image upload, primary image, deletion, cleanup and resize integration.
-- Minh Anh [#89](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/89): Admin user directory with search, role filter and pagination.
-- Hiếu [#90](https://github.com/0Yaam/PTUDW-2026-Nhom3/issues/90): create/update recipe form and Draft/Published/Archived/Deleted lifecycle.
+All Lab 08 issues are closed and their Pull Requests are merged into `main`.
 
-All four assignments start in `Ready`. Existing storage, recipe and logging foundations must be reused rather than rebuilt.
 ### Collaboration Rules
 
-- The assignee owns the full vertical slice: API/UI integration, tests and documentation.
+- Each assignee owns a complete vertical slice: API/UI integration, tests and documentation.
 - Dân reviews member Pull Requests; Hân reviews Dân's Pull Request.
 - Use one feature branch and one Pull Request per Issue, linked with `Closes #<issue>`.
 - Move work through `Ready` → `In Progress` → `Review` → `Done` on the Project board.
-- Do not count an open Pull Request as merged work on `main`.
+- Count work as complete only after its Pull Request is merged into `main`.
 
-Track current status in the [GitHub Project board](https://github.com/users/0Yaam/projects/1/views/3).
-Detailed history also remains documented in [docs/ROADMAP.md](docs/ROADMAP.md).
-
+Track current status in the [GitHub Project board](https://github.com/users/0Yaam/projects/1/views/3). Detailed history remains documented in [docs/ROADMAP.md](docs/ROADMAP.md).
 ## Overview
 Small Kitchen is a student project for sharing cooking recipes. The current
 working flow connects PostgreSQL, a FastAPI REST API, and a Next.js App Router
