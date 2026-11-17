@@ -585,6 +585,7 @@
     "apiUnavailable": "Cannot reach the API. Check that the backend is running."
   },
   "recipeEditor": {
+    "editPageTitle": "Edit recipe",
     "title": "Edit recipe",
     "description": "Save the recipe details, then manage ingredients and ordered cooking steps. Changes to each row are saved separately.",
     "statusDraft": "Draft",

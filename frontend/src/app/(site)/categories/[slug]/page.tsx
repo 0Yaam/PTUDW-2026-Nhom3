@@ -19,10 +19,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const category = await getCategory(slug);
+  const [category, t] = await Promise.all([getCategory(slug), getTranslations("category")]);
 
   if (!category) {
-    return { title: "Category not found", robots: { index: false, follow: false } };
+    return { title: t("notFoundTitle"), robots: { index: false, follow: false } };
   }
 
   return {
