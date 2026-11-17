@@ -42,6 +42,7 @@ GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 
 
 def user_profile(user: User) -> UserRead:
+    """Map the database user to the public profile shape returned by auth endpoints."""
     return UserRead.model_validate(
         {
             "id": user.id,
@@ -55,6 +56,7 @@ def user_profile(user: User) -> UserRead:
 
 
 async def _issue_tokens(unit_of_work: UnitOfWork, user: User) -> AuthResponse:
+    """Create an access/refresh pair and persist the hashed refresh token."""
     access_token, access_expires_at = create_access_token(
         user.id, user.email, user.role, user.session_version
     )
@@ -72,6 +74,7 @@ async def _issue_tokens(unit_of_work: UnitOfWork, user: User) -> AuthResponse:
 
 
 async def register_user(session: AsyncSession, request: RegisterRequest) -> AuthResponse:
+    """Create an Author account and queue its welcome email in the same transaction."""
     unit_of_work = UnitOfWork(session)
     existing = await unit_of_work.users.get_by_email_or_user_name(request.email, request.user_name)
     if existing is not None:
@@ -107,6 +110,7 @@ async def register_user(session: AsyncSession, request: RegisterRequest) -> Auth
 
 
 async def login_user(session: AsyncSession, request: LoginRequest) -> AuthResponse:
+    """Authenticate by email while applying failed-attempt and temporary lockout rules."""
     unit_of_work = UnitOfWork(session)
     user = await unit_of_work.users.get_by_email(request.email)
     if user is None:
@@ -145,6 +149,7 @@ async def login_user(session: AsyncSession, request: LoginRequest) -> AuthRespon
 
 
 async def fetch_google_profile(id_token: str) -> dict[str, str]:
+    """Validate a Google ID token and return only the profile fields used by the app."""
     client_id = get_settings().google_client_id
     if not client_id:
         raise AuthProblem(
@@ -179,6 +184,7 @@ async def fetch_google_profile(id_token: str) -> dict[str, str]:
 
 
 async def google_login(session: AsyncSession, request: GoogleLoginRequest) -> AuthResponse:
+    """Find or create an Author from a verified Google profile, then issue local tokens."""
     profile = await fetch_google_profile(request.id_token)
     unit_of_work = UnitOfWork(session)
     user = await unit_of_work.users.get_by_email(profile["email"])
@@ -204,6 +210,7 @@ async def google_login(session: AsyncSession, request: GoogleLoginRequest) -> Au
 
 
 async def refresh_tokens(session: AsyncSession, request: RefreshTokenRequest) -> AuthResponse:
+    """Rotate a valid refresh token and revoke the token that was presented."""
     unit_of_work = UnitOfWork(session)
     now = datetime.now(UTC)
     stored_token = await unit_of_work.refresh_tokens.get_by_hash(
@@ -239,6 +246,7 @@ async def refresh_tokens(session: AsyncSession, request: RefreshTokenRequest) ->
 
 
 async def logout_user(session: AsyncSession, user: User, request: RefreshTokenRequest) -> None:
+    """Revoke the caller's refresh token without revealing whether it was already invalid."""
     unit_of_work = UnitOfWork(session)
     stored_token = await unit_of_work.refresh_tokens.get_by_hash(
         hash_refresh_token(request.refresh_token)
@@ -256,6 +264,7 @@ async def logout_user(session: AsyncSession, user: User, request: RefreshTokenRe
 async def change_password(
     session: AsyncSession, user: User, request: ChangePasswordRequest
 ) -> None:
+    """Change a password and invalidate every existing session for the user."""
     if not verify_password(request.current_password, user.password_hash):
         raise AuthProblem(
             400,
@@ -283,6 +292,7 @@ async def change_password(
 
 
 async def forgot_password(session: AsyncSession, request: ForgotPasswordRequest) -> None:
+    """Create a reset token and queue an email without exposing account existence."""
     unit_of_work = UnitOfWork(session)
     user = await unit_of_work.users.get_by_email(request.email)
     if user is None:
@@ -312,6 +322,7 @@ async def forgot_password(session: AsyncSession, request: ForgotPasswordRequest)
 
 
 async def reset_password(session: AsyncSession, request: ResetPasswordRequest) -> None:
+    """Consume one valid reset token and revoke all older sessions and reset links."""
     claims = read_password_reset_token(request.token)
     if claims is None:
         raise AuthProblem(
@@ -372,6 +383,7 @@ async def reset_password(session: AsyncSession, request: ResetPasswordRequest) -
 async def update_profile(
     session: AsyncSession, user: User, request: ProfileUpdateRequest
 ) -> UserRead:
+    """Update editable profile fields while enforcing username uniqueness."""
     unit_of_work = UnitOfWork(session)
     if request.user_name != user.user_name:
         taken = await unit_of_work.users.get_by_user_name_except(request.user_name, user.id)
