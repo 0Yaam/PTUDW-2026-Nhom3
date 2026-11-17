@@ -23,6 +23,7 @@ export type AdminOverview = {
   }[];
 };
 
+/** Fetch dashboard counters and recent activity for an authenticated Admin. */
 export async function getAdminOverview(accessToken: string): Promise<AdminOverview> {
   return apiRequest<AdminOverview>("/api/v1/admin/overview", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -57,6 +58,7 @@ export type AdminUsersParams = {
   role?: string;
 };
 
+/** Fetch one filtered page of users while keeping pagination server-side. */
 export async function getAdminUsers(
   params: AdminUsersParams,
   accessToken: string,

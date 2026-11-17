@@ -55,14 +55,17 @@ async def _slug_exists(
 
 
 def _duplicate_name() -> CategoryProblem:
+    """Build the shared conflict response for a duplicate category name."""
     return CategoryProblem(409, "CATEGORY_NAME_EXISTS", "Conflict", "Category name already exists.")
 
 
 def _duplicate_slug() -> CategoryProblem:
+    """Build the shared conflict response for a duplicate public slug."""
     return CategoryProblem(409, "CATEGORY_SLUG_EXISTS", "Conflict", "Category slug already exists.")
 
 
 def _category_in_use(recipe_count: int) -> CategoryProblem:
+    """Build the conflict response that protects recipes from category deletion."""
     noun = "recipe" if recipe_count == 1 else "recipes"
     return CategoryProblem(
         409,
@@ -130,6 +133,7 @@ async def update_category(
 
 
 async def list_categories(session: AsyncSession) -> list[CategoryRead]:
+    """List categories with recipe counts using one grouped database query."""
     result = await session.execute(
         select(Category, func.count(Recipe.id).label("recipe_count"))
         .outerjoin(Recipe, Recipe.category_id == Category.id)

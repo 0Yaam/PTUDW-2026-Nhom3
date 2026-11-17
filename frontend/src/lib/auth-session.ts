@@ -15,10 +15,12 @@ export const AUTH_SESSION_CHANGED = "culinary-blog:auth-session-changed";
 let refreshPromise: Promise<AuthSession | null> | null = null;
 
 function notifySessionChanged() {
+  // Notify mounted components so header, forms, and protected pages refresh together.
   window.dispatchEvent(new Event(AUTH_SESSION_CHANGED));
 }
 
 export function loadAuthSession(): AuthSession | null {
+  // Read and validate the short-lived browser session without throwing on corrupt storage.
   if (typeof window === "undefined") return null;
 
   try {
@@ -45,6 +47,7 @@ export function loadAuthSession(): AuthSession | null {
 }
 
 export function loadActiveAuthSession(): Promise<AuthSession | null> {
+  // Return the current session or perform one shared refresh when the access token expired.
   const session = loadAuthSession();
   if (session || typeof window === "undefined") return Promise.resolve(session);
 
@@ -73,11 +76,13 @@ export function loadActiveAuthSession(): Promise<AuthSession | null> {
 }
 
 export function saveAuthSession(session: AuthSession) {
+  // Persist the latest access/refresh pair and update all session-aware UI components.
   window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
   notifySessionChanged();
 }
 
 export function clearAuthSession() {
+  // Remove local credentials after sign-out or an unrecoverable refresh failure.
   window.sessionStorage.removeItem(AUTH_SESSION_KEY);
   notifySessionChanged();
 }

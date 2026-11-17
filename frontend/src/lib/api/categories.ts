@@ -1,6 +1,7 @@
 import type { Category } from "@/components/category-grid";
 import { ApiError, apiRequest } from "@/lib/api/client";
 
+/** Load the public category list without serving stale admin-edited data. */
 export async function getCategories(): Promise<Category[]> {
   return apiRequest<Category[]>("/api/v1/categories", {
     // Admin edits should appear on the public category list on the next request.
