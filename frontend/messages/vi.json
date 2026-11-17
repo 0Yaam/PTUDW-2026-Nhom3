@@ -585,6 +585,7 @@
     "apiUnavailable": "Không kết nối được API. Hãy kiểm tra backend."
   },
   "recipeEditor": {
+    "editPageTitle": "Chỉnh sửa công thức",
     "title": "Chỉnh sửa công thức",
     "description": "Lưu thông tin công thức, sau đó quản lý nguyên liệu và các bước nấu theo thứ tự. Mỗi dòng được lưu riêng.",
     "statusDraft": "Bản nháp",

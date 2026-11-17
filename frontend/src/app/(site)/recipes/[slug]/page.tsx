@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { RecipeDetailView } from "@/components/recipe-detail-view";
 import { getRecipe, type RecipeDetail } from "@/lib/api/recipes";
@@ -53,10 +54,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const recipe = await getRecipe(slug);
+  const [recipe, t] = await Promise.all([getRecipe(slug), getTranslations("recipeDetail")]);
 
   if (!recipe) {
-    return { title: "Recipe not found", robots: { index: false, follow: false } };
+    return { title: t("notFoundTitle"), robots: { index: false, follow: false } };
   }
 
   return {
