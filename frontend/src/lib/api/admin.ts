@@ -1,6 +1,6 @@
 import { apiRequest } from "@/lib/api/client";
 
-/** Contracts for the Admin-only `/api/v1/admin` endpoints. */
+/** Kiểu dữ liệu dùng cho các endpoint `/api/v1/admin` chỉ dành cho Admin. */
 export type AdminLoginResponse = {
   accessToken: string;
   refreshToken?: string;
@@ -23,7 +23,7 @@ export type AdminOverview = {
   }[];
 };
 
-/** Fetch dashboard counters and recent activity for an authenticated Admin. */
+/** Lấy số liệu dashboard và hoạt động gần đây của Admin đã xác thực. */
 export async function getAdminOverview(accessToken: string): Promise<AdminOverview> {
   return apiRequest<AdminOverview>("/api/v1/admin/overview", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -58,7 +58,7 @@ export type AdminUsersParams = {
   role?: string;
 };
 
-/** Fetch one filtered page of users while keeping pagination server-side. */
+/** Lấy một trang người dùng theo bộ lọc, giữ phân trang ở phía server. */
 export async function getAdminUsers(
   params: AdminUsersParams,
   accessToken: string,

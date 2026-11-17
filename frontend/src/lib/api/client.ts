@@ -17,12 +17,12 @@ const browserApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 const serverApiUrl = process.env.API_INTERNAL_URL ?? browserApiUrl;
 
 export function apiBaseUrl(): string {
-  // Server components use the internal Docker URL; browsers use the public API URL.
+  // Server component dùng URL nội bộ Docker; trình duyệt dùng URL API công khai.
   return typeof window === "undefined" ? serverApiUrl : browserApiUrl;
 }
 
 export async function readProblemDetails(response: Response): Promise<ProblemDetails> {
-  // Keep RFC 7807 fields when available and provide a safe fallback for non-JSON errors.
+  // Giữ trường RFC 7807 nếu có và tạo thông báo dự phòng khi lỗi không phải JSON.
   try {
     const problem = (await response.json()) as ProblemDetails;
     return { ...problem, status: problem.status ?? response.status };
@@ -36,7 +36,7 @@ export async function readProblemDetails(response: Response): Promise<ProblemDet
 }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  // Centralize headers, error conversion, and empty 204 responses for every API call.
+  // Tập trung xử lý header, chuyển lỗi và response 204 cho mọi lời gọi API.
   const headers = new Headers(init.headers);
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   const response = await fetch(`${apiBaseUrl()}${path}`, { ...init, headers });

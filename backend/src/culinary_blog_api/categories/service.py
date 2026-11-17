@@ -23,7 +23,7 @@ logger = structlog.get_logger()
 
 def slugify(name: str) -> str:
     """Turn a Vietnamese category name into a stable URL segment."""
-    # Unicode decomposition does not convert Vietnamese đ on its own.
+    # Chuẩn hóa Unicode không tự chuyển ký tự tiếng Việt đ.
     normalized = unicodedata.normalize("NFKD", name.replace("đ", "d").replace("Đ", "D"))
     ascii_name = normalized.encode("ascii", "ignore").decode("ascii").lower()
     slug = re.sub(r"[^a-z0-9]+", "-", ascii_name).strip("-")
@@ -55,17 +55,17 @@ async def _slug_exists(
 
 
 def _duplicate_name() -> CategoryProblem:
-    """Build the shared conflict response for a duplicate category name."""
+    """Tạo lỗi dùng chung cho trường hợp tên danh mục bị trùng."""
     return CategoryProblem(409, "CATEGORY_NAME_EXISTS", "Conflict", "Category name already exists.")
 
 
 def _duplicate_slug() -> CategoryProblem:
-    """Build the shared conflict response for a duplicate public slug."""
+    """Tạo lỗi dùng chung cho trường hợp slug công khai bị trùng."""
     return CategoryProblem(409, "CATEGORY_SLUG_EXISTS", "Conflict", "Category slug already exists.")
 
 
 def _category_in_use(recipe_count: int) -> CategoryProblem:
-    """Build the conflict response that protects recipes from category deletion."""
+    """Tạo lỗi ngăn xóa danh mục khi vẫn còn công thức tham chiếu."""
     noun = "recipe" if recipe_count == 1 else "recipes"
     return CategoryProblem(
         409,
@@ -93,7 +93,7 @@ async def create_category(session: AsyncSession, data: CategoryCreate) -> Catego
             await session.rollback()
             if await _name_exists(session, data.name):
                 raise _duplicate_name() from None
-            # A different name can normalize to the same slug. Try the next suffix.
+            # Tên khác nhau có thể chuẩn hóa thành cùng slug, nên thử hậu tố tiếp theo.
             continue
         logger.info("category_created", category_id=str(category.id), slug=category.slug)
         return CategoryRead.model_validate(category)
@@ -133,7 +133,7 @@ async def update_category(
 
 
 async def list_categories(session: AsyncSession) -> list[CategoryRead]:
-    """List categories with recipe counts using one grouped database query."""
+    """Lấy danh sách danh mục kèm số công thức bằng một truy vấn group duy nhất."""
     result = await session.execute(
         select(Category, func.count(Recipe.id).label("recipe_count"))
         .outerjoin(Recipe, Recipe.category_id == Category.id)
@@ -164,8 +164,8 @@ async def delete_category(session: AsyncSession, category_id: uuid.UUID) -> None
     try:
         await session.commit()
     except IntegrityError:
-        # A recipe may have been assigned after the count. Preserve the category
-        # and translate the database constraint into the public API contract.
+        # Một công thức có thể được gán sau lúc đếm. Giữ danh mục và chuyển
+        # ràng buộc database thành lỗi đúng theo hợp đồng API.
         await session.rollback()
         current_count = await session.scalar(
             select(func.count(Recipe.id)).where(Recipe.category_id == category_id)
@@ -182,7 +182,7 @@ async def get_category_by_slug(session: AsyncSession, slug: str) -> CategoryDeta
             404, "CATEGORY_NOT_FOUND", "Not Found", "Category was not found."
         )
 
-    # Readers may only see published recipes. Drafts belong to their author alone.
+    # Người đọc chỉ thấy công thức đã đăng; bản nháp chỉ thuộc về tác giả.
     recipes = await session.scalars(
         select(Recipe)
         .where(
