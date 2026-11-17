@@ -1,10 +1,10 @@
 import type { Category } from "@/components/category-grid";
 import { ApiError, apiRequest } from "@/lib/api/client";
 
-/** Load the public category list without serving stale admin-edited data. */
+/** Lấy danh sách danh mục công khai và không dùng dữ liệu cũ sau khi Admin sửa. */
 export async function getCategories(): Promise<Category[]> {
   return apiRequest<Category[]>("/api/v1/categories", {
-    // Admin edits should appear on the public category list on the next request.
+    // Thay đổi của Admin phải xuất hiện ở danh sách công khai từ request kế tiếp.
     cache: "no-store",
   });
 }
@@ -22,12 +22,12 @@ export type RecipeCard = {
 
 export type CategoryDetail = Category & { recipes: RecipeCard[] };
 
-/** Returns null when no category owns the slug, so the page can show its own not-found state. */
+/** Trả null khi slug không tồn tại để trang tự hiển thị trạng thái không tìm thấy. */
 export async function getCategory(slug: string): Promise<CategoryDetail | null> {
   try {
     return await apiRequest<CategoryDetail>(
       `/api/v1/categories/${encodeURIComponent(slug)}`,
-      // Admin edits should appear on the detail page on the next request.
+      // Thay đổi của Admin phải xuất hiện ở trang chi tiết từ request kế tiếp.
       { cache: "no-store" },
     );
   } catch (error) {

@@ -42,7 +42,7 @@ GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 
 
 def user_profile(user: User) -> UserRead:
-    """Map the database user to the public profile shape returned by auth endpoints."""
+    """Chuyển User trong database sang cấu trúc hồ sơ công khai của API xác thực."""
     return UserRead.model_validate(
         {
             "id": user.id,
@@ -56,7 +56,7 @@ def user_profile(user: User) -> UserRead:
 
 
 async def _issue_tokens(unit_of_work: UnitOfWork, user: User) -> AuthResponse:
-    """Create an access/refresh pair and persist the hashed refresh token."""
+    """Tạo cặp access/refresh token và lưu refresh token dưới dạng hash."""
     access_token, access_expires_at = create_access_token(
         user.id, user.email, user.role, user.session_version
     )
@@ -74,7 +74,7 @@ async def _issue_tokens(unit_of_work: UnitOfWork, user: User) -> AuthResponse:
 
 
 async def register_user(session: AsyncSession, request: RegisterRequest) -> AuthResponse:
-    """Create an Author account and queue its welcome email in the same transaction."""
+    """Tạo tài khoản Author và xếp email chào mừng trong cùng giao dịch."""
     unit_of_work = UnitOfWork(session)
     existing = await unit_of_work.users.get_by_email_or_user_name(request.email, request.user_name)
     if existing is not None:
@@ -103,14 +103,14 @@ async def register_user(session: AsyncSession, request: RegisterRequest) -> Auth
             "Conflict",
             "Email or user name is already registered.",
         ) from error
-    # Queue the welcome email in the same transaction as the account and tokens.
-    # The separate worker sends it after commit, so SMTP never delays registration.
+    # Xếp email chào mừng trong cùng giao dịch với tài khoản và token.
+    # Worker riêng gửi email sau commit nên SMTP không làm chậm đăng ký.
     session.add(WelcomeEmailJob(user_id=user.id, recipient=user.email, full_name=user.full_name))
     return await _issue_tokens(unit_of_work, user)
 
 
 async def login_user(session: AsyncSession, request: LoginRequest) -> AuthResponse:
-    """Authenticate by email while applying failed-attempt and temporary lockout rules."""
+    """Đăng nhập bằng email, đồng thời áp dụng giới hạn lần sai và khóa tạm thời."""
     unit_of_work = UnitOfWork(session)
     user = await unit_of_work.users.get_by_email(request.email)
     if user is None:
@@ -149,7 +149,7 @@ async def login_user(session: AsyncSession, request: LoginRequest) -> AuthRespon
 
 
 async def fetch_google_profile(id_token: str) -> dict[str, str]:
-    """Validate a Google ID token and return only the profile fields used by the app."""
+    """Xác thực Google ID token và chỉ trả về các trường hồ sơ ứng dụng cần dùng."""
     client_id = get_settings().google_client_id
     if not client_id:
         raise AuthProblem(
@@ -184,7 +184,7 @@ async def fetch_google_profile(id_token: str) -> dict[str, str]:
 
 
 async def google_login(session: AsyncSession, request: GoogleLoginRequest) -> AuthResponse:
-    """Find or create an Author from a verified Google profile, then issue local tokens."""
+    """Tìm hoặc tạo Author từ hồ sơ Google hợp lệ rồi phát hành token nội bộ."""
     profile = await fetch_google_profile(request.id_token)
     unit_of_work = UnitOfWork(session)
     user = await unit_of_work.users.get_by_email(profile["email"])
@@ -210,7 +210,7 @@ async def google_login(session: AsyncSession, request: GoogleLoginRequest) -> Au
 
 
 async def refresh_tokens(session: AsyncSession, request: RefreshTokenRequest) -> AuthResponse:
-    """Rotate a valid refresh token and revoke the token that was presented."""
+    """Xoay vòng refresh token hợp lệ và thu hồi token vừa được sử dụng."""
     unit_of_work = UnitOfWork(session)
     now = datetime.now(UTC)
     stored_token = await unit_of_work.refresh_tokens.get_by_hash(
@@ -246,7 +246,7 @@ async def refresh_tokens(session: AsyncSession, request: RefreshTokenRequest) ->
 
 
 async def logout_user(session: AsyncSession, user: User, request: RefreshTokenRequest) -> None:
-    """Revoke the caller's refresh token without revealing whether it was already invalid."""
+    """Thu hồi refresh token của người gọi mà không tiết lộ token đã vô hiệu hay chưa."""
     unit_of_work = UnitOfWork(session)
     stored_token = await unit_of_work.refresh_tokens.get_by_hash(
         hash_refresh_token(request.refresh_token)
@@ -264,7 +264,7 @@ async def logout_user(session: AsyncSession, user: User, request: RefreshTokenRe
 async def change_password(
     session: AsyncSession, user: User, request: ChangePasswordRequest
 ) -> None:
-    """Change a password and invalidate every existing session for the user."""
+    """Đổi mật khẩu và vô hiệu hóa toàn bộ phiên đăng nhập hiện có của người dùng."""
     if not verify_password(request.current_password, user.password_hash):
         raise AuthProblem(
             400,
@@ -292,7 +292,7 @@ async def change_password(
 
 
 async def forgot_password(session: AsyncSession, request: ForgotPasswordRequest) -> None:
-    """Create a reset token and queue an email without exposing account existence."""
+    """Tạo token đặt lại mật khẩu và xếp email mà không làm lộ tài khoản có tồn tại."""
     unit_of_work = UnitOfWork(session)
     user = await unit_of_work.users.get_by_email(request.email)
     if user is None:
@@ -322,7 +322,7 @@ async def forgot_password(session: AsyncSession, request: ForgotPasswordRequest)
 
 
 async def reset_password(session: AsyncSession, request: ResetPasswordRequest) -> None:
-    """Consume one valid reset token and revoke all older sessions and reset links."""
+    """Sử dụng một token hợp lệ rồi thu hồi các phiên và liên kết đặt lại cũ."""
     claims = read_password_reset_token(request.token)
     if claims is None:
         raise AuthProblem(
@@ -383,7 +383,7 @@ async def reset_password(session: AsyncSession, request: ResetPasswordRequest) -
 async def update_profile(
     session: AsyncSession, user: User, request: ProfileUpdateRequest
 ) -> UserRead:
-    """Update editable profile fields while enforcing username uniqueness."""
+    """Cập nhật trường hồ sơ được phép sửa và bảo đảm username không bị trùng."""
     unit_of_work = UnitOfWork(session)
     if request.user_name != user.user_name:
         taken = await unit_of_work.users.get_by_user_name_except(request.user_name, user.id)

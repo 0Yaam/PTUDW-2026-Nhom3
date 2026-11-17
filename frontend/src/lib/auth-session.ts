@@ -15,12 +15,12 @@ export const AUTH_SESSION_CHANGED = "culinary-blog:auth-session-changed";
 let refreshPromise: Promise<AuthSession | null> | null = null;
 
 function notifySessionChanged() {
-  // Notify mounted components so header, forms, and protected pages refresh together.
+  // Thông báo để header, form và trang bảo vệ cùng cập nhật trạng thái.
   window.dispatchEvent(new Event(AUTH_SESSION_CHANGED));
 }
 
 export function loadAuthSession(): AuthSession | null {
-  // Read and validate the short-lived browser session without throwing on corrupt storage.
+  // Đọc và kiểm tra phiên ngắn hạn mà không làm ứng dụng lỗi khi storage hỏng.
   if (typeof window === "undefined") return null;
 
   try {
@@ -47,7 +47,7 @@ export function loadAuthSession(): AuthSession | null {
 }
 
 export function loadActiveAuthSession(): Promise<AuthSession | null> {
-  // Return the current session or perform one shared refresh when the access token expired.
+  // Trả phiên hiện tại hoặc thực hiện một lần refresh dùng chung khi access token hết hạn.
   const session = loadAuthSession();
   if (session || typeof window === "undefined") return Promise.resolve(session);
 
@@ -76,13 +76,13 @@ export function loadActiveAuthSession(): Promise<AuthSession | null> {
 }
 
 export function saveAuthSession(session: AuthSession) {
-  // Persist the latest access/refresh pair and update all session-aware UI components.
+  // Lưu cặp access/refresh mới nhất và cập nhật các component theo dõi phiên.
   window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
   notifySessionChanged();
 }
 
 export function clearAuthSession() {
-  // Remove local credentials after sign-out or an unrecoverable refresh failure.
+  // Xóa thông tin đăng nhập cục bộ khi đăng xuất hoặc refresh thất bại không thể phục hồi.
   window.sessionStorage.removeItem(AUTH_SESSION_KEY);
   notifySessionChanged();
 }
