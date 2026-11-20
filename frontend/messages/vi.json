@@ -99,6 +99,9 @@
     "viewRecipeLabel": "Xem chi tiết công thức {title}"
   },
   "auth": {
+    "signedInTitle": "Đã đăng nhập.",
+    "signedInDescription": "Phiên đăng nhập đang hoạt động. Bạn có thể tạo công thức mới hoặc đăng xuất khỏi tài khoản.",
+    "checkingSession": "Đang kiểm tra phiên đăng nhập...",
     "signOut": "Đăng xuất",
     "signedOut": "Đã đăng xuất.",
     "eyebrow": "Tài khoản căn bếp",

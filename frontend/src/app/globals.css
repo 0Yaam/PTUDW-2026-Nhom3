@@ -112,6 +112,9 @@ h1, h2, h3 { font-family: var(--font-display); }
 .auth-submit:disabled { cursor: wait; opacity: .6; }
 .auth-message { min-height: 22px; margin-top: 18px; color: #9c1722; }
 .auth-message.success { color: var(--moss); }
+.auth-account { display: grid; gap: 24px; }
+.auth-account .auth-message { min-height: 0; margin: 0; font-size: 15px; }
+.auth-account .hero-actions { margin-top: 0; }
 
 .site-footer { padding: 72px max(32px, calc((100vw - 1280px) / 2)) 24px; background: #101820; color: white; }
 .site-footer-inner { display: flex; justify-content: space-between; gap: 40px; padding-bottom: 70px; }

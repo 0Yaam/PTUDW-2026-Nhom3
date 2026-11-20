@@ -99,6 +99,9 @@
     "viewRecipeLabel": "View details for {title}"
   },
   "auth": {
+    "signedInTitle": "You are signed in.",
+    "signedInDescription": "Your session is active. You can create a new recipe or sign out of your account.",
+    "checkingSession": "Checking your session...",
     "eyebrow": "Your kitchen account",
     "title": "Save a seat at the table.",
     "description": "Create an Author account, or sign in with email and password. Passwords are hashed before storage.",
