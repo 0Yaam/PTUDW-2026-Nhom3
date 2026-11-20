@@ -18,6 +18,7 @@ from .auth import router as auth_router
 from .auth.security import read_access_token
 from .categories import router as categories_router
 from .config import get_settings
+from .contact.router import router as contact_router
 from .recipes import RecipeProblem
 from .recipes import router as recipes_router
 from .storage import model as storage_model  # noqa: F401 - register cleanup table
@@ -79,6 +80,8 @@ async def validation_problem_handler(
 
 
 def _rate_limit(path: str) -> tuple[str, int] | None:
+    if path == "/api/v1/contact":
+        return "contact", 5
     if path == "/api/v1/auth/google":
         return "google-auth", 5
     if path.startswith("/api/v1/auth/"):
@@ -216,3 +219,4 @@ app.include_router(auth_router)
 app.include_router(categories_router)
 app.include_router(recipes_router)
 app.include_router(admin_router)
+app.include_router(contact_router)

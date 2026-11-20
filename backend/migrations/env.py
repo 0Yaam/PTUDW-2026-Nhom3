@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from culinary_blog_api.auth import RefreshToken, User  # noqa: F401
 from culinary_blog_api.categories import Category  # noqa: F401
 from culinary_blog_api.config import get_settings
+from culinary_blog_api.contact.model import ContactMessage  # noqa: F401
 from culinary_blog_api.db import Base
 from culinary_blog_api.jobs.model import WelcomeEmailJob  # noqa: F401
 from culinary_blog_api.recipes import (  # noqa: F401

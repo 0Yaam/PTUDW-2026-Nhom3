@@ -7,6 +7,7 @@ export function SiteFooter() {
   const sectionLinks = [
     { href: "/categories", label: t("categories") },
     { href: "/#about", label: t("story") },
+    { href: "/contact", label: t("contact") },
     { href: "/#auth", label: t("account") },
   ];
   return (

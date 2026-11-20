@@ -57,6 +57,7 @@ services:
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
       SMTP_SSL: ${SMTP_SSL:-false}
       SMTP_FROM: ${SMTP_FROM:-no-reply@culinary.local}
+      CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-owner@culinary.local}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
     command: >-
       sh -c "alembic upgrade head && seed &&
@@ -123,6 +124,7 @@ services:
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
       SMTP_SSL: ${SMTP_SSL:-false}
       SMTP_FROM: ${SMTP_FROM:-no-reply@culinary.local}
+      CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-owner@culinary.local}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
     depends_on:
       api:

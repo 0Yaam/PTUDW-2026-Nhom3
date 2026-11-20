@@ -20,6 +20,7 @@
     "profile": "Profile",
     "footer": "Footer navigation",
     "brandHome": "Small Kitchen home",
+    "contact": "Contact",
     "security": "Security"
   },
   "site": {
@@ -123,6 +124,28 @@
     "apiUnavailable": "Cannot reach the API. Check that the backend is running.",
     "modeLabel": "Account action",
     "forgotPassword": "Forgot your password?"
+  },
+  "contact": {
+    "eyebrow": "Contact Small Kitchen",
+    "title": "Send a note to our kitchen.",
+    "description": "Share recipe feedback, an account question, or a collaboration idea. Your message is stored safely and forwarded to the team by email.",
+    "guidanceTitle": "Before you send",
+    "guidanceEmail": "Use an email address you check so the team can reply.",
+    "guidanceSensitive": "Never include passwords or other sensitive information.",
+    "guidanceLimit": "Keep the message focused and under 4,000 characters.",
+    "formTitle": "Your message",
+    "requiredNote": "All fields are required.",
+    "fullName": "Full name",
+    "email": "Email",
+    "message": "Message",
+    "messageHint": "10–4,000 characters.",
+    "send": "Send message",
+    "sending": "Sending...",
+    "successTitle": "Message received.",
+    "successDescription": "Your message has been saved and is being forwarded to the team inbox.",
+    "sendAnother": "Send another message",
+    "requestFailed": "The message could not be sent. Please try again.",
+    "apiUnavailable": "Cannot reach the API. Check that the backend is running."
   },
   "profile": {
     "eyebrow": "Your account",
