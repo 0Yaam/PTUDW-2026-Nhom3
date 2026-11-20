@@ -1,14 +1,17 @@
 @echo off
-setlocal
-cd /d %~dp0
+setlocal EnableExtensions
+cd /d "%~dp0" || (
+    echo Khong the mo thu muc du an: "%~dp0"
+    exit /b 1
+)
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File %~dp0start-all.ps1 %*
-set EXIT_CODE=%ERRORLEVEL%
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-all.ps1" %*
+set "EXIT_CODE=%ERRORLEVEL%"
 
-if not %EXIT_CODE%==0 (
+if not "%EXIT_CODE%"=="0" (
     echo.
-    echo Khoi dong that bai. Kiem tra Docker Desktop va cac port 3000, 5432, 8000.
+    echo Lenh that bai. Xem thong bao loi o tren va dam bao Docker Desktop dang chay.
     pause
 )
 
-exit /b %EXIT_CODE%
+endlocal & exit /b %EXIT_CODE%

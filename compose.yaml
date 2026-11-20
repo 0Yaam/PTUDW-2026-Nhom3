@@ -163,7 +163,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-change-this-local-password}
     ports:
       - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
 
