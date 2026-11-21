@@ -27,3 +27,46 @@ export async function getAdminOverview(accessToken: string): Promise<AdminOvervi
     cache: "no-store",
   });
 }
+
+export type AdminUser = {
+  id: string;
+  fullName: string;
+  email: string;
+  userName: string;
+  role: string;
+  avatarUrl?: string | null;
+  createdAt: string;
+};
+
+export type PagedAdminUsers = {
+  items: AdminUser[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
+export type AdminUsersParams = {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  role?: string;
+};
+
+export async function getAdminUsers(
+  params: AdminUsersParams,
+  accessToken: string,
+): Promise<PagedAdminUsers> {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", String(params.page));
+  if (params.pageSize) query.set("pageSize", String(params.pageSize));
+  if (params.q) query.set("q", params.q);
+  if (params.role) query.set("role", params.role);
+
+  return apiRequest<PagedAdminUsers>(`/api/v1/admin/users?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+}
