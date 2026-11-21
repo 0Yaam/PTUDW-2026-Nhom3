@@ -323,12 +323,17 @@ async def retry_failed_jobs() -> int:
                 .where(WelcomeEmailJob.status == "Failed")
                 .values(status="Pending", attempts=0, next_attempt_at=datetime.now(UTC))
             )
+            password_result = await session.execute(
+                update(PasswordResetEmailJob)
+                .where(PasswordResetEmailJob.status == "Failed")
+                .values(status="Pending", attempts=0, next_attempt_at=datetime.now(UTC))
+            )
             contact_result = await session.execute(
                 update(ContactMessage)
                 .where(ContactMessage.status == "Failed")
                 .values(status="Pending", attempts=0, next_attempt_at=datetime.now(UTC))
             )
-            return welcome_result.rowcount + contact_result.rowcount
+            return welcome_result.rowcount + password_result.rowcount + contact_result.rowcount
 
 
 async def run_worker() -> None:

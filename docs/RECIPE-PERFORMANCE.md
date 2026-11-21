@@ -200,3 +200,15 @@ Local Docker had 16 logical CPUs and approximately 3.8 GiB RAM assigned,
 shared with other running containers. This check is evidence for the seeded
 local dataset, not certification of the SRS production thresholds on a
 dedicated 2-vCPU/4-GiB host or at higher throughput.
+
+## Shared rate limit re-run (2026-11-19)
+
+After the per-IP limiter moved to Redis, `backend/perf/recipe-reads.js` ran
+three times on the local Docker network (100 virtual users, two minutes,
+`grafana/k6`). Every run had 0% failed requests (0/203) and a 98.5–99% cache
+hit rate. The run with a warm API met every threshold: p50 114.3 ms, p95
+278.99 ms, p99 282.97 ms. The two runs right after container restarts recorded
+p50 252.15 ms / p95 314.87 ms and p50 224.79 ms / p95 898.51 ms, because 100
+simultaneous requests reached one cold Uvicorn process on a shared laptop.
+Inside the API container, 100 concurrent limiter checks take about 10 ms once
+Redis connections are pooled (about 170 ms for the first burst that opens them).

@@ -4,10 +4,11 @@ import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from culinary_blog_api.auth.security import read_password_reset_token
 from culinary_blog_api.config import Settings
+from culinary_blog_api.contact.model import ContactMessage
 from culinary_blog_api.db import SessionFactory
 from culinary_blog_api.jobs import worker
 from culinary_blog_api.jobs.model import PasswordResetEmailJob, WelcomeEmailJob
@@ -119,6 +120,33 @@ async def test_worker_retries_three_times_then_marks_failed(client) -> None:
 
     assert await worker.retry_failed_jobs() == 1
     assert (await get_job()).status == "Pending"
+
+
+async def test_retry_failed_jobs_requeues_every_email_type(client) -> None:
+    await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
+    await client.post("/api/v1/auth/forgot-password", json={"email": REGISTER_PAYLOAD["email"]})
+    await client.post(
+        "/api/v1/contact",
+        json={
+            "fullName": "Nguyen Ngoc Han",
+            "email": "han@example.com",
+            "message": "Please reply about this recipe.",
+        },
+    )
+    async with SessionFactory() as session:
+        for model in (WelcomeEmailJob, PasswordResetEmailJob, ContactMessage):
+            await session.execute(
+                update(model).values(status="Failed", attempts=4, last_error="OSError")
+            )
+        await session.commit()
+
+    assert await worker.retry_failed_jobs() == 3
+    async with SessionFactory() as session:
+        statuses = [
+            await session.scalar(select(model.status))
+            for model in (WelcomeEmailJob, PasswordResetEmailJob, ContactMessage)
+        ]
+    assert statuses == ["Pending", "Pending", "Pending"]
 
 
 def test_html_welcome_email_escapes_name_and_links_to_app(monkeypatch) -> None:
