@@ -514,6 +514,7 @@
     "usersEmpty": "No users found matching your criteria.",
     "usersEmptyHint": "Try searching with a different keyword or resetting the role filter.",
     "usersError": "Could not load the user list. Try again.",
+    "refreshUsers": "Refresh users",
     "usersForbiddenTitle": "Admin access required",
     "usersForbiddenDescription": "You must be signed in with an Administrator account to view this page.",
     "usersForbiddenAction": "Sign in as Admin",

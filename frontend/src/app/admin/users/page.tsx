@@ -370,7 +370,7 @@ function UsersContent() {
           </span>
           <div>
             <p>{adminName || t("brand")}</p>
-            <p>Admin</p>
+            <p>{t("roleAdmin")}</p>
           </div>
           <button type="button" onClick={handleSignOut}>
             {t("signOut")}

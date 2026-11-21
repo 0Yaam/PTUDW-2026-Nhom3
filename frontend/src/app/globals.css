@@ -144,6 +144,11 @@ h1, h2, h3 { font-family: var(--font-display); }
 .shared-state-loading > span { animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .45; } }
 
+@media (max-width: 1279px) {
+  .desktop-nav, .header-action { display: none; }
+  .mobile-nav { display: block; }
+}
+
 @media (max-width: 1100px) {
   .site-header-inner { gap: 22px; }
   .desktop-nav { gap: 18px; }
