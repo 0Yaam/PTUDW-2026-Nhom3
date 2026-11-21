@@ -112,7 +112,9 @@ cd PTUDW-2026-Nhom3
 The default command builds and starts PostgreSQL, MinIO, Redis, Mailpit, the
 email, image, and file cleanup workers, a daily database backup service, the
 FastAPI backend, and the production-style frontend container. The
-API container automatically runs database migrations and the safe seed command.
+API container automatically runs database migrations and the seed command, which loads
+the real dataset (11 categories, 55 recipes with photos) and removes test data; see
+[docs/SEED-DATA.md](docs/SEED-DATA.md).
 For local passwords, copy `.env.example` to `.env` before starting.
 
 ### Terminal 2 — optional frontend with hot reload

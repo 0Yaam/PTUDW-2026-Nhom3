@@ -1,122 +1,140 @@
+import json
+import uuid
+
 from sqlalchemy import func, select
 from test_recipe_list import add_recipe, create_user
 
+from culinary_blog_api.auth import User
 from culinary_blog_api.categories import Category
 from culinary_blog_api.db import SessionFactory
-from culinary_blog_api.recipes import Recipe, RecipeIngredient, RecipeStatus, RecipeStep
-from culinary_blog_api.recipes.service import generate_slug
-from culinary_blog_api.seed import (
-    INGREDIENTS_PER_RECIPE,
-    SEED_CATEGORIES,
-    SEED_RECIPE_COUNT,
-    SEED_RECIPE_TITLES,
-    SEED_RECIPES_PER_CATEGORY,
-    STEPS_PER_RECIPE,
-    seed,
+from culinary_blog_api.recipes import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    RecipeStatus,
+    RecipeStep,
 )
+from culinary_blog_api.recipes.model import RecipeImage, RecipeImageResizeJob
+from culinary_blog_api.seed import load_seed_data, seed
 
 
-async def test_seed_creates_complete_lab2_dataset(client) -> None:
-    await seed()
-    await seed()
+class MemoryStorage:
+    def __init__(self) -> None:
+        self.uploads: list[tuple[str, int]] = []
+
+    async def upload_image(self, data: bytes, folder: str, content_type: str) -> str:
+        assert content_type == "image/jpeg" and data[:3] == b"\xff\xd8\xff"
+        self.uploads.append((folder, len(data)))
+        return f"http://minio.test/culinary/{folder}/{uuid.uuid4().hex}.jpg"
+
+
+def test_dataset_meets_course_minimum() -> None:
+    data = load_seed_data()
+    category_slugs = {item["slug"] for item in data.categories}
+    recipe_slugs = {item["slug"] for item in data.recipes}
+    credits = json.loads(
+        (data.directory / "images" / "credits.json").read_text(encoding="utf-8")
+    )
+
+    assert len(data.categories) >= 10
+    assert len(data.recipes) >= 50
+    assert len(recipe_slugs) == len(data.recipes)
+    assert set(credits) == recipe_slugs
+    for item in data.recipes:
+        assert item["category"] in category_slugs
+        assert len(item["ingredients"]) >= 4 and len(item["steps"]) >= 4
+        assert all(quantity > 0 for _, quantity, _ in item["ingredients"])
+        assert (data.directory / "images" / f"{item['slug']}.jpg").is_file(), item["slug"]
+    for credit in credits.values():
+        assert credit["file"] and credit["source"].startswith("https://")
+        assert credit["license"].startswith(("CC0 ", "CC BY ", "CC BY-SA "))
+        assert credit["artist"] or credit["license"].startswith("CC0 ")
+
+
+async def test_seed_loads_complete_real_dataset_once(client) -> None:
+    data = load_seed_data()
+    storage = MemoryStorage()
+
+    await seed(storage)
+    await seed(storage)
 
     async with SessionFactory() as session:
-        category_count = await session.scalar(select(func.count()).select_from(Category))
-        recipe_count = await session.scalar(select(func.count()).select_from(Recipe))
-        titles = (
-            await session.scalars(
-                select(Recipe.title).where(
-                    Recipe.slug.in_(("pho-bo-ha-noi", "xoi-gac"))
-                )
-            )
-        ).all()
-        seeded_slugs = (
-            await session.scalars(
-                select(Recipe.slug).where(Recipe.title.in_(SEED_RECIPE_TITLES))
-            )
-        ).all()
-        category_by_title = dict(
-            (
-                await session.execute(
-                    select(Recipe.title, Category.slug)
-                    .join(Category, Recipe.category_id == Category.id)
-                    .where(Recipe.title.in_(SEED_RECIPE_TITLES))
-                )
-            ).all()
-        )
-
-        ingredient_counts = (
-            await session.execute(
+        recipes = (await session.scalars(select(Recipe))).all()
+        categories = await session.scalar(select(func.count()).select_from(Category))
+        ingredient_counts = dict(
+            (await session.execute(
                 select(RecipeIngredient.recipe_id, func.count())
                 .group_by(RecipeIngredient.recipe_id)
-                .order_by(RecipeIngredient.recipe_id)
-            )
-        ).all()
-        step_counts = (
-            await session.execute(
-                select(RecipeStep.recipe_id, func.count())
-                .group_by(RecipeStep.recipe_id)
-                .order_by(RecipeStep.recipe_id)
-            )
-        ).all()
-
-    assert category_count is not None and category_count >= 20
-    assert recipe_count is not None and recipe_count >= SEED_RECIPE_COUNT
-    assert set(titles) == {"Phở bò Hà Nội", "Xôi gấc"}
-    assert set(seeded_slugs) == {generate_slug(title) for title in SEED_RECIPE_TITLES}
-    assert all(
-        category_by_title[title] == SEED_CATEGORIES[index // SEED_RECIPES_PER_CATEGORY][1]
-        for index, title in enumerate(SEED_RECIPE_TITLES)
-    )
-    assert len(ingredient_counts) >= SEED_RECIPE_COUNT
-    assert min(count for _, count in ingredient_counts) >= INGREDIENTS_PER_RECIPE
-    assert len(step_counts) >= SEED_RECIPE_COUNT
-    assert min(count for _, count in step_counts) >= STEPS_PER_RECIPE
-
-
-async def test_seed_updates_legacy_recipe_slug_without_recreating_it(client) -> None:
-    await seed()
-    async with SessionFactory() as session:
-        recipe = await session.scalar(select(Recipe).where(Recipe.slug == "pho-bo-ha-noi"))
-        assert recipe is not None
-        recipe_id = recipe.id
-        recipe.slug = "lab2-recipe-001"
-        recipe.category_id = await session.scalar(
-            select(Category.id).where(Category.slug == "beef")
+            )).all()
         )
+        step_counts = dict(
+            (await session.execute(
+                select(RecipeStep.recipe_id, func.count()).group_by(RecipeStep.recipe_id)
+            )).all()
+        )
+        images = (await session.scalars(select(RecipeImage))).all()
+        jobs = await session.scalar(select(func.count()).select_from(RecipeImageResizeJob))
+        pho = await session.scalar(select(Recipe).where(Recipe.slug == "pho-bo-ha-noi"))
+
+    assert categories == len(data.categories)
+    assert len(recipes) == len(data.recipes)
+    assert all(recipe.status == RecipeStatus.PUBLISHED for recipe in recipes)
+    assert all(ingredient_counts[recipe.id] >= 4 for recipe in recipes)
+    assert all(step_counts[recipe.id] >= 4 for recipe in recipes)
+    # One primary photo per recipe, uploaded only on the first run.
+    assert len(storage.uploads) == len(data.recipes)
+    assert len(images) == len(data.recipes) and all(image.is_primary for image in images)
+    assert jobs == len(data.recipes)
+    assert pho is not None and pho.title == "Phở bò Hà Nội"
+
+
+async def test_seed_removes_generated_and_test_data(client) -> None:
+    async with SessionFactory() as session:
+        legacy_author = User(full_name="Lab 2 Seed Author", email="lab2-author@example.local",
+                             user_name="lab2-seed-author", password_hash="x", role="Author")
+        legacy_category = Category(name="Breakfast", slug="breakfast", description=None)
+        e2e_category = Category(name="E2E abc123", slug="e2e-abc123", description=None)
+        session.add_all([legacy_author, legacy_category, e2e_category, Ingredient(name="Rice")])
         await session.commit()
+        legacy_category_id, legacy_author_id = legacy_category.id, legacy_author.id
+    e2e_user, _ = await create_user(client, email="e2e-author-xyz@example.com")
+    async with SessionFactory() as session:
+        category = await session.get(Category, legacy_category_id)
+        legacy_author = await session.get(User, legacy_author_id)
+    await add_recipe(category, legacy_author, title="Prepare recipe 001")
+    await add_recipe(category, e2e_user, title="Canh chua E2E", status=RecipeStatus.DRAFT)
 
-    await seed()
+    summary = await seed(upload_images=False)
 
     async with SessionFactory() as session:
-        recipe = await session.scalar(select(Recipe).where(Recipe.id == recipe_id))
-        assert recipe is not None
-        assert recipe.slug == "pho-bo-ha-noi"
-        assert recipe.category_id == await session.scalar(
-            select(Category.id).where(Category.slug == "vietnamese-food")
-        )
-        assert await session.scalar(
-            select(func.count()).select_from(RecipeIngredient).where(
-                RecipeIngredient.recipe_id == recipe_id
-            )
-        ) == INGREDIENTS_PER_RECIPE
-        assert await session.scalar(
-            select(func.count()).select_from(RecipeStep).where(RecipeStep.recipe_id == recipe_id)
-        ) == STEPS_PER_RECIPE
+        emails = set((await session.scalars(select(User.email))).all())
+        category_slugs = set((await session.scalars(select(Category.slug))).all())
+        titles = set((await session.scalars(select(Recipe.title))).all())
+        rice = await session.scalar(select(Ingredient).where(Ingredient.name == "Rice"))
+
+    assert summary["removed"]["users"] == 2 and summary["removed"]["recipes"] == 2
+    assert "lab2-author@example.local" not in emails
+    assert "e2e-author-xyz@example.com" not in emails
+    assert {"breakfast", "e2e-abc123"}.isdisjoint(category_slugs)
+    assert {"Prepare recipe 001", "Canh chua E2E"}.isdisjoint(titles)
+    assert rice is None
 
 
-async def test_seed_does_not_reassign_user_recipe(client) -> None:
-    await seed()
+async def test_seed_keeps_real_user_recipes_and_admin_edits(client) -> None:
+    await seed(upload_images=False)
     author, _ = await create_user(client, email="my-recipe@example.com")
     async with SessionFactory() as session:
-        category = await session.scalar(select(Category).where(Category.slug == "vietnamese-food"))
-        assert category is not None
+        category = await session.scalar(select(Category).where(Category.slug == "mon-an-sang"))
+        category.name = "Ăn sáng mỗi ngày"
+        await session.commit()
     recipe = await add_recipe(category, author, title="Cơm rang", status=RecipeStatus.DRAFT)
 
-    await seed()
+    await seed(upload_images=False)
 
     async with SessionFactory() as session:
         unchanged = await session.get(Recipe, recipe.id)
-        assert unchanged is not None
-        assert unchanged.category_id == category.id
-        assert unchanged.status == RecipeStatus.DRAFT
+        edited = await session.scalar(select(Category).where(Category.slug == "mon-an-sang"))
+        owner = await session.scalar(select(User).where(User.email == "my-recipe@example.com"))
+    assert unchanged is not None and unchanged.status == RecipeStatus.DRAFT
+    assert edited.name == "Ăn sáng mỗi ngày"
+    assert owner is not None
