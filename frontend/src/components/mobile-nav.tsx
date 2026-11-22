@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { AdminCategoriesLink } from "@/components/site-account-controls";
 
 type NavLink = { href: string; label: string };
 
@@ -21,7 +22,7 @@ export function MobileNav({ links }: { links: NavLink[] }) {
       <summary aria-label={t("menu")}>{t("menu")} <span aria-hidden="true">☰</span></summary>
       <nav aria-label={t("mobile")} onClick={() => details.current?.removeAttribute("open")}>
         {links.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
-        <Link href="/admin/categories">{t("manage")}</Link>
+        <AdminCategoriesLink>{t("manage")}</AdminCategoriesLink>
       </nav>
     </details>
   );

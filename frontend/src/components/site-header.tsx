@@ -2,6 +2,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { MobileNav } from "@/components/mobile-nav";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { AdminCategoriesLink, SiteGuestBadge } from "@/components/site-account-controls";
+import styles from "./site-header.module.css";
 
 export function SiteHeader() {
   const t = useTranslations("nav");
@@ -19,11 +21,15 @@ export function SiteHeader() {
   return (
     <>
       <a className="skip-link" href="#main-content">{t("skip")}</a>
-      <header className="site-header"><div className="site-header-inner">
-        <Link className="site-brand" href="/" aria-label={t("brandHome")}><span className="site-brand-mark" aria-hidden="true">✳</span><span className="site-brand-name">small<span>kitchen</span><small>{site("tagline")}</small></span></Link>
+      <header className="site-header"><div className={`site-header-inner ${styles.inner}`}>
+        <div className={styles.brandGroup}>
+          <Link className="site-brand" href="/" aria-label={t("brandHome")}><span className="site-brand-mark" aria-hidden="true">✳</span><span className="site-brand-name">small<span>kitchen</span><small>{site("tagline")}</small></span></Link>
+          <SiteGuestBadge className={`${styles.guestBadge} ${styles.mobileGuest}`}>{t("guest")}</SiteGuestBadge>
+        </div>
         <nav className="desktop-nav" aria-label={t("main")}>{links.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}</nav>
         <LocaleSwitcher compact />
-        <Link className="header-action" href="/admin/categories">{t("manage")} <span aria-hidden="true">↗</span></Link>
+        <SiteGuestBadge className={`${styles.guestBadge} ${styles.desktopGuest}`}>{t("guest")}</SiteGuestBadge>
+        <AdminCategoriesLink className="header-action">{t("manage")} <span aria-hidden="true">↗</span></AdminCategoriesLink>
         <MobileNav links={links} />
       </div></header>
     </>
