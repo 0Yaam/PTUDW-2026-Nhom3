@@ -2,9 +2,8 @@
 
 FR-RCP-002 serves a recipe at `GET /api/v1/recipes/{slug}`. The recipe cards on
 `/recipes` link to `/recipes/{slug}`, where the frontend loads this endpoint.
-The 100 Lab 2 sample recipes use slugs derived from their dish names (for
-example, `pho-bo-ha-noi`); re-running the seed updates existing numeric
-`lab2-recipe-###` slugs in place without recreating those recipes.
+The 55 seeded recipes (see `docs/SEED-DATA.md`) use slugs derived from their
+dish names, for example `pho-bo-ha-noi`.
 
 ## Visibility and errors
 

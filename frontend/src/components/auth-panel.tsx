@@ -28,6 +28,7 @@ export function AuthPanel() {
   const [message, setMessage] = useState("");
   const sessionFromStore = useAuthStore();
   const user = sessionFromStore?.user ?? null;
+  const checkingSession = sessionFromStore === undefined;
   const [pending, setPending] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -88,77 +89,104 @@ export function AuthPanel() {
     <section className="auth-section" id="auth" aria-labelledby="auth-title">
       <div className="auth-copy">
         <p className="eyebrow">{t("eyebrow")}</p>
-        <h2 id="auth-title">{t("title")}</h2>
-        <p>{t("description")}</p>
+        <h2 id="auth-title">{user ? t("signedInTitle") : t("title")}</h2>
+        {!checkingSession && (
+          <p>{user ? t("signedInDescription") : t("description")}</p>
+        )}
       </div>
-      <div className="auth-card">
-        <div className="auth-tabs" role="group" aria-label={t("modeLabel")}>
-          {(["register", "login"] as const).map((value) => (
-            <button
-              type="button"
-              key={value}
-              aria-pressed={mode === value}
-              onClick={() => {
-                setMode(value);
-                setMessage("");
-                        }}
-            >
-              {value === "register" ? t("register") : t("login")}
-            </button>
-          ))}
-        </div>
-        <form onSubmit={submit} aria-describedby="auth-message">
-          {mode === "register" && (
-            <>
+      <div className="auth-card" aria-busy={checkingSession}>
+        {checkingSession ? (
+          <p id="auth-message" className="auth-message" aria-live="polite">
+            {t("checkingSession")}
+          </p>
+        ) : user ? (
+          <div className="auth-account">
+            <p id="auth-message" className="auth-message success" aria-live="polite">
+              {t("welcome", {
+                message: message || t("signedIn"),
+                name: user.fullName,
+                roles: user.roles.join(", "),
+              })}
+            </p>
+            <div className="hero-actions">
+              <Link className="primary-action" href="/recipes/new">
+                {t("createRecipe")}
+              </Link>
+              <button className="primary-action" type="button" onClick={signOut} disabled={pending}>
+                {t("signOut")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="auth-tabs" role="group" aria-label={t("modeLabel")}>
+              {(["register", "login"] as const).map((value) => (
+                <button
+                  type="button"
+                  key={value}
+                  aria-pressed={mode === value}
+                  onClick={() => {
+                    setMode(value);
+                    setMessage("");
+                  }}
+                >
+                  {value === "register" ? t("register") : t("login")}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={submit} aria-describedby="auth-message">
+              {mode === "register" && (
+                <>
+                  <label>
+                    {t("fullName")}
+                    <input name="fullName" autoComplete="name" maxLength={150} required />
+                  </label>
+                  <label>
+                    {t("userName")}
+                    <input
+                      name="userName"
+                      autoComplete="username"
+                      minLength={3}
+                      maxLength={50}
+                      pattern="[A-Za-z0-9_]+"
+                      required
+                    />
+                  </label>
+                </>
+              )}
               <label>
-                {t("fullName")}
-                <input name="fullName" autoComplete="name" maxLength={150} required />
+                {t("email")}
+                <input name="email" type="email" autoComplete="email" required />
               </label>
               <label>
-                {t("userName")}
+                {t("password")}
                 <input
-                  name="userName"
-                  autoComplete="username"
-                  minLength={3}
-                  maxLength={50}
-                  pattern="[A-Za-z0-9_]+"
+                  name="password"
+                  type="password"
+                  autoComplete={mode === "register" ? "new-password" : "current-password"}
+                  minLength={mode === "register" ? 8 : 1}
                   required
                 />
               </label>
-            </>
-          )}
-          <label>
-            {t("email")}
-            <input name="email" type="email" autoComplete="email" required />
-          </label>
-          <label>
-            {t("password")}
-            <input
-              name="password"
-              type="password"
-              autoComplete={mode === "register" ? "new-password" : "current-password"}
-              minLength={mode === "register" ? 8 : 1}
-              required
-            />
-          </label>
-          {mode === "register" && (
-            <p className="field-note">
-              {t("passwordHint")}
+              {mode === "register" && (
+                <p className="field-note">
+                  {t("passwordHint")}
+                </p>
+              )}
+              <button className="auth-submit" type="submit" disabled={pending}>
+                {pending ? t("working") : mode === "register" ? t("register") : t("login")}
+              </button>
+              {mode === "login" && <Link href="/forgot-password">{t("forgotPassword")}</Link>}
+            </form>
+            <p
+              id="auth-message"
+              className="auth-message"
+              aria-live="polite"
+            >
+              {message}
             </p>
-          )}
-          <button className="auth-submit" type="submit" disabled={pending}>
-            {pending ? t("working") : mode === "register" ? t("register") : t("login")}
-          </button>
-          {mode === "login" && <Link href="/forgot-password">{t("forgotPassword")}</Link>}
-        </form>
-        <p
-          id="auth-message"
-          className={user ? "auth-message success" : "auth-message"}
-          aria-live="polite"
-        >
-          {user ? t("welcome", { message, name: user.fullName, roles: user.roles.join(", ") }) : message}
-        </p>
-        {user && <div className="hero-actions"><Link className="primary-action" href="/recipes/new">{t("createRecipe")}</Link><button className="primary-action" type="button" onClick={signOut} disabled={pending}>{t("signOut")}</button></div>}
+          </>
+        )}
       </div>
     </section>
   );

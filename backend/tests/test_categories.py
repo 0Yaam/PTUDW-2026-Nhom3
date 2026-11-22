@@ -244,13 +244,13 @@ async def test_admin_cannot_delete_category_with_any_recipes(client) -> None:
 
 
 async def test_seed_does_not_overwrite_admin_edit(client) -> None:
-    await seed()
+    await seed(upload_images=False)
     async with SessionFactory() as session:
-        category = await session.scalar(select(Category).where(Category.slug == "breakfast"))
+        category = await session.scalar(select(Category).where(Category.slug == "mon-an-sang"))
         assert category is not None
         category.name = "Morning Meals"
         await session.commit()
-    await seed()
+    await seed(upload_images=False)
     response = await client.get("/api/v1/categories")
     assert any(item["name"] == "Morning Meals" for item in response.json())
 

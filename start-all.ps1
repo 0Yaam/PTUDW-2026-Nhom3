@@ -48,11 +48,69 @@ function Get-UvExecutable {
     throw "uv was not found. Install it from https://docs.astral.sh/uv/ or add it to PATH."
 }
 
+function Test-LocalPortAvailable {
+    param([int]$Port)
+
+    $listener = [System.Net.Sockets.TcpListener]::new(
+        [System.Net.IPAddress]::Loopback,
+        $Port
+    )
+    try {
+        $listener.Start()
+        return $true
+    }
+    catch {
+        return $false
+    }
+    finally {
+        $listener.Stop()
+    }
+}
+
+function Get-MinIOConsolePort {
+    if ($env:MINIO_CONSOLE_PORT) {
+        $configuredPort = 0
+        if (
+            -not [int]::TryParse($env:MINIO_CONSOLE_PORT, [ref]$configuredPort) -or
+            $configuredPort -lt 1 -or
+            $configuredPort -gt 65535
+        ) {
+            throw "MINIO_CONSOLE_PORT must be a number from 1 to 65535."
+        }
+        return $configuredPort
+    }
+
+    $runningServiceJson = docker compose -f "$RootPath\compose.yaml" ps --format json minio
+    if ($LASTEXITCODE -eq 0 -and $runningServiceJson) {
+        $runningService = $runningServiceJson | ConvertFrom-Json
+        $consolePublisher = $runningService.Publishers |
+            Where-Object { $_.TargetPort -eq 9001 } |
+            Select-Object -First 1
+        if ($consolePublisher -and $consolePublisher.PublishedPort) {
+            return [int]$consolePublisher.PublishedPort
+        }
+    }
+
+    foreach ($candidate in 9001, 19001, 29001) {
+        if (Test-LocalPortAvailable $candidate) {
+            return $candidate
+        }
+    }
+
+    throw "MinIO Console ports 9001, 19001 and 29001 are all in use."
+}
+
 switch ($Mode) {
     "docker" {
         Show-Title "Run Docker Compose"
         Show-Info "Dang build va khoi chay Postgres, MinIO, Mailpit, email worker, Backend va Frontend..."
-        
+
+        $minioConsolePort = Get-MinIOConsolePort
+        $env:MINIO_CONSOLE_PORT = [string]$minioConsolePort
+        if ($minioConsolePort -ne 9001) {
+            Show-Info "Cong 9001 dang bi chiem; MinIO Console se dung cong $minioConsolePort."
+        }
+
         docker compose -f "$RootPath\compose.yaml" up --build -d
         Confirm-Command "Docker Compose startup"
         
@@ -61,7 +119,7 @@ switch ($Mode) {
         Write-Host "  - Frontend Web        : http://localhost:3000" -ForegroundColor Cyan
         Write-Host "  - Backend API Swagger : http://localhost:8000/docs" -ForegroundColor Cyan
         Write-Host "  - Backend Healthcheck : http://localhost:8000/health" -ForegroundColor Cyan
-        Write-Host "  - MinIO Console        : http://localhost:9001" -ForegroundColor Cyan
+        Write-Host "  - MinIO Console        : http://localhost:$minioConsolePort" -ForegroundColor Cyan
         Write-Host "  - Mailpit Inbox        : http://localhost:8025" -ForegroundColor Cyan
         Write-Host "  - Frontend Hot Reload : http://localhost:3001 (optional)" -ForegroundColor DarkCyan
         Show-Info "Theo doi Frontend realtime: npm run dev --prefix frontend"
@@ -139,5 +197,6 @@ switch ($Mode) {
         Write-Host "  .\start-all.ps1 -Mode check : Kiem tra lint, tests va build toan bo"
         Write-Host "  .\start-all.ps1 -Mode down  : Dung cac container Docker"
         Write-Host "  .\start-all.ps1 -Mode local : Chay dev truc tiep qua uv va npm"
+        Write-Host "  MinIO Console tu dung 19001/29001 neu cong 9001 dang bi chiem."
     }
 }

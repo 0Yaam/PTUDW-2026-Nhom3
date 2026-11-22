@@ -57,6 +57,7 @@ services:
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
       SMTP_SSL: ${SMTP_SSL:-false}
       SMTP_FROM: ${SMTP_FROM:-no-reply@culinary.local}
+      CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-owner@culinary.local}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
     command: >-
       sh -c "alembic upgrade head && seed &&
@@ -123,6 +124,7 @@ services:
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
       SMTP_SSL: ${SMTP_SSL:-false}
       SMTP_FROM: ${SMTP_FROM:-no-reply@culinary.local}
+      CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-owner@culinary.local}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
     depends_on:
       api:
@@ -132,7 +134,10 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     environment:
       API_INTERNAL_URL: http://api:8000
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
@@ -163,7 +168,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-change-this-local-password}
     ports:
       - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
 

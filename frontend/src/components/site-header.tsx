@@ -11,6 +11,7 @@ export function SiteHeader() {
     { href: "/recipes", label: t("recipes") },
     { href: "/recipes/new", label: t("createRecipe") },
     { href: "/#about", label: t("story") },
+    { href: "/contact", label: t("contact") },
     { href: "/profile", label: t("profile") },
     { href: "/change-password", label: t("security") },
     { href: "/#auth", label: t("account") },

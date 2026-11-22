@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     smtp_starttls: bool = False
     smtp_ssl: bool = False
     app_public_url: str = "http://localhost:3000"
+    contact_recipient: str = "owner@culinary.local"
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore")
 

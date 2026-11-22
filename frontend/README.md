@@ -49,3 +49,23 @@ Check for `UPDATE 1`, then sign in at `/admin/categories`. Use your configured
 PostgreSQL user/database values if they differ from Compose defaults. This is
 manual local setup; the application has no role-granting endpoint or production
 development helper.
+
+## End-to-end tests
+
+Playwright tests in `e2e/` drive the Docker stack in the installed Chrome:
+guest browsing and accent-free search (desktop and mobile), registration and
+sign-in, an Author saving a private Draft, and the Vietnamese Admin workspace
+(category creation, user search, non-Admin refusal).
+
+```bash
+.\start-all.ps1
+npm run test:e2e --prefix frontend
+```
+
+Set `E2E_BASE_URL` / `E2E_API_URL` when the stack uses other ports. The run
+promotes a fresh test account to Admin through `docker compose exec postgres`
+and clears `ratelimit:*` counters in Redis before signed-in tests, because one
+machine quickly reaches the 10 `/auth` requests per minute limit.
+After the run, the global teardown executes `docker compose exec api seed`, which
+removes the test accounts, categories and draft recipes again (set
+`E2E_KEEP_TEST_DATA=1` to keep them for debugging).

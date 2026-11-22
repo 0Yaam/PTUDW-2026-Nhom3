@@ -20,6 +20,7 @@
     "profile": "Profile",
     "footer": "Footer navigation",
     "brandHome": "Small Kitchen home",
+    "contact": "Contact",
     "security": "Security"
   },
   "site": {
@@ -99,6 +100,9 @@
     "viewRecipeLabel": "View details for {title}"
   },
   "auth": {
+    "signedInTitle": "You are signed in.",
+    "signedInDescription": "Your session is active. You can create a new recipe or sign out of your account.",
+    "checkingSession": "Checking your session...",
     "eyebrow": "Your kitchen account",
     "title": "Save a seat at the table.",
     "description": "Create an Author account, or sign in with email and password. Passwords are hashed before storage.",
@@ -120,6 +124,28 @@
     "apiUnavailable": "Cannot reach the API. Check that the backend is running.",
     "modeLabel": "Account action",
     "forgotPassword": "Forgot your password?"
+  },
+  "contact": {
+    "eyebrow": "Contact Small Kitchen",
+    "title": "Send a note to our kitchen.",
+    "description": "Share recipe feedback, an account question, or a collaboration idea. Your message is stored safely and forwarded to the team by email.",
+    "guidanceTitle": "Before you send",
+    "guidanceEmail": "Use an email address you check so the team can reply.",
+    "guidanceSensitive": "Never include passwords or other sensitive information.",
+    "guidanceLimit": "Keep the message focused and under 4,000 characters.",
+    "formTitle": "Your message",
+    "requiredNote": "All fields are required.",
+    "fullName": "Full name",
+    "email": "Email",
+    "message": "Message",
+    "messageHint": "10–4,000 characters.",
+    "send": "Send message",
+    "sending": "Sending...",
+    "successTitle": "Message received.",
+    "successDescription": "Your message has been saved and is being forwarded to the team inbox.",
+    "sendAnother": "Send another message",
+    "requestFailed": "The message could not be sent. Please try again.",
+    "apiUnavailable": "Cannot reach the API. Check that the backend is running."
   },
   "profile": {
     "eyebrow": "Your account",
@@ -488,6 +514,7 @@
     "usersEmpty": "No users found matching your criteria.",
     "usersEmptyHint": "Try searching with a different keyword or resetting the role filter.",
     "usersError": "Could not load the user list. Try again.",
+    "refreshUsers": "Refresh users",
     "usersForbiddenTitle": "Admin access required",
     "usersForbiddenDescription": "You must be signed in with an Administrator account to view this page.",
     "usersForbiddenAction": "Sign in as Admin",

@@ -39,6 +39,7 @@
 | NFR-SCALE-002 | Database scaling path | Hieu | Cycle 3 #47 - Ready |
 | NFR-SCALE-003 | Container and proxy setup | Han | Done - #59 |
 | NFR-SEO-001 to NFR-SEO-004 | Recipe SEO, sitemap, and URLs | Minh Anh | Done - #46 |
+| Part III extension | Public contact form with durable email delivery | Team | Done - `docs/CONTACT.md` |
 ## Lab 08 assignments
 
 | Issue | Owner | Lab 08 scope | SRS coverage | Status |

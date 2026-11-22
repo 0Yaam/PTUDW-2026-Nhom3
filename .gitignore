@@ -19,5 +19,6 @@ Thumbs.db
 .DS_Store
 .artifacts/
 .template-audit/
+**/.playwright-cli/
 backend/.git.scaffold/
 PROMPT-Agent-Setup-Culinary-Blog.md

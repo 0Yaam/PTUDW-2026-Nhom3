@@ -8,6 +8,7 @@ import asyncio
 import hashlib
 import html
 import smtplib
+import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
@@ -19,6 +20,7 @@ from sqlalchemy import select, update
 from ..auth.model import PasswordResetToken
 from ..auth.security import create_password_reset_token
 from ..config import Settings, get_settings
+from ..contact.model import ContactMessage
 from ..db import SessionFactory
 from .model import PasswordResetEmailJob, WelcomeEmailJob
 
@@ -80,6 +82,43 @@ def send_password_reset_email(
         "<p>Use this one-time link to reset your Culinary Blog password. "
         "It expires in 30 minutes.</p>"
         f'<p><a href="{safe_reset_url}">Reset password</a></p>',
+        subtype="html",
+    )
+    if settings.smtp_ssl and settings.smtp_starttls:
+        raise ValueError("SMTP_SSL and SMTP_STARTTLS are mutually exclusive")
+    connection = smtplib.SMTP_SSL if settings.smtp_ssl else smtplib.SMTP
+    with connection(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
+        if settings.smtp_starttls:
+            smtp.starttls()
+        if settings.smtp_username:
+            smtp.login(settings.smtp_username, settings.smtp_password.get_secret_value())
+        smtp.send_message(message)
+
+
+def send_contact_email(
+    contact_id: uuid.UUID,
+    reply_to: str,
+    full_name: str,
+    content: str,
+    settings: Settings,
+) -> None:
+    """Forward one contact message without treating user input as HTML."""
+    if not settings.smtp_host:
+        raise RuntimeError("SMTP_HOST is not configured")
+    safe_name = html.escape(full_name)
+    safe_email = html.escape(reply_to)
+    safe_content = html.escape(content).replace("\n", "<br>")
+    message = EmailMessage()
+    message["Subject"] = "New Culinary Blog contact message"
+    message["From"] = settings.smtp_from
+    message["To"] = settings.contact_recipient
+    message["Reply-To"] = reply_to
+    sender_domain = parseaddr(settings.smtp_from)[1].rpartition("@")[2] or "culinary-blog.local"
+    message["Message-ID"] = f"<contact-{contact_id}@{sender_domain}>"
+    message.set_content(f"From: {full_name} <{reply_to}>\n\n{content}")
+    message.add_alternative(
+        f"<p><strong>From:</strong> {safe_name} &lt;{safe_email}&gt;</p>"
+        f"<p>{safe_content}</p>",
         subtype="html",
     )
     if settings.smtp_ssl and settings.smtp_starttls:
@@ -214,26 +253,99 @@ async def process_due_password_reset_job(
             return True
 
 
+async def process_due_contact_job(
+    *,
+    sender: Callable[[uuid.UUID, str, str, str, Settings], None] = send_contact_email,
+    now: datetime | None = None,
+) -> bool:
+    now = now or datetime.now(UTC)
+    async with SessionFactory() as session:
+        async with session.begin():
+            query = (
+                select(ContactMessage)
+                .where(
+                    ContactMessage.status == "Pending",
+                    ContactMessage.next_attempt_at <= now,
+                )
+                .order_by(ContactMessage.next_attempt_at, ContactMessage.id)
+                .limit(1)
+            )
+            if session.bind.dialect.name == "postgresql":
+                query = query.with_for_update(skip_locked=True)
+            contact = await session.scalar(query)
+            if contact is None:
+                return False
+            try:
+                await asyncio.to_thread(
+                    sender,
+                    contact.id,
+                    contact.email,
+                    contact.full_name,
+                    contact.message,
+                    get_settings(),
+                )
+            except Exception as error:
+                contact.attempts += 1
+                contact.last_error = type(error).__name__
+                if contact.attempts >= MAX_ATTEMPTS:
+                    contact.status = "Failed"
+                    logger.error(
+                        "contact_email_failed_permanently",
+                        contact_id=str(contact.id),
+                        attempts=contact.attempts,
+                        error_type=contact.last_error,
+                    )
+                else:
+                    contact.next_attempt_at = now + timedelta(
+                        seconds=RETRY_DELAYS[contact.attempts - 1]
+                    )
+                    logger.warning(
+                        "contact_email_retry_scheduled",
+                        contact_id=str(contact.id),
+                        attempts=contact.attempts,
+                        error_type=contact.last_error,
+                    )
+            else:
+                contact.status = "Sent"
+                contact.attempts += 1
+                contact.sent_at = now
+                contact.last_error = None
+                logger.info("contact_email_sent", contact_id=str(contact.id))
+            return True
+
+
 async def retry_failed_jobs() -> int:
     """Requeue failed messages after an operator fixes delivery configuration."""
     async with SessionFactory() as session:
         async with session.begin():
-            result = await session.execute(
+            welcome_result = await session.execute(
                 update(WelcomeEmailJob)
                 .where(WelcomeEmailJob.status == "Failed")
                 .values(status="Pending", attempts=0, next_attempt_at=datetime.now(UTC))
             )
-            return result.rowcount
+            password_result = await session.execute(
+                update(PasswordResetEmailJob)
+                .where(PasswordResetEmailJob.status == "Failed")
+                .values(status="Pending", attempts=0, next_attempt_at=datetime.now(UTC))
+            )
+            contact_result = await session.execute(
+                update(ContactMessage)
+                .where(ContactMessage.status == "Failed")
+                .values(status="Pending", attempts=0, next_attempt_at=datetime.now(UTC))
+            )
+            return welcome_result.rowcount + password_result.rowcount + contact_result.rowcount
 
 
 async def run_worker() -> None:
     """Poll the shared database. Each worker instance is independent."""
-    logger.info("welcome_email_worker_started")
+    logger.info("email_worker_started")
     while True:
         try:
             processed = await process_due_job()
             if not processed:
                 processed = await process_due_password_reset_job()
+            if not processed:
+                processed = await process_due_contact_job()
         except Exception:
             logger.exception("welcome_email_worker_error")
             await asyncio.sleep(5)

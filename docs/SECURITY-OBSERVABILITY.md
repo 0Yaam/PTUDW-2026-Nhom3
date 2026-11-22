@@ -12,7 +12,8 @@
 - Other authentication endpoints: 10 requests per minute per client IP.
 - Other `/api/v1` endpoints: 100 requests per minute per client IP.
 - Limit errors return RFC 7807 problem details with `429` and `Retry-After`.
-- The current limiter is per API process. Move it to Redis in Issue #47 when the API runs multiple replicas.
+- When `REDIS_URL` is set, limits are counted in Redis (`ratelimit:{scope}:{client}:{window}`, 60-second fixed windows), so every API replica shares one limit.
+- If Redis is not configured or does not answer, each API process falls back to its own 60-second sliding window and logs `rate_limit_redis_unavailable`.
 
 Responses include clickjacking, MIME sniffing, referrer, and browser permission headers. Authentication responses also use `Cache-Control: no-store`. Production responses include HSTS.
 

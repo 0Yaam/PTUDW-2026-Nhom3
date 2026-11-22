@@ -26,7 +26,7 @@
   --shadow-panel: 0 12px 32px rgba(22, 29, 35, 0.1);
 
   --font-body: "Segoe UI", Arial, sans-serif;
-  --font-display: Georgia, "Times New Roman", serif;
+  --font-display: Constantia, "Times New Roman", serif;
 }
 
 /* Tailwind 4 reads this theme block and exposes the same tokens to utilities. */

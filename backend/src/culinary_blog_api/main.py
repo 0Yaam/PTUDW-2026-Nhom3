@@ -1,9 +1,7 @@
 import asyncio
-import math
 import re
 import time
 import uuid
-from collections import deque
 
 import structlog
 from fastapi import FastAPI, Request
@@ -18,6 +16,8 @@ from .auth import router as auth_router
 from .auth.security import read_access_token
 from .categories import router as categories_router
 from .config import get_settings
+from .contact.router import router as contact_router
+from .rate_limit import check_rate_limit
 from .recipes import RecipeProblem
 from .recipes import router as recipes_router
 from .storage import model as storage_model  # noqa: F401 - register cleanup table
@@ -79,6 +79,8 @@ async def validation_problem_handler(
 
 
 def _rate_limit(path: str) -> tuple[str, int] | None:
+    if path == "/api/v1/contact":
+        return "contact", 5
     if path == "/api/v1/auth/google":
         return "google-auth", 5
     if path.startswith("/api/v1/auth/"):
@@ -111,29 +113,23 @@ async def _rate_limit_response(request: Request) -> JSONResponse | None:
         return None
 
     scope, maximum = limit
-    now = time.monotonic()
     client_ip = request.client.host if request.client else "unknown"
-    key = (client_ip, scope)
-    # ponytail: per-process limiter; move to Redis when Issue #47 adds shared cache.
-    async with app.state.rate_limit_lock:
-        bucket = app.state.rate_limit_buckets.setdefault(key, deque())
-        while bucket and bucket[0] <= now - 60:
-            bucket.popleft()
-        if len(bucket) >= maximum:
-            retry_after = max(1, math.ceil(60 - (now - bucket[0])))
-            return JSONResponse(
-                status_code=429,
-                media_type="application/problem+json",
-                headers={"Retry-After": str(retry_after)},
-                content={
-                    "type": "RATE_LIMIT_EXCEEDED",
-                    "title": "Too Many Requests",
-                    "status": 429,
-                    "detail": "Too many requests. Try again later.",
-                },
-            )
-        bucket.append(now)
-    return None
+    retry_after = await check_rate_limit(
+        app.state.rate_limit_buckets, app.state.rate_limit_lock, scope, client_ip, maximum
+    )
+    if retry_after is None:
+        return None
+    return JSONResponse(
+        status_code=429,
+        media_type="application/problem+json",
+        headers={"Retry-After": str(retry_after)},
+        content={
+            "type": "RATE_LIMIT_EXCEEDED",
+            "title": "Too Many Requests",
+            "status": 429,
+            "detail": "Too many requests. Try again later.",
+        },
+    )
 
 
 def _audit_result(status_code: int) -> str:
@@ -216,3 +212,4 @@ app.include_router(auth_router)
 app.include_router(categories_router)
 app.include_router(recipes_router)
 app.include_router(admin_router)
+app.include_router(contact_router)

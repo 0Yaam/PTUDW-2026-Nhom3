@@ -103,6 +103,8 @@ export default function ManageCategories() {
   function problemText(problem: Problem): string {
     const fieldError = Object.values(problem.errors ?? {}).flat()[0];
     if (problem.type && errors.has(problem.type)) return errors(problem.type);
+    // Backend details are English; only show them in the English UI.
+    if (locale !== "en") return errors(fieldError ? "VALIDATION_ERROR" : "fallback");
     return fieldError ?? problem.detail ?? errors("fallback");
   }
 
