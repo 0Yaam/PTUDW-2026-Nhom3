@@ -1,0 +1,97 @@
+.inner:global(.site-header-inner) {
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.inner :global(.desktop-nav) {
+  gap: clamp(12px, 1.3vw, 22px);
+}
+
+.inner :global(.desktop-nav) a {
+  white-space: nowrap;
+}
+
+.inner :global(.locale-switcher),
+.inner :global(.header-action),
+.inner :global(.mobile-nav) {
+  flex-shrink: 0;
+}
+
+.brandGroup {
+  flex-shrink: 0;
+}
+
+.guestBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.guestBadge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--clay);
+}
+
+.mobileGuest {
+  display: none;
+}
+
+@media (max-width: 1279px) {
+  .desktopGuest {
+    display: none;
+  }
+
+  .mobileGuest {
+    display: inline-flex;
+    margin-block-start: 4px;
+    margin-inline-start: var(--space-6);
+    padding: 2px 7px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 560px) {
+  .inner:global(.site-header-inner) {
+    width: calc(100% - 24px);
+    gap: 8px;
+  }
+
+  .inner :global(.site-brand-name) {
+    font-size: clamp(19px, 5vw, 23px);
+  }
+
+  .inner :global(.site-brand-mark) {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 400px) {
+  .inner :global(.site-brand-name) small {
+    letter-spacing: 0.1em;
+  }
+
+  .inner :global(.mobile-nav) summary {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .inner :global(.mobile-nav) summary span {
+    margin-left: 0;
+    font-size: 20px;
+  }
+}

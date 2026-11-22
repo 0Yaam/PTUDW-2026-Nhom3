@@ -25,6 +25,11 @@ supports English/Vietnamese UI text through `next-intl`. See
 [the Admin and i18n notes](../docs/ADMIN-DASHBOARD-I18N.md) for the license,
 authorization boundary, teammate integration rules, and FR-CAT trace.
 
+The public header shows a Guest badge before sign-in. Its Manage categories
+links on desktop, mobile, and in the footer appear after the profile API
+confirms the current session has the Admin role. The public navigation follows
+session changes when users sign in or sign out on the homepage.
+
 Issues #2 and #33 add `/admin/categories`. Sign in with an existing Admin account,
 then create categories or select one to edit its name and description. An empty
 category can be deleted after a second confirmation. A category with recipes
